@@ -43,7 +43,7 @@ class MainInterface extends StatelessWidget {
                         onPressed: theme.toggleTheme,
                         tooltip: 'Toggle Theme',
                         style: IconButton.styleFrom(
-                          backgroundColor: Colors.white.withOpacity(0.05),
+                          backgroundColor: Colors.white.withValues(alpha: 0.05),
                         ),
                       );
                     },
@@ -55,8 +55,8 @@ class MainInterface extends StatelessWidget {
                     icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: controller.close,
                     style: IconButton.styleFrom(
-                      backgroundColor: Colors.white.withOpacity(0.05),
-                      hoverColor: Colors.red.withOpacity(0.1),
+                      backgroundColor: Colors.white.withValues(alpha: 0.05),
+                      hoverColor: Colors.red.withValues(alpha: 0.1),
                     ),
                   ),
                 ),

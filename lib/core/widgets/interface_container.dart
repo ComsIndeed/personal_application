@@ -40,7 +40,7 @@ class InterfaceContainer extends StatelessWidget {
                   color: Theme.of(context).cardColor,
                   shadows: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withValues(alpha: 0.3),
                       blurRadius: 24,
                       offset: const Offset(-8, 0),
                     ),
