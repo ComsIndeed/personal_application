@@ -78,15 +78,27 @@ class MainInterface extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.fromLTRB(20, 20, 20, 10),
-                        child: Text(
-                          'Universal Hub',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.5,
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                        child: ListenableBuilder(
+                          listenable: tabController,
+                          builder: (context, _) {
+                            final titles = [
+                              'Assistant',
+                              'Sprints',
+                              'Notes',
+                              'Dashboard',
+                              'Settings',
+                            ];
+                            return Text(
+                              titles[tabController.index],
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            );
+                          },
                         ),
                       ),
                       const Spacer(),

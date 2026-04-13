@@ -32,24 +32,7 @@ class ChatTab extends StatefulWidget {
 }
 
 class _ChatTabState extends State<ChatTab> {
-  final List<ChatMessage> _messages = [
-    ChatMessage(
-      id: '1',
-      authorId: 'ai',
-      text: 'Analyzing your workflow...',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
-      toolCalls: [
-        ToolCall(name: 'list_dir', status: 'done'),
-        ToolCall(name: 'grep_search', status: 'running'),
-      ],
-    ),
-    ChatMessage(
-      id: '2',
-      authorId: 'user',
-      text: 'Hey, can you help me with the new sprint?',
-      createdAt: DateTime.now().subtract(const Duration(minutes: 10)),
-    ),
-  ];
+  final List<ChatMessage> _messages = [];
 
   final TextEditingController _textController = TextEditingController();
   final FocusNode _focusNode = FocusNode();

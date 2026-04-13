@@ -59,15 +59,15 @@ class MainNavTabs extends StatelessWidget {
                   children: [
                     _NavButton(
                       index: 0,
-                      icon: Icons.chat_bubble_rounded,
-                      label: 'AI',
+                      icon: Icons.auto_awesome_rounded,
+                      label: 'Assistant',
                       onTap: () => tabController.animateTo(0),
                     ),
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 1,
-                      icon: Icons.check_circle_rounded,
-                      label: 'Tasks',
+                      icon: Icons.bolt_rounded,
+                      label: 'Sprints',
                       onTap: () => tabController.animateTo(1),
                     ),
                     const SizedBox(height: spacing),
@@ -87,8 +87,8 @@ class MainNavTabs extends StatelessWidget {
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 4,
-                      icon: Icons.person_rounded,
-                      label: 'User',
+                      icon: Icons.settings_rounded,
+                      label: 'Settings',
                       onTap: () => tabController.animateTo(4),
                     ),
                   ],
