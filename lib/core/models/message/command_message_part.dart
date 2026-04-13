@@ -1,7 +1,7 @@
 // removed unused import
 
-import 'package:personal_application/core/models/command_data.dart';
-import 'package:personal_application/core/models/message_part.dart';
+import 'package:personal_application/core/models/message/command_data.dart';
+import 'package:personal_application/core/models/message/message_part.dart';
 
 class CommandMessagePart extends MessagePart {
   @override

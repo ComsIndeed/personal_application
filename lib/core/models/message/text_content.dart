@@ -1,6 +1,6 @@
 // removed unused import
 
-import 'package:personal_application/core/models/message_content.dart';
+import 'package:personal_application/core/models/message/message_content.dart';
 
 class TextContent extends MessageContent {
   @override

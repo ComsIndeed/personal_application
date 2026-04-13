@@ -1,7 +1,7 @@
 // removed unused import
 
-import 'package:personal_application/core/models/message_content.dart';
-import 'package:personal_application/core/models/message_part.dart';
+import 'package:personal_application/core/models/message/message_content.dart';
+import 'package:personal_application/core/models/message/message_part.dart';
 
 class TextMessagePart extends MessagePart {
   @override

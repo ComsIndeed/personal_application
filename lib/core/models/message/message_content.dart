@@ -1,7 +1,7 @@
 // removed unused import
 
-import 'package:personal_application/core/models/asset_content.dart';
-import 'package:personal_application/core/models/text_content.dart';
+import 'package:personal_application/core/models/message/asset_content.dart';
+import 'package:personal_application/core/models/message/text_content.dart';
 
 abstract class MessageContent {
   String get type;

@@ -1,7 +1,7 @@
 // removed unused import
 
-import 'package:personal_application/core/models/command_message_part.dart';
-import 'package:personal_application/core/models/text_message_part.dart';
+import 'package:personal_application/core/models/message/command_message_part.dart';
+import 'package:personal_application/core/models/message/text_message_part.dart';
 
 abstract class MessagePart {
   String get type;

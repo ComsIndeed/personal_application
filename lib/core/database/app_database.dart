@@ -6,9 +6,9 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import 'package:personal_application/core/models/media_type.dart';
-import 'package:personal_application/core/models/message_part.dart';
-import 'package:personal_application/core/models/message_role.dart';
+import 'package:personal_application/core/models/message/media_type.dart';
+import 'package:personal_application/core/models/message/message_part.dart';
+import 'package:personal_application/core/models/message/message_role.dart';
 
 import '../tables/asset_items.dart';
 import '../tables/conversation_items.dart';
