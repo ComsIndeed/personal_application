@@ -15,17 +15,38 @@ class TabIntent extends Intent {
   const TabIntent(this.index);
 }
 
-class MainInterface extends StatelessWidget {
+class MainInterface extends StatefulWidget {
   final bool isVisible;
 
   const MainInterface({super.key, required this.isVisible});
+
+  @override
+  State<MainInterface> createState() => _MainInterfaceState();
+}
+
+class _MainInterfaceState extends State<MainInterface> {
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void didUpdateWidget(MainInterface oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isVisible && !oldWidget.isVisible) {
+      _focusNode.requestFocus();
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 5,
       child: InterfaceContainer(
-        isVisible: isVisible,
+        isVisible: widget.isVisible,
         outerBuilder: (context, controller, container) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -41,125 +62,118 @@ class MainInterface extends StatelessWidget {
         builder: (context, controller) {
           final tabController = DefaultTabController.of(context);
 
-          return Shortcuts(
-            shortcuts: <ShortcutActivator, Intent>{
-              LogicalKeySet(
-                LogicalKeyboardKey.altLeft,
-                LogicalKeyboardKey.keyC,
-              ): const TabIntent(
-                0,
-              ),
-              LogicalKeySet(
-                LogicalKeyboardKey.altLeft,
-                LogicalKeyboardKey.keyT,
-              ): const TabIntent(
-                1,
-              ),
-              LogicalKeySet(
-                LogicalKeyboardKey.altLeft,
-                LogicalKeyboardKey.keyN,
-              ): const TabIntent(
-                2,
-              ),
-              LogicalKeySet(
-                LogicalKeyboardKey.altLeft,
-                LogicalKeyboardKey.keyD,
-              ): const TabIntent(
-                3,
-              ),
-            },
-            child: Actions(
-              actions: <Type, Action<Intent>>{
-                TabIntent: CallbackAction<TabIntent>(
-                  onInvoke: (intent) => tabController.animateTo(intent.index),
-                ),
+          return Focus(
+            focusNode: _focusNode,
+            autofocus: true,
+            child: Shortcuts(
+              shortcuts: <ShortcutActivator, Intent>{
+                const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
+                    const TabIntent(0),
+                const SingleActivator(LogicalKeyboardKey.digit2, alt: true):
+                    const TabIntent(1),
+                const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
+                    const TabIntent(2),
+                const SingleActivator(LogicalKeyboardKey.digit4, alt: true):
+                    const TabIntent(3),
+                const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
+                    const TabIntent(4),
               },
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                        child: ListenableBuilder(
-                          listenable: tabController,
-                          builder: (context, _) {
-                            final titles = [
-                              'Assistant',
-                              'Sprints',
-                              'Notes',
-                              'Dashboard',
-                              'Settings',
-                            ];
-                            return Text(
-                              titles[tabController.index],
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 4, top: 12),
-                        child: Consumer<ThemeController>(
-                          builder: (context, theme, _) {
-                            return IconButton(
-                              icon: Icon(
-                                theme.isDarkMode
-                                    ? Icons.light_mode_rounded
-                                    : Icons.dark_mode_rounded,
-                                size: 20,
-                              ),
-                              onPressed: theme.toggleTheme,
-                              tooltip: 'Toggle Theme',
-                              style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.05,
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  TabIntent: CallbackAction<TabIntent>(
+                    onInvoke: (intent) {
+                      tabController.animateTo(intent.index);
+                      return null;
+                    },
+                  ),
+                },
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+                          child: ListenableBuilder(
+                            listenable: tabController,
+                            builder: (context, _) {
+                              final titles = [
+                                'Assistant',
+                                'Sprints',
+                                'Notes',
+                                'Dashboard',
+                                'Settings',
+                              ];
+                              return Text(
+                                titles[tabController.index],
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(right: 12, top: 12),
-                        child: IconButton(
-                          icon: const Icon(Icons.close_rounded, size: 20),
-                          onPressed: controller.close,
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white.withValues(
-                              alpha: 0.05,
-                            ),
-                            hoverColor: Colors.red.withValues(alpha: 0.1),
+                              );
+                            },
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-
-                  const Divider(
-                    height: 1,
-                    indent: 20,
-                    endIndent: 20,
-                    color: Colors.white10,
-                  ),
-
-                  // Main Content Area
-                  const Expanded(
-                    child: VerticalTabBarView(
-                      children: [
-                        ChatTab(),
-                        TodoTab(),
-                        NotesTab(),
-                        DashboardTab(),
-                        SettingsTab(),
+                        const Spacer(),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 4, top: 12),
+                          child: Consumer<ThemeController>(
+                            builder: (context, theme, _) {
+                              return IconButton(
+                                icon: Icon(
+                                  theme.isDarkMode
+                                      ? Icons.light_mode_rounded
+                                      : Icons.dark_mode_rounded,
+                                  size: 20,
+                                ),
+                                onPressed: theme.toggleTheme,
+                                tooltip: 'Toggle Theme',
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.white.withValues(
+                                    alpha: 0.05,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.only(right: 12, top: 12),
+                          child: IconButton(
+                            icon: const Icon(Icons.close_rounded, size: 20),
+                            onPressed: controller.close,
+                            style: IconButton.styleFrom(
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.05,
+                              ),
+                              hoverColor: Colors.red.withValues(alpha: 0.1),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                ],
+
+                    const Divider(
+                      height: 1,
+                      indent: 20,
+                      endIndent: 20,
+                      color: Colors.white10,
+                    ),
+
+                    // Main Content Area
+                    const Expanded(
+                      child: VerticalTabBarView(
+                        children: [
+                          ChatTab(),
+                          TodoTab(),
+                          NotesTab(),
+                          DashboardTab(),
+                          SettingsTab(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
