@@ -1,0 +1,134 @@
+name: Flutter Build & Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  # ============================================================================
+  # Check for [BUILD] trigger or tag
+  # ============================================================================
+  check-trigger:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.check.outputs.should_build }}
+    steps:
+      - name: Check trigger conditions
+        id: check
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ "$COMMIT_MSG" == \[BUILD\]* ]] || [[ "${{ github.ref }}" == refs/tags/v* ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "should_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "should_build=false" >> $GITHUB_OUTPUT
+          fi
+
+  # ============================================================================
+  # Build Android APK
+  # ============================================================================
+  build-android:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_build == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Android APK
+        run: flutter build apk --release
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 7
+
+  # ============================================================================
+  # Build Windows
+  # ============================================================================
+  build-windows:
+    needs: check-trigger
+    if: needs.check-trigger.outputs.should_build == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build Windows
+        run: flutter build windows --release
+
+      - name: Create Windows ZIP
+        shell: pwsh
+        run: |
+          Compress-Archive -Path build\windows\x64\runner\Release\* -DestinationPath personal_application-windows.zip
+
+      - name: Upload Windows Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-zip
+          path: personal_application-windows.zip
+          retention-days: 7
+
+  # ============================================================================
+  # Create GitHub Release (Only on Tags)
+  # ============================================================================
+  create-release:
+    needs: [build-android, build-windows]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Android Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: .
+
+      - name: Download Windows Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-zip
+          path: .
+
+      - name: Rename Artifacts for Release
+        run: |
+          mv app-release.apk personal_application-android.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            personal_application-android.apk
+            personal_application-windows.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: false
