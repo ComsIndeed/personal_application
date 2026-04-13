@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:personal_application/main.dart';
 import 'package:provider/provider.dart';
-import '../../main.dart'; // To access WindowOverlayState
 
 class InterfaceController {
   final WindowOverlayState overlayState;
@@ -22,6 +22,7 @@ class InterfaceContainer extends StatelessWidget {
   outerBuilder;
   final bool isVisible;
   final InterfaceController? controller;
+  final bool useSafeArea;
 
   const InterfaceContainer({
     super.key,
@@ -29,6 +30,7 @@ class InterfaceContainer extends StatelessWidget {
     required this.isVisible,
     this.outerBuilder,
     this.controller,
+    this.useSafeArea = true,
   });
 
   @override
@@ -58,7 +60,7 @@ class InterfaceContainer extends StatelessWidget {
       container = outerBuilder!(context, effectiveController, container);
     }
 
-    return Padding(
+    Widget content = Padding(
       padding: const EdgeInsets.all(16.0),
       child: container
           .animate(target: isVisible ? 1 : 0)
@@ -69,5 +71,11 @@ class InterfaceContainer extends StatelessWidget {
             duration: 320.ms,
           ),
     );
+
+    if (useSafeArea) {
+      return SafeArea(child: content);
+    }
+
+    return content;
   }
 }
