@@ -5,6 +5,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'interfaces/main_interface.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +29,11 @@ void main() async {
       });
 
   runApp(
-    ChangeNotifierProvider(
-      create: (_) => WindowOverlayState(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => WindowOverlayState()),
+        ChangeNotifierProvider(create: (_) => ThemeController()),
+      ],
       child: const MainApp(),
     ),
   );
@@ -117,12 +121,13 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final themeController = context.watch<ThemeController>();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        colorScheme: const ColorScheme.dark(),
-        scaffoldBackgroundColor: Colors.transparent,
-      ),
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeController.themeMode,
       home: const OverlayPage(),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../components/interface_container.dart';
+import '../theme/app_theme.dart';
 
 class MainInterface extends StatelessWidget {
   final bool isVisible;
@@ -28,9 +30,29 @@ class MainInterface extends StatelessWidget {
                 ),
                 const Spacer(),
                 Padding(
+                  padding: const EdgeInsets.only(right: 4, top: 12),
+                  child: Consumer<ThemeController>(
+                    builder: (context, theme, _) {
+                      return IconButton(
+                        icon: Icon(
+                          theme.isDarkMode
+                              ? Icons.light_mode_rounded
+                              : Icons.dark_mode_rounded,
+                          size: 20,
+                        ),
+                        onPressed: theme.toggleTheme,
+                        tooltip: 'Toggle Theme',
+                        style: IconButton.styleFrom(
+                          backgroundColor: Colors.white.withOpacity(0.05),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                Padding(
                   padding: const EdgeInsets.only(right: 12, top: 12),
                   child: IconButton(
-                    icon: const Icon(Icons.close_rounded),
+                    icon: const Icon(Icons.close_rounded, size: 20),
                     onPressed: controller.close,
                     style: IconButton.styleFrom(
                       backgroundColor: Colors.white.withOpacity(0.05),
