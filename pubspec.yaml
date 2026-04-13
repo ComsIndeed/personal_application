@@ -1,6 +1,6 @@
 name: personal_application
 description: "A new Flutter project."
-publish_to: 'none'
+publish_to: "none"
 version: 0.1.0+1
 
 environment:
@@ -9,6 +9,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  window_manager: ^0.5.1
+  hotkey_manager: ^0.2.3
+  flutter_animate: ^4.5.2
+  provider: ^6.1.5+1
+  flutter_acrylic: ^1.1.4
 
 dev_dependencies:
   flutter_test:
