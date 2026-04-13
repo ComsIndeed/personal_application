@@ -2,14 +2,17 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
+import 'package:personal_application/core/models/media_type.dart';
+import 'package:personal_application/core/models/message_part.dart';
+import 'package:personal_application/core/models/message_role.dart';
+
+import '../tables/asset_items.dart';
 import '../tables/conversation_items.dart';
 import '../tables/message_items.dart';
-import '../tables/asset_items.dart';
-import '../models/message_models.dart';
 
 part 'app_database.g.dart';
 

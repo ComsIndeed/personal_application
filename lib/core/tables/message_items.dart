@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:personal_application/core/models/message_part.dart';
+import 'package:personal_application/core/models/message_role.dart';
 import 'package:uuid/uuid.dart';
-import '../models/message_models.dart';
 import 'conversation_items.dart';
 
 class MessagePartsConverter extends TypeConverter<List<MessagePart>, String> {
