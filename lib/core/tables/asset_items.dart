@@ -1,5 +1,5 @@
 import 'package:drift/drift.dart';
-import 'package:personal_application/core/models/message/media_type.dart';
+import 'package:personal_application/core/models/message/enums.dart';
 import 'package:uuid/uuid.dart';
 
 class AssetItems extends Table {

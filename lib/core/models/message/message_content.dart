@@ -1,8 +1,3 @@
-// removed unused import
-
-import 'package:personal_application/core/models/message/asset_content.dart';
-import 'package:personal_application/core/models/message/text_content.dart';
-
 abstract class MessageContent {
   String get type;
   Map<String, dynamic> toJson();
@@ -18,4 +13,32 @@ abstract class MessageContent {
         throw Exception('Unknown message content type: $type');
     }
   }
+}
+
+class TextContent extends MessageContent {
+  @override
+  String get type => 'text';
+  final String text;
+
+  TextContent({required this.text});
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'text': text};
+
+  factory TextContent.fromJson(Map<String, dynamic> json) =>
+      TextContent(text: json['text'] as String);
+}
+
+class AssetContent extends MessageContent {
+  @override
+  String get type => 'asset';
+  final String assetId;
+
+  AssetContent({required this.assetId});
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'assetId': assetId};
+
+  factory AssetContent.fromJson(Map<String, dynamic> json) =>
+      AssetContent(assetId: json['assetId'] as String);
 }

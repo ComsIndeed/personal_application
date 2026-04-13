@@ -1,3 +1,3 @@
-// removed unused import
+enum MessageRole { user, model, system }
 
 enum MediaType { image, video, audio, document, other }
