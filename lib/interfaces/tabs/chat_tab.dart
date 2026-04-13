@@ -21,6 +21,31 @@ class _ChatTabState extends State<ChatTab> {
       messages: [
         core.Message.text(
           id: const Uuid().v4(),
+          authorId: 'user',
+          text: 'Hey AI, give me some motivational advice.',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
+        ),
+        core.Message.text(
+          id: const Uuid().v4(),
+          authorId: 'ai',
+          text:
+              'Focus on the process, not just the outcome. Small daily wins build monumental success over time!',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 4)),
+        ),
+        core.Message.text(
+          id: const Uuid().v4(),
+          authorId: 'user',
+          text: 'What should I work on next?',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 3)),
+        ),
+        core.Message.text(
+          id: const Uuid().v4(),
+          authorId: 'ai',
+          text: 'Your current sprint says "Code Refactor". It has high energy.',
+          createdAt: DateTime.now().subtract(const Duration(minutes: 2)),
+        ),
+        core.Message.text(
+          id: const Uuid().v4(),
           authorId: 'ai',
           text: 'Hello! How can I help you today?',
           createdAt: DateTime.now(),

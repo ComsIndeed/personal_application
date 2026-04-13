@@ -7,15 +7,25 @@ class TodoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
       children: [
         _buildSprintHeader('Current Sprint: Focus Week'),
         _buildTodoItem('Morning Reading', 'Low Energy', Colors.green),
         _buildTodoItem('Code Refactor', 'High Energy', Colors.red),
         _buildTodoItem('Email Cleanup', 'Medium Energy', Colors.orange),
+        _buildTodoItem('Bug Hunting', 'High Energy', Colors.red),
+        _buildTodoItem('Update Documentation', 'Low Energy', Colors.green),
         const SizedBox(height: 24),
         _buildSprintHeader('Next Sprint: Prep Phase'),
         _buildTodoItem('Design Mockups', 'High Energy', Colors.red),
         _buildTodoItem('Grocery Shopping', 'Medium Energy', Colors.orange),
+        _buildTodoItem('Planning Meeting', 'Medium Energy', Colors.orange),
+        _buildTodoItem('Exercise', 'High Energy', Colors.red),
+        _buildTodoItem('Meditation', 'Low Energy', Colors.green),
+        _buildTodoItem('Call Parents', 'Low Energy', Colors.green),
+        _buildTodoItem('Clean Desk', 'Medium Energy', Colors.orange),
+        _buildTodoItem('Market Research', 'High Energy', Colors.red),
+        _buildTodoItem('UI Polishing', 'Medium Energy', Colors.orange),
       ],
     );
   }

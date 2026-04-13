@@ -7,6 +7,7 @@ class DashboardTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
+      physics: const BouncingScrollPhysics(),
       children: [
         const Text(
           'Canvas LMS - Upcoming',
@@ -27,6 +28,26 @@ class DashboardTab extends StatelessWidget {
           'ENG102: Literature',
           'Draft Essay',
           'Due: Tomorrow, 5:00 PM',
+        ),
+        _buildAssignmentCard(
+          'HIST101: History',
+          'Primary Source Analysis',
+          'Due: Wednesday, 11:59 PM',
+        ),
+        _buildAssignmentCard(
+          'PHYS201: Physics',
+          'Lab Report #4',
+          'Due: Next Tuesday, 10:00 AM',
+        ),
+        _buildAssignmentCard(
+          'ART210: Digital Art',
+          'Midterm Portfolio',
+          'Due: Last Week (Late)',
+        ),
+        _buildAssignmentCard(
+          'SPAN101: Spanish',
+          'Oral Exam Prep',
+          'Due: Saturday',
         ),
       ],
     );
