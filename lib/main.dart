@@ -4,6 +4,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'core/services/app_prefs.dart';
 import 'interfaces/main_interface.dart';
 import 'theme/app_theme.dart';
 
@@ -12,6 +13,7 @@ void main() async {
   await hotKeyManager.unregisterAll();
   await windowManager.ensureInitialized();
   await Window.initialize();
+  await AppPrefs().init();
 
   const windowOptions = WindowOptions(
     center: true,

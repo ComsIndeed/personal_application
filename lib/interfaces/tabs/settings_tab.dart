@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/services/app_prefs.dart';
 
 class SettingsTab extends StatelessWidget {
   const SettingsTab({super.key});
@@ -87,6 +88,32 @@ class SettingsTab extends StatelessWidget {
         ),
         const Divider(height: 48, color: Colors.white10),
         const Text(
+          'AI Providers',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        _buildApiKeyField(
+          label: 'Gemini API Key',
+          hint: 'Enter Gemini API Key',
+          value: AppPrefs().geminiApiKey,
+          onChanged: (v) => AppPrefs().geminiApiKey = v,
+        ),
+        const SizedBox(height: 12),
+        _buildApiKeyField(
+          label: 'DeepSeek API Key',
+          hint: 'Enter DeepSeek API Key',
+          value: AppPrefs().deepSeekApiKey,
+          onChanged: (v) => AppPrefs().deepSeekApiKey = v,
+        ),
+        const SizedBox(height: 12),
+        _buildApiKeyField(
+          label: 'Groq API Key',
+          hint: 'Enter Groq API Key',
+          value: AppPrefs().groqApiKey,
+          onChanged: (v) => AppPrefs().groqApiKey = v,
+        ),
+        const Divider(height: 48, color: Colors.white10),
+        const Text(
           'App Settings',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
@@ -121,6 +148,48 @@ class SettingsTab extends StatelessWidget {
           onTap: () {},
         ),
       ],
+    );
+  }
+
+  Widget _buildApiKeyField({
+    required String label,
+    required String hint,
+    required String value,
+    required ValueChanged<String> onChanged,
+  }) {
+    return Card(
+      elevation: 0,
+      color: Colors.white.withValues(alpha: 0.03),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white10),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(fontSize: 12, color: Colors.white70),
+            ),
+            TextField(
+              obscureText: true,
+              controller: TextEditingController(text: value)
+                ..selection = TextSelection.fromPosition(
+                  TextPosition(offset: value.length),
+                ),
+              onChanged: onChanged,
+              decoration: InputDecoration(
+                hintText: hint,
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

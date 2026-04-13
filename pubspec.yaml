@@ -23,6 +23,10 @@ dependencies:
   flutter_chat_ui: ^2.11.1
   flutter_chat_types: ^3.6.2
   flutter_chat_core: ^2.9.0
+  llm_json_stream: ^0.4.7
+  flutter_bloc: ^9.1.1
+  shared_preferences: ^2.5.5
+  flutter_secure_storage: ^10.0.0
 
 dev_dependencies:
   flutter_test:
