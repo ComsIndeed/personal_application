@@ -17,13 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       should_build: ${{ steps.check.outputs.should_build }}
+      tag_name: ${{ steps.check.outputs.tag_name }}
     steps:
       - name: Check trigger conditions
         id: check
         run: |
           COMMIT_MSG="${{ github.event.head_commit.message }}"
-          if [[ "$COMMIT_MSG" == \[BUILD\]* ]] || [[ "${{ github.ref }}" == refs/tags/v* ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "tag_name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          elif [[ "$COMMIT_MSG" == \[BUILD\]* ]] || [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TIMESTAMP=$(date +'%Y.%m.%d-%H%M')
+            echo "should_build=true" >> $GITHUB_OUTPUT
+            echo "tag_name=build-$TIMESTAMP" >> $GITHUB_OUTPUT
           else
             echo "should_build=false" >> $GITHUB_OUTPUT
           fi
@@ -103,8 +109,8 @@ jobs:
   # Create GitHub Release (Only on Tags)
   # ============================================================================
   create-release:
-    needs: [build-android, build-windows]
-    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [check-trigger, build-android, build-windows]
+    if: needs.check-trigger.outputs.should_build == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Download Android Artifact
@@ -126,6 +132,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ needs.check-trigger.outputs.tag_name }}
           files: |
             personal_application-android.apk
             personal_application-windows.zip
