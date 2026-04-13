@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../components/interface_container.dart';
+import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
 
 class MainInterface extends StatelessWidget {
