@@ -35,15 +35,9 @@ void main() async {
   );
 }
 
-/// Manages the overlay window visibility and animation.
-/// Mirrors the coms_inferential WindowBloc pattern but with ChangeNotifier.
 class WindowOverlayState extends ChangeNotifier {
   bool _isVisible = false;
   bool get isVisible => _isVisible;
-
-  // Animation progress (0.0 = hidden, 1.0 = visible)
-  double _progress = 0.0;
-  double get progress => _progress;
 
   late AnimationController _controller;
   bool _initialized = false;
@@ -54,13 +48,11 @@ class WindowOverlayState extends ChangeNotifier {
 
     _controller = AnimationController(
       vsync: vsync,
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 220),
     );
 
-    _controller.addListener(() async {
-      _progress = _controller.value;
-      await windowManager.setOpacity(_controller.value);
-      notifyListeners();
+    _controller.addListener(() {
+      windowManager.setOpacity(_controller.value);
     });
 
     _registerHotKey();
@@ -69,25 +61,25 @@ class WindowOverlayState extends ChangeNotifier {
   Future<void> open() async {
     if (_isVisible) return;
     _isVisible = true;
+    notifyListeners(); // trigger panel slide-in immediately
     await windowManager.show();
     await windowManager.focus();
-    await _controller.forward();
-    notifyListeners();
+    _controller.forward();
   }
 
   Future<void> close() async {
     if (!_isVisible) return;
     _isVisible = false;
-    notifyListeners(); // Trigger slide-out immediately
+    notifyListeners(); // trigger panel slide-out immediately
     await _controller.reverse();
     await windowManager.hide();
   }
 
-  Future<void> toggle() async {
+  void toggle() {
     if (_isVisible) {
-      await close();
+      close();
     } else {
-      await open();
+      open();
     }
   }
 
@@ -118,7 +110,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // Initialize the animation controller with this TickerProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WindowOverlayState>().initAnimation(this);
     });
@@ -144,38 +135,29 @@ class OverlayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<WindowOverlayState>();
-    final isVisible = state.isVisible;
-
-    // Scale content opacity faster than window opacity for snappy feel
-    final contentOpacity = (state.progress * 10).clamp(0.0, 1.0);
+    final isVisible = context.watch<WindowOverlayState>().isVisible;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: AnimatedOpacity(
-        opacity: contentOpacity,
-        duration: Duration.zero,
-        child: Stack(
-          children: [
-            // Clickable transparent background → close
-            if (isVisible)
-              Positioned.fill(
-                child: GestureDetector(
-                  onTap: () => context.read<WindowOverlayState>().close(),
-                  child: Container(color: Colors.transparent),
-                ),
-              ),
-
-            // Side panel aligned right
-            Positioned(
-              top: 0,
-              bottom: 0,
-              right: 0,
-              width: panelWidth,
-              child: _SidePanel(isVisible: isVisible),
+      body: Stack(
+        children: [
+          // Clickable transparent backdrop → close
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => context.read<WindowOverlayState>().close(),
+              child: Container(color: Colors.transparent),
             ),
-          ],
-        ),
+          ),
+
+          // Side panel (always in tree, driven by isVisible)
+          Positioned(
+            top: 0,
+            bottom: 0,
+            right: 0,
+            width: panelWidth,
+            child: _SidePanel(isVisible: isVisible),
+          ),
+        ],
       ),
     );
   }
@@ -190,7 +172,7 @@ class _SidePanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF1E1E2E).withValues(alpha: 0.85),
+            color: const Color(0xFF1E1E2E).withValues(alpha: 0.92),
             border: Border(
               left: BorderSide(
                 color: Colors.white.withValues(alpha: 0.08),
@@ -236,7 +218,7 @@ class _SidePanel extends StatelessWidget {
               ),
               const Divider(height: 1, color: Colors.white10),
 
-              // Content area
+              // Content
               Expanded(
                 child: Center(
                   child: Column(
@@ -271,7 +253,6 @@ class _SidePanel extends StatelessWidget {
           ),
         )
         .animate(target: isVisible ? 1 : 0)
-        .slideX(begin: 1, end: 0, curve: Curves.easeOutCubic, duration: 250.ms)
-        .fadeIn(duration: 200.ms);
+        .slideX(begin: 1, end: 0, curve: Curves.easeOutCubic, duration: 280.ms);
   }
 }
