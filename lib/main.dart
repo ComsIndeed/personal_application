@@ -24,7 +24,7 @@ void main() async {
         await windowManager.setOpacity(0.0);
       })
       .then((_) {
-        Window.setEffect(effect: WindowEffect.acrylic, color: Colors.black);
+        Window.setEffect(effect: WindowEffect.transparent);
       });
 
   runApp(
