@@ -26,8 +26,7 @@ class AppTheme {
         surface: darkSurface,
         onSurface: Colors.white,
       ),
-      scaffoldBackgroundColor:
-          Colors.transparent, // Required for our acrylic/transparent window
+      scaffoldBackgroundColor: darkBg,
       cardColor: darkCard,
       dividerColor: Colors.white10,
       iconTheme: const IconThemeData(color: Colors.white70),
@@ -49,8 +48,7 @@ class AppTheme {
         surface: lightSurface,
         onSurface: Color(0xFF334155),
       ),
-      scaffoldBackgroundColor:
-          Colors.transparent, // Required for our acrylic/transparent window
+      scaffoldBackgroundColor: lightBg,
       cardColor: lightCard,
       dividerColor: Colors.black12,
       iconTheme: const IconThemeData(color: Color(0xFF64748B)),

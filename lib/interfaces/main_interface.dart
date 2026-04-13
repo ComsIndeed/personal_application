@@ -6,6 +6,7 @@ import 'tabs/chat_tab.dart';
 import 'tabs/todo_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
+import 'widgets/main_nav_tabs.dart';
 
 class MainInterface extends StatelessWidget {
   final bool isVisible;
@@ -14,12 +15,24 @@ class MainInterface extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InterfaceContainer(
-      isVisible: isVisible,
-      builder: (context, controller) {
-        return DefaultTabController(
-          length: 4,
-          child: Column(
+    return DefaultTabController(
+      length: 4,
+      child: InterfaceContainer(
+        isVisible: isVisible,
+        outerBuilder: (context, controller, container) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              // Floating Tab Navigation (Now within hit-test bounds)
+              const MainNavTabs(),
+              // Main Animated Container (Fixed width to avoid jumping)
+              SizedBox(width: 420, child: container),
+            ],
+          );
+        },
+        builder: (context, controller) {
+          return Column(
             children: [
               Row(
                 children: [
@@ -71,26 +84,6 @@ class MainInterface extends StatelessWidget {
                 ],
               ),
 
-              const TabBar(
-                dividerColor: Colors.transparent,
-                labelStyle: TextStyle(fontWeight: FontWeight.bold),
-                tabs: [
-                  Tab(
-                    text: 'AI',
-                    icon: Icon(Icons.chat_bubble_outline, size: 20),
-                  ),
-                  Tab(
-                    text: 'Tasks',
-                    icon: Icon(Icons.check_circle_outline, size: 20),
-                  ),
-                  Tab(
-                    text: 'School',
-                    icon: Icon(Icons.school_outlined, size: 20),
-                  ),
-                  Tab(text: 'User', icon: Icon(Icons.person_outline, size: 20)),
-                ],
-              ),
-
               const Divider(
                 height: 1,
                 indent: 20,
@@ -110,9 +103,9 @@ class MainInterface extends StatelessWidget {
                 ),
               ),
             ],
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

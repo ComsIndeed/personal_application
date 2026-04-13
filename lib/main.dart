@@ -136,7 +136,7 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
 class OverlayPage extends StatelessWidget {
   const OverlayPage({super.key});
 
-  static const double panelWidth = 420;
+  static const double panelWidth = 530;
 
   @override
   Widget build(BuildContext context) {
