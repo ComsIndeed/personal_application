@@ -3,6 +3,7 @@ import 'package:flutter_chat_core/flutter_chat_core.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:personal_application/theme/app_theme.dart';
 import 'package:uuid/uuid.dart';
+import 'package:personal_application/interfaces/widgets/chat_composer.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -25,20 +26,38 @@ class _ChatTabState extends State<ChatTab> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Chat(
-      theme: isDark
-          ? ChatTheme.fromThemeData(AppTheme.dark())
-          : ChatTheme.fromThemeData(AppTheme.light()),
-      currentUserId: 'user',
-      chatController: _chatController,
-      resolveUser: (id) async {
-        return User(id: id);
-      },
-      onMessageSend: (text) {
-        _chatController.insertMessage(
-          TextMessage(id: Uuid().v4(), authorId: 'user', text: text),
-        );
-      },
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Column(
+        children: [
+          Expanded(
+            child: Chat(
+              theme: isDark
+                  ? ChatTheme.fromThemeData(AppTheme.dark())
+                  : ChatTheme.fromThemeData(AppTheme.light()),
+              currentUserId: 'user',
+              chatController: _chatController,
+              resolveUser: (id) async {
+                return User(id: id);
+              },
+              onMessageSend: (_) {}, // Handled by our custom composer
+              builders: Builders(
+                composerBuilder: (context) => const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          ChatComposer(
+            onSend: (text) {
+              _chatController.insertMessage(
+                TextMessage(id: Uuid().v4(), authorId: 'user', text: text),
+              );
+            },
+            onAddMedia: () {
+              // TODO: Implement media picker
+            },
+          ),
+        ],
+      ),
     );
   }
 }
