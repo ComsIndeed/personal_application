@@ -1,5 +1,4 @@
 import 'package:personal_application/core/models/message/command_data.dart';
-import 'package:personal_application/core/models/message/message_content.dart';
 
 abstract class MessagePart {
   String get type;
@@ -10,56 +9,62 @@ abstract class MessagePart {
     final type = json['type'] as String;
     switch (type) {
       case 'text':
-        return TextMessagePart.fromJson(json);
+        return TextPart.fromJson(json);
+      case 'asset':
+        return AssetPart.fromJson(json);
       case 'command':
-        return CommandMessagePart.fromJson(json);
+        return CommandPart.fromJson(json);
       default:
         throw Exception('Unknown message part type: $type');
     }
   }
 }
 
-class TextMessagePart extends MessagePart {
+class TextPart extends MessagePart {
   @override
   String get type => 'text';
-  final List<MessageContent> contents;
+  final String text;
 
-  TextMessagePart({required this.contents});
+  TextPart({required this.text});
 
   @override
-  Map<String, dynamic> toJson() => {
-    'type': type,
-    'contents': contents.map((e) => e.toJson()).toList(),
-  };
+  Map<String, dynamic> toJson() => {'type': type, 'text': text};
 
-  factory TextMessagePart.fromJson(Map<String, dynamic> json) =>
-      TextMessagePart(
-        contents: (json['contents'] as List<dynamic>)
-            .map((e) => MessageContent.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+  factory TextPart.fromJson(Map<String, dynamic> json) =>
+      TextPart(text: json['text'] as String);
 }
 
-class CommandMessagePart extends MessagePart {
+class AssetPart extends MessagePart {
+  @override
+  String get type => 'asset';
+  final String assetId;
+
+  AssetPart({required this.assetId});
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'assetId': assetId};
+
+  factory AssetPart.fromJson(Map<String, dynamic> json) =>
+      AssetPart(assetId: json['assetId'] as String);
+}
+
+class CommandPart extends MessagePart {
   @override
   String get type => 'command';
-  final String commandName;
-  final CommandData commandData;
+  final String name;
+  final CommandData data;
 
-  CommandMessagePart({required this.commandName, required this.commandData});
+  CommandPart({required this.name, required this.data});
 
   @override
   Map<String, dynamic> toJson() => {
     'type': type,
-    'commandName': commandName,
-    'commandData': commandData.toJson(),
+    'name': name,
+    'data': data.toJson(),
   };
 
-  factory CommandMessagePart.fromJson(Map<String, dynamic> json) =>
-      CommandMessagePart(
-        commandName: json['commandName'] as String,
-        commandData: CommandData.fromJson(
-          json['commandData'] as Map<String, dynamic>,
-        ),
-      );
+  factory CommandPart.fromJson(Map<String, dynamic> json) => CommandPart(
+    name: json['name'] as String,
+    data: CommandData.fromJson(json['data'] as Map<String, dynamic>),
+  );
 }

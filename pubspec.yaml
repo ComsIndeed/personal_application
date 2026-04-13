@@ -27,6 +27,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   shared_preferences: ^2.5.5
   flutter_secure_storage: ^10.0.0
+  openai_dart: ^4.1.0
 
 dev_dependencies:
   flutter_test:
