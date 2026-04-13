@@ -8,9 +8,12 @@ class MainNavTabs extends StatelessWidget {
     final tabController = DefaultTabController.of(context);
     final theme = Theme.of(context);
 
+    const double buttonSize = 44;
+    const double spacing = 8;
+    const double padding = 8;
+
     return Container(
       margin: const EdgeInsets.only(right: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(24),
@@ -23,39 +26,66 @@ class MainNavTabs extends StatelessWidget {
       child: ListenableBuilder(
         listenable: tabController,
         builder: (context, _) {
-          return Column(
-            mainAxisSize: MainAxisSize.min,
+          return Stack(
             children: [
-              _NavButton(
-                index: 0,
-                icon: Icons.chat_bubble_rounded,
-                label: 'AI',
-                isSelected: tabController.index == 0,
-                onTap: () => tabController.animateTo(0),
+              // Sliding Indicator Pill
+              AnimatedPositioned(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                top: padding + (tabController.index * (buttonSize + spacing)),
+                left: padding,
+                right: padding,
+                height: buttonSize,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.15),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-              const SizedBox(height: 8),
-              _NavButton(
-                index: 1,
-                icon: Icons.check_circle_rounded,
-                label: 'Tasks',
-                isSelected: tabController.index == 1,
-                onTap: () => tabController.animateTo(1),
-              ),
-              const SizedBox(height: 8),
-              _NavButton(
-                index: 2,
-                icon: Icons.school_rounded,
-                label: 'School',
-                isSelected: tabController.index == 2,
-                onTap: () => tabController.animateTo(2),
-              ),
-              const SizedBox(height: 8),
-              _NavButton(
-                index: 3,
-                icon: Icons.person_rounded,
-                label: 'User',
-                isSelected: tabController.index == 3,
-                onTap: () => tabController.animateTo(3),
+
+              // Button Icons
+              Padding(
+                padding: const EdgeInsets.all(padding),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _NavButton(
+                      index: 0,
+                      icon: Icons.chat_bubble_rounded,
+                      label: 'AI',
+                      onTap: () => tabController.animateTo(0),
+                    ),
+                    const SizedBox(height: spacing),
+                    _NavButton(
+                      index: 1,
+                      icon: Icons.check_circle_rounded,
+                      label: 'Tasks',
+                      onTap: () => tabController.animateTo(1),
+                    ),
+                    const SizedBox(height: spacing),
+                    _NavButton(
+                      index: 2,
+                      icon: Icons.school_rounded,
+                      label: 'School',
+                      onTap: () => tabController.animateTo(2),
+                    ),
+                    const SizedBox(height: spacing),
+                    _NavButton(
+                      index: 3,
+                      icon: Icons.person_rounded,
+                      label: 'User',
+                      onTap: () => tabController.animateTo(3),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -69,47 +99,35 @@ class _NavButton extends StatelessWidget {
   final int index;
   final IconData icon;
   final String label;
-  final bool isSelected;
   final VoidCallback onTap;
 
   const _NavButton({
     required this.index,
     required this.icon,
     required this.label,
-    required this.isSelected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final tabController = DefaultTabController.of(context);
     final theme = Theme.of(context);
-    final primaryColor = theme.primaryColor;
+    final isSelected = tabController.index == index;
 
     return Tooltip(
       message: label,
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 250),
-          curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isSelected ? theme.cardColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: isSelected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Icon(
-            icon,
-            size: 20,
-            color: isSelected ? primaryColor : theme.iconTheme.color,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: 44,
+          height: 44,
+          child: Center(
+            child: Icon(
+              icon,
+              size: 20,
+              color: isSelected ? theme.primaryColor : theme.iconTheme.color,
+            ),
           ),
         ),
       ),

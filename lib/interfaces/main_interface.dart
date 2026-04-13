@@ -93,7 +93,7 @@ class MainInterface extends StatelessWidget {
 
               // Main Content Area
               const Expanded(
-                child: TabBarView(
+                child: VerticalTabBarView(
                   children: [
                     ChatTab(),
                     TodoTab(),
@@ -106,6 +106,58 @@ class MainInterface extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+class VerticalTabBarView extends StatefulWidget {
+  final List<Widget> children;
+  const VerticalTabBarView({super.key, required this.children});
+
+  @override
+  State<VerticalTabBarView> createState() => _VerticalTabBarViewState();
+}
+
+class _VerticalTabBarViewState extends State<VerticalTabBarView> {
+  late PageController _pageController;
+  TabController? _tabController;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final newTabController = DefaultTabController.of(context);
+    if (newTabController != _tabController) {
+      _tabController?.removeListener(_handleTabSelection);
+      _tabController = newTabController;
+      _tabController?.addListener(_handleTabSelection);
+      _pageController = PageController(initialPage: _tabController?.index ?? 0);
+    }
+  }
+
+  void _handleTabSelection() {
+    if (_tabController != null && _tabController!.indexIsChanging) {
+      _pageController.animateToPage(
+        _tabController!.index,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _tabController?.removeListener(_handleTabSelection);
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      physics: const NeverScrollableScrollPhysics(),
+      children: widget.children,
     );
   }
 }
