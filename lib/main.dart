@@ -4,7 +4,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
-import 'interfaces/main_view.dart';
+import 'interfaces/main_interface.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -155,7 +155,7 @@ class OverlayPage extends StatelessWidget {
             bottom: 0,
             right: 0,
             width: panelWidth,
-            child: MainView(isVisible: isVisible),
+            child: MainInterface(isVisible: isVisible),
           ),
         ],
       ),
