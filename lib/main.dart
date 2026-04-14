@@ -4,6 +4,7 @@ import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
 import 'interfaces/main_interface.dart';
 import 'theme/app_theme.dart';
@@ -14,6 +15,8 @@ void main() async {
   await windowManager.ensureInitialized();
   await Window.initialize();
   await AppPrefs().init();
+
+  final database = AppDatabase();
 
   const windowOptions = WindowOptions(
     center: true,
@@ -33,6 +36,7 @@ void main() async {
   runApp(
     MultiProvider(
       providers: [
+        Provider<AppDatabase>.value(value: database),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
