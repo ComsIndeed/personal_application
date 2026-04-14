@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class MainNavTabs extends StatelessWidget {
   const MainNavTabs({super.key});
@@ -59,35 +60,35 @@ class MainNavTabs extends StatelessWidget {
                   children: [
                     _NavButton(
                       index: 0,
-                      icon: Icons.auto_awesome_rounded,
-                      label: 'Assistant',
+                      icon: FaIcon(FontAwesomeIcons.diamond),
+                      label: 'Application',
                       onTap: () => tabController.animateTo(0),
                     ),
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 1,
-                      icon: Icons.bolt_rounded,
+                      icon: Icon(Icons.bolt_rounded),
                       label: 'Sprints',
                       onTap: () => tabController.animateTo(1),
                     ),
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 2,
-                      icon: Icons.notes_rounded,
+                      icon: Icon(Icons.notes_rounded),
                       label: 'Notes',
                       onTap: () => tabController.animateTo(2),
                     ),
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 3,
-                      icon: Icons.dashboard_rounded,
+                      icon: Icon(Icons.dashboard_rounded),
                       label: 'Dashboard',
                       onTap: () => tabController.animateTo(3),
                     ),
                     const SizedBox(height: spacing),
                     _NavButton(
                       index: 4,
-                      icon: Icons.settings_rounded,
+                      icon: Icon(Icons.settings_rounded),
                       label: 'Settings',
                       onTap: () => tabController.animateTo(4),
                     ),
@@ -104,7 +105,7 @@ class MainNavTabs extends StatelessWidget {
 
 class _NavButton extends StatelessWidget {
   final int index;
-  final IconData icon;
+  final Widget icon;
   final String label;
   final VoidCallback onTap;
 
@@ -117,26 +118,12 @@ class _NavButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tabController = DefaultTabController.of(context);
-    final theme = Theme.of(context);
-    final isSelected = tabController.index == index;
-
     return Tooltip(
       message: label,
       child: GestureDetector(
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
-        child: SizedBox(
-          width: 44,
-          height: 44,
-          child: Center(
-            child: Icon(
-              icon,
-              size: 20,
-              color: isSelected ? theme.primaryColor : theme.iconTheme.color,
-            ),
-          ),
-        ),
+        child: SizedBox(width: 44, height: 44, child: Center(child: icon)),
       ),
     );
   }

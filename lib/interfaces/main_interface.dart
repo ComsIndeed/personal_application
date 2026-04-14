@@ -97,7 +97,7 @@ class _MainInterfaceState extends State<MainInterface> {
                             listenable: tabController,
                             builder: (context, _) {
                               final titles = [
-                                'Assistant',
+                                'Application',
                                 'Sprints',
                                 'Notes',
                                 'Dashboard',
