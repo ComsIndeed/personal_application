@@ -54,6 +54,9 @@ class LLMService {
       MessageRole.user => openai.ChatMessage.user(parts),
       MessageRole.model => openai.ChatMessage.assistant(content: text),
       MessageRole.system => openai.ChatMessage.system(text),
+      MessageRole.error => openai.ChatMessage.assistant(
+        content: 'Error: $text',
+      ),
     };
   }
 

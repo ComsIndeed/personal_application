@@ -45,6 +45,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final LLMService _llmService;
   final AppDatabase _db;
   StreamSubscription? _streamSubscription;
+  final LLMProvider _provider = LLMProvider.gemini;
+  String? _model;
 
   AssistantChatCubit({required AppDatabase db, LLMService? llmService})
     : _db = db,
@@ -53,6 +55,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         AssistantChatState(currentConversationId: const UuidV4().generate()),
       ) {
     loadMessages();
+    loadInitialModel();
+  }
+
+  Future<void> loadInitialModel() async {
+    final models = await _llmService.listModels(_provider);
+    _model = models.first;
   }
 
   void selectConversation(String conversationId) {
@@ -110,11 +118,15 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     String fullResponse = "";
     emit(state.copyWith(streamingText: ""));
 
+    if (_model == null) {
+      await loadInitialModel();
+    }
+
     try {
       final stream = _llmService.generateContentStream(
         history: state.messages,
-        provider: LLMProvider.gemini,
-        model: 'gemini-1.5-flash',
+        provider: _provider,
+        model: _model!,
       );
 
       _streamSubscription = stream.listen(
@@ -140,6 +152,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
         },
       );
     } catch (e) {
+      final errorMessage = MessagesCompanion.insert(
+        conversationId: conversationId,
+        role: MessageRole.error,
+        parts: [TextPart(text: e.toString())],
+      );
+      await _db.into(_db.messages).insert(errorMessage);
+      await loadMessages();
       emit(state.copyWith(clearStreaming: true));
     }
   }
