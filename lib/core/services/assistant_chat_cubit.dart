@@ -163,6 +163,12 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     }
   }
 
+  void stopGeneration() {
+    _streamSubscription?.cancel();
+    _streamSubscription = null;
+    emit(state.copyWith(clearStreaming: true));
+  }
+
   @override
   Future<void> close() {
     _streamSubscription?.cancel();

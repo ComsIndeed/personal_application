@@ -6,8 +6,16 @@ import 'package:provider/provider.dart';
 class ChatComposer extends StatefulWidget {
   final Function(String text) onSend;
   final VoidCallback? onAddMedia;
+  final bool isStreaming;
+  final VoidCallback? onStop;
 
-  const ChatComposer({super.key, required this.onSend, this.onAddMedia});
+  const ChatComposer({
+    super.key,
+    required this.onSend,
+    this.onAddMedia,
+    this.isStreaming = false,
+    this.onStop,
+  });
 
   @override
   State<ChatComposer> createState() => _ChatComposerState();
@@ -213,6 +221,7 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   void _handleSend() {
+    if (widget.isStreaming) return;
     final text = _controller.text.trim();
     if (text.isNotEmpty) {
       widget.onSend(text);
@@ -290,6 +299,7 @@ class _ChatComposerState extends State<ChatComposer> {
                     child: TextField(
                       controller: _controller,
                       focusNode: _focusNode,
+                      enabled: true,
                       maxLines: 5,
                       minLines: 1,
                       textInputAction: TextInputAction.newline,
@@ -312,6 +322,19 @@ class _ChatComposerState extends State<ChatComposer> {
               ListenableBuilder(
                 listenable: _controller,
                 builder: (context, child) {
+                  if (widget.isStreaming) {
+                    return IconButton(
+                      onPressed: widget.onStop,
+                      icon: const Icon(Icons.stop_rounded),
+                      iconSize: 24,
+                      color: Colors.white,
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.all(8),
+                      ),
+                    );
+                  }
+
                   final hasText = _controller.text.trim().isNotEmpty;
                   return IconButton(
                     onPressed: hasText ? _handleSend : null,
