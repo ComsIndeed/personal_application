@@ -34,13 +34,14 @@ class _SettingsTabState extends State<SettingsTab> {
 
   Future<void> _fetchAllModels() async {
     await Future.wait([
-      _fetchModels(LLMProvider.gemini, AppPrefs().geminiApiKey),
-      _fetchModels(LLMProvider.deepseek, AppPrefs().deepSeekApiKey),
-      _fetchModels(LLMProvider.groq, AppPrefs().groqApiKey),
+      _fetchModels(LLMProvider.gemini),
+      _fetchModels(LLMProvider.deepseek),
+      _fetchModels(LLMProvider.groq),
     ]);
   }
 
-  Future<void> _fetchModels(LLMProvider provider, String apiKey) async {
+  Future<void> _fetchModels(LLMProvider provider) async {
+    final apiKey = _getApiKey(provider);
     if (apiKey.isEmpty) {
       if (mounted) {
         setState(() {
@@ -60,7 +61,7 @@ class _SettingsTabState extends State<SettingsTab> {
     }
 
     try {
-      final models = await LLMService().listModels(provider, apiKey);
+      final models = await LLMService().listModels(provider);
       if (mounted) {
         setState(() {
           _models[provider] = models;
@@ -117,9 +118,17 @@ class _SettingsTabState extends State<SettingsTab> {
         });
 
         // Fetch models
-        await _fetchModels(provider, value);
+        await _fetchModels(provider);
       },
     );
+  }
+
+  String _getApiKey(LLMProvider provider) {
+    return switch (provider) {
+      LLMProvider.gemini => AppPrefs().geminiApiKey,
+      LLMProvider.deepseek => AppPrefs().deepSeekApiKey,
+      LLMProvider.groq => AppPrefs().groqApiKey,
+    };
   }
 
   void _saveValue(LLMProvider provider, String value) {
