@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:personal_application/core/services/assistant_chat_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'core/database/app_database.dart';
@@ -37,6 +39,7 @@ void main() async {
     MultiProvider(
       providers: [
         Provider<AppDatabase>.value(value: database),
+        BlocProvider(create: (context) => AssistantChatCubit(db: database)),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
