@@ -28,35 +28,27 @@ class _ChatTabState extends State<ChatTab> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          Expanded(
-            child: Chat(
-              theme: isDark
-                  ? ChatTheme.fromThemeData(AppTheme.dark())
-                  : ChatTheme.fromThemeData(AppTheme.light()),
-              currentUserId: 'user',
-              chatController: _chatController,
-              resolveUser: (id) async {
-                return User(id: id);
+      body: Chat(
+        theme: isDark
+            ? ChatTheme.fromThemeData(AppTheme.dark())
+            : ChatTheme.fromThemeData(AppTheme.light()),
+        currentUserId: 'user',
+        chatController: _chatController,
+        resolveUser: (id) async {
+          return User(id: id);
+        },
+        builders: Builders(
+          composerBuilder: (context) => Align(
+            alignment: Alignment.bottomCenter,
+            child: ChatComposer(
+              onSend: (text) {
+                _chatController.insertMessage(
+                  TextMessage(id: Uuid().v4(), authorId: 'user', text: text),
+                );
               },
-              onMessageSend: (_) {}, // Handled by our custom composer
-              builders: Builders(
-                composerBuilder: (context) => const SizedBox.shrink(),
-              ),
             ),
           ),
-          ChatComposer(
-            onSend: (text) {
-              _chatController.insertMessage(
-                TextMessage(id: Uuid().v4(), authorId: 'user', text: text),
-              );
-            },
-            onAddMedia: () {
-              // TODO: Implement media picker
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

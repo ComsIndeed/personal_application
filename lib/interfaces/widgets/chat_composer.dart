@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:provider/provider.dart';
 
 class ChatComposer extends StatefulWidget {
   final Function(String text) onSend;
@@ -14,6 +16,7 @@ class ChatComposer extends StatefulWidget {
 class _ChatComposerState extends State<ChatComposer> {
   final _controller = TextEditingController();
   final _focusNode = FocusNode();
+  final _containerKey = GlobalKey();
   final LayerLink _layerLink = LayerLink();
   OverlayEntry? _overlayEntry;
   String? _currentTrigger;
@@ -55,6 +58,24 @@ class _ChatComposerState extends State<ChatComposer> {
   void initState() {
     super.initState();
     _controller.addListener(_onTextChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
+  }
+
+  void _measureHeight() {
+    if (!mounted) return;
+    final renderBox =
+        _containerKey.currentContext?.findRenderObject() as RenderBox?;
+    if (renderBox != null) {
+      final height = renderBox.size.height;
+      final bottomSafeArea = MediaQuery.of(context).padding.bottom;
+      context.read<ComposerHeightNotifier>().setHeight(height - bottomSafeArea);
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant ChatComposer oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
   }
 
   @override
@@ -67,6 +88,7 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 
   void _onTextChanged() {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
     final text = _controller.text;
     final selection = _controller.selection;
 
@@ -202,12 +224,14 @@ class _ChatComposerState extends State<ChatComposer> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
     return CompositedTransformTarget(
       link: _layerLink,
       child: Container(
+        key: _containerKey,
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
