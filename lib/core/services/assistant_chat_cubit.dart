@@ -12,12 +12,16 @@ class AssistantChatState {
   final String? streamingText;
   final String currentConversationId;
   final bool isLoading;
+  final LLMProvider provider;
+  final String? model;
 
   const AssistantChatState({
     this.messages = const [],
     this.streamingText,
     required this.currentConversationId,
     this.isLoading = false,
+    this.provider = LLMProvider.gemini,
+    this.model,
   });
 
   bool get isStreaming => streamingText != null;
@@ -27,6 +31,8 @@ class AssistantChatState {
     String? streamingText,
     String? currentConversationId,
     bool? isLoading,
+    LLMProvider? provider,
+    String? model,
     bool clearStreaming = false,
   }) {
     return AssistantChatState(
@@ -37,6 +43,8 @@ class AssistantChatState {
       currentConversationId:
           currentConversationId ?? this.currentConversationId,
       isLoading: isLoading ?? this.isLoading,
+      provider: provider ?? this.provider,
+      model: model ?? this.model,
     );
   }
 }
@@ -45,8 +53,6 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   final LLMService _llmService;
   final AppDatabase _db;
   StreamSubscription? _streamSubscription;
-  final LLMProvider _provider = LLMProvider.gemini;
-  String? _model;
 
   AssistantChatCubit({required AppDatabase db, LLMService? llmService})
     : _db = db,
@@ -59,8 +65,18 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   }
 
   Future<void> loadInitialModel() async {
-    final models = await _llmService.listModels(_provider);
-    _model = models.first;
+    try {
+      final models = await _llmService.listModels(state.provider);
+      if (models.isNotEmpty) {
+        emit(state.copyWith(model: models.first));
+      }
+    } catch (e) {
+      // Handle error or stay null
+    }
+  }
+
+  void setModel(LLMProvider provider, String model) {
+    emit(state.copyWith(provider: provider, model: model));
   }
 
   void selectConversation(String conversationId) {
@@ -118,15 +134,20 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     String fullResponse = "";
     emit(state.copyWith(streamingText: ""));
 
-    if (_model == null) {
+    if (state.model == null) {
       await loadInitialModel();
+    }
+
+    if (state.model == null) {
+      emit(state.copyWith(clearStreaming: true));
+      return;
     }
 
     try {
       final stream = _llmService.generateContentStream(
         history: state.messages,
-        provider: _provider,
-        model: _model!,
+        provider: state.provider,
+        model: state.model!,
       );
 
       _streamSubscription = stream.listen(

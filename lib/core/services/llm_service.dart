@@ -99,12 +99,26 @@ class LLMService {
   }
 
   Future<List<String>> listModels(LLMProvider provider) async {
+    if (!hasApiKey(provider)) {
+      throw Exception('API key missing');
+    }
     final client = _getClient(provider);
     try {
       final models = await client.models.list();
       return models.data.map((m) => m.id).toList();
     } finally {
       client.close();
+    }
+  }
+
+  bool hasApiKey(LLMProvider provider) {
+    switch (provider) {
+      case LLMProvider.groq:
+        return _prefs.groqApiKey.isNotEmpty;
+      case LLMProvider.gemini:
+        return _prefs.geminiApiKey.isNotEmpty;
+      case LLMProvider.deepseek:
+        return _prefs.deepSeekApiKey.isNotEmpty;
     }
   }
 }
