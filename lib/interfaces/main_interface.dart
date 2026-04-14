@@ -15,6 +15,10 @@ class TabIntent extends Intent {
   const TabIntent(this.index);
 }
 
+class HideIntent extends Intent {
+  const HideIntent();
+}
+
 class MainInterface extends StatefulWidget {
   final bool isVisible;
 
@@ -77,12 +81,20 @@ class _MainInterfaceState extends State<MainInterface> {
                     const TabIntent(3),
                 const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
                     const TabIntent(4),
+                const SingleActivator(LogicalKeyboardKey.escape):
+                    const HideIntent(),
               },
               child: Actions(
                 actions: <Type, Action<Intent>>{
                   TabIntent: CallbackAction<TabIntent>(
                     onInvoke: (intent) {
                       tabController.animateTo(intent.index);
+                      return null;
+                    },
+                  ),
+                  HideIntent: CallbackAction<HideIntent>(
+                    onInvoke: (intent) {
+                      controller.close();
                       return null;
                     },
                   ),
