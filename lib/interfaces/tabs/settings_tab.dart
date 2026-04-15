@@ -218,17 +218,17 @@ class _SettingsTabState extends State<SettingsTab> {
         const SizedBox(height: 16),
         Card(
           elevation: 0,
-          color: Colors.white.withValues(alpha: 0.03),
+          color: const Color(0xFF0B1120),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Colors.white10),
+            side: const BorderSide(color: Color(0xFF334155)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: _user != null ? _buildUserPanel() : _buildAuthForm(),
           ),
         ),
-        const Divider(height: 48, color: Colors.white10),
+        const Divider(height: 48, color: Color(0xFF334155)),
         const Text(
           'AI Providers',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -257,7 +257,7 @@ class _SettingsTabState extends State<SettingsTab> {
           value: AppPrefs().groqApiKey,
           onChanged: (v) => _onApiKeyChanged(LLMProvider.groq, v),
         ),
-        const Divider(height: 48, color: Colors.white10),
+        const Divider(height: 48, color: Color(0xFF334155)),
         const Text(
           'App Settings',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -396,10 +396,10 @@ class _SettingsTabState extends State<SettingsTab> {
 
     return Card(
       elevation: 0,
-      color: Colors.white.withValues(alpha: 0.03),
+      color: const Color(0xFF0B1120),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Colors.white10),
+        side: const BorderSide(color: Color(0xFF334155)),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

@@ -8,7 +8,7 @@ class DashboardTab extends StatelessWidget {
     return const Center(
       child: Text(
         'No active dashboard widgets.',
-        style: TextStyle(color: Colors.white30),
+        style: TextStyle(color: Color(0xFF94A3B8)),
       ),
     );
   }

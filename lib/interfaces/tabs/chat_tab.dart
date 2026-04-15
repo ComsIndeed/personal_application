@@ -216,10 +216,11 @@ class _ReasoningBlockState extends State<_ReasoningBlock>
       constraints: const BoxConstraints(maxWidth: 450),
       margin: const EdgeInsets.only(bottom: 8, left: 12, right: 12),
       decoration: BoxDecoration(
-        color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
-        borderRadius: BorderRadius.circular(12),
+        color: isDark ? const Color(0xFF0B1120) : Colors.black.withAlpha(5),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+          color: isDark ? const Color(0xFF334155) : Colors.black.withAlpha(10),
+          width: 1.5,
         ),
       ),
       child: InkWell(
@@ -235,9 +236,9 @@ class _ReasoningBlockState extends State<_ReasoningBlock>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.psychology_outlined,
-                    size: 16,
-                    color: theme.colorScheme.primary.withAlpha(180),
+                    Icons.auto_awesome_outlined,
+                    size: 14,
+                    color: theme.colorScheme.primary,
                   ),
                   const SizedBox(width: 8),
                   Text(

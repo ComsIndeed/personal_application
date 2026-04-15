@@ -17,11 +17,13 @@ class BrainDumpInput extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: isDark
-                    ? Colors.white.withAlpha(5)
+                    ? const Color(0xFF0B1120)
                     : Colors.black.withAlpha(5),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+                  color: isDark
+                      ? const Color(0xFF334155)
+                      : Colors.black.withAlpha(10),
                 ),
               ),
               child: IntrinsicHeight(
@@ -98,10 +100,7 @@ class _SideButton extends StatelessWidget {
       return Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: theme.colorScheme.primary.withAlpha(80),
-            width: 1.5,
-          ),
+          border: Border.all(color: theme.colorScheme.primary, width: 1.5),
         ),
         child: IconButton(
           icon: Icon(icon, size: 20, color: theme.colorScheme.primary),
@@ -115,13 +114,7 @@ class _SideButton extends StatelessWidget {
       decoration: BoxDecoration(
         color: theme.colorScheme.primary,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withAlpha(60),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        // No shadow to avoid "ghostly" overlay effects
       ),
       child: IconButton(
         icon: Icon(icon, size: 20, color: theme.colorScheme.onPrimary),

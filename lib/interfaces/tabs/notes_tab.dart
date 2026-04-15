@@ -6,7 +6,7 @@ class NotesTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('No notes yet.', style: TextStyle(color: Colors.white30)),
+      child: Text('No notes yet.', style: TextStyle(color: Color(0xFF94A3B8))),
     );
   }
 }

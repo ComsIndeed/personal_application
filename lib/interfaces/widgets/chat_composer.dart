@@ -200,7 +200,8 @@ class _ChatComposerState extends State<ChatComposer> {
     _currentTrigger = trigger;
 
     final overlay = Overlay.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
     _overlayEntry = OverlayEntry(
       builder: (context) {
@@ -233,118 +234,151 @@ class _ChatComposerState extends State<ChatComposer> {
           items.addAll(_options[trigger] ?? []);
         }
 
-        const double itemHeight = 36;
+        const double itemHeight = 44; // Increased from 36
         final double totalHeight = (items.length * itemHeight + 16).clamp(
           0,
-          300,
+          400,
         );
 
         return Positioned(
-          width: 280,
+          width: 300, // Slightly wider
           child: CompositedTransformFollower(
             link: _layerLink,
             showWhenUnlinked: false,
-            offset: Offset(0, -totalHeight - 8),
-            child: Material(
-              elevation: 8,
-              borderRadius: BorderRadius.circular(16),
-              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-              child: Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: isDark ? Colors.white10 : Colors.black12,
+            offset: Offset(0, -totalHeight - 12),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.0, end: 1.0),
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) {
+                return Transform.translate(
+                  offset: Offset(0, 10 * (1 - value)),
+                  child: Opacity(
+                    opacity:
+                        value, // Short fade is fine for entry, but background remains solid
+                    child: child,
                   ),
-                ),
-                constraints: BoxConstraints(maxHeight: totalHeight),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Expanded(
-                      child: ListView.builder(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        itemCount: items.length,
-                        itemBuilder: (context, i) {
-                          final item = items[i];
+                );
+              },
+              child: Material(
+                elevation: 12,
+                borderRadius: BorderRadius.circular(20),
+                color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                clipBehavior: Clip.antiAlias,
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark ? const Color(0xFF334155) : Colors.black12,
+                      width: 1.5,
+                    ),
+                    gradient: isDark
+                        ? const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFF0F172A), Color(0xFF020617)],
+                          )
+                        : null,
+                  ),
+                  constraints: BoxConstraints(maxHeight: totalHeight),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: ListView.builder(
+                          padding: const EdgeInsets.all(8),
+                          itemCount: items.length,
+                          itemBuilder: (context, i) {
+                            final item = items[i];
 
-                          if (item is LLMProvider) {
-                            return Container(
-                              height: 24,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                              ),
-                              alignment: Alignment.centerLeft,
-                              color: Colors.white.withAlpha(5),
-                              child: Text(
-                                item.name.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.grey,
+                            if (item is LLMProvider) {
+                              return Container(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  12,
+                                  16,
+                                  4,
                                 ),
-                              ),
-                            );
-                          }
+                                child: Text(
+                                  item.name.toUpperCase(),
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    letterSpacing: 1.2,
+                                    fontWeight: FontWeight.w800,
+                                    color: theme.colorScheme.primary.withAlpha(
+                                      180,
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }
 
-                          if (item == 'NEW_CHAT_ACTION') {
-                            return _OptionTile(
-                              label: 'New Chat',
-                              index: 1,
-                              height: itemHeight,
-                              icon: Icons.add_rounded,
-                              onTap: () {
-                                context
-                                    .read<AssistantChatCubit>()
-                                    .startNewChat();
-                                _hideOverlay();
-                              },
-                            );
-                          }
+                            if (item == 'NEW_CHAT_ACTION') {
+                              return _OptionTile(
+                                label: 'Start New Conversation',
+                                index: 1,
+                                height: itemHeight,
+                                icon: Icons.add_circle_outline_rounded,
+                                isPrimary: true,
+                                onTap: () {
+                                  context
+                                      .read<AssistantChatCubit>()
+                                      .startNewChat();
+                                  _hideOverlay();
+                                },
+                              );
+                            }
 
-                          if (item is Conversation) {
+                            if (item is Conversation) {
+                              return _OptionTile(
+                                label: item.title ?? 'Untitled Conversation',
+                                index: i + 1,
+                                height: itemHeight,
+                                onTap: () => _selectConversation(item.id),
+                              );
+                            }
+
+                            final isSelectable =
+                                item != 'Loading models...' &&
+                                item != 'API key missing' &&
+                                item != 'No models found' &&
+                                !item.toString().startsWith('Error:');
+
                             return _OptionTile(
-                              label: item.title ?? 'Untitled',
+                              label: item.toString(),
                               index: i + 1,
                               height: itemHeight,
-                              onTap: () => _selectConversation(item.id),
-                            );
-                          }
-
-                          final isSelectable =
-                              item != 'Loading models...' &&
-                              item != 'API key missing' &&
-                              item != 'No models found' &&
-                              !item.toString().startsWith('Error:');
-
-                          return _OptionTile(
-                            label: item.toString(),
-                            index: i + 1,
-                            height: itemHeight,
-                            isSelectable: isSelectable,
-                            onTap: isSelectable
-                                ? () {
-                                    if (trigger == '#') {
-                                      LLMProvider? provider;
-                                      for (final p in LLMProvider.values) {
-                                        if (_fetchedModels[p]?.contains(item) ??
-                                            false) {
-                                          provider = p;
-                                          break;
+                              isSelectable: isSelectable,
+                              onTap: isSelectable
+                                  ? () {
+                                      if (trigger == '#') {
+                                        LLMProvider? provider;
+                                        for (final p in LLMProvider.values) {
+                                          if (_fetchedModels[p]?.contains(
+                                                item,
+                                              ) ??
+                                              false) {
+                                            provider = p;
+                                            break;
+                                          }
                                         }
+                                        if (provider != null) {
+                                          _selectModel(
+                                            provider,
+                                            item.toString(),
+                                          );
+                                        }
+                                      } else {
+                                        _selectOption(item.toString());
                                       }
-                                      if (provider != null) {
-                                        _selectModel(provider, item.toString());
-                                      }
-                                    } else {
-                                      _selectOption(item.toString());
                                     }
-                                  }
-                                : null,
-                          );
-                        },
+                                  : null,
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -407,15 +441,13 @@ class _ChatComposerState extends State<ChatComposer> {
       link: _layerLink,
       child: Container(
         key: _containerKey,
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16), // Refined padding
         decoration: BoxDecoration(
           color: theme.scaffoldBackgroundColor,
           border: Border(
             top: BorderSide(
-              color: isDark
-                  ? Colors.white.withAlpha(20)
-                  : Colors.black.withAlpha(20),
-              width: 1,
+              color: isDark ? const Color(0xFF1E293B) : Colors.black12,
+              width: 1.5,
             ),
           ),
         ),
@@ -440,9 +472,14 @@ class _ChatComposerState extends State<ChatComposer> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: isDark
-                            ? Colors.white.withAlpha(15)
-                            : Colors.black.withAlpha(10),
-                        borderRadius: BorderRadius.circular(24),
+                            ? const Color(0xFF0B1120)
+                            : Colors.black.withAlpha(5),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isDark
+                              ? const Color(0xFF334155)
+                              : Colors.black12,
+                        ),
                       ),
                       child: CallbackShortcuts(
                         bindings: {
@@ -495,6 +532,7 @@ class _ChatComposerState extends State<ChatComposer> {
                   ListenableBuilder(
                     listenable: _controller,
                     builder: (context, child) {
+                      final hasText = _controller.text.trim().isNotEmpty;
                       if (widget.isStreaming) {
                         return IconButton(
                           onPressed: widget.onStop,
@@ -508,19 +546,25 @@ class _ChatComposerState extends State<ChatComposer> {
                         );
                       }
 
-                      final hasText = _controller.text.trim().isNotEmpty;
-                      return IconButton(
-                        onPressed: hasText ? _handleSend : null,
-                        icon: const Icon(Icons.arrow_upward_rounded),
-                        iconSize: 24,
-                        color: hasText
-                            ? Colors.white
-                            : Colors.grey.withAlpha(100),
-                        style: IconButton.styleFrom(
-                          backgroundColor: hasText
-                              ? theme.colorScheme.primary
-                              : Colors.transparent,
-                          padding: const EdgeInsets.all(8),
+                      return AnimatedScale(
+                        scale: hasText ? 1.0 : 0.95,
+                        duration: const Duration(milliseconds: 150),
+                        child: IconButton(
+                          onPressed: hasText ? _handleSend : null,
+                          icon: const Icon(Icons.arrow_upward_rounded),
+                          iconSize: 22,
+                          color: Colors.white,
+                          style: IconButton.styleFrom(
+                            backgroundColor: hasText
+                                ? theme.colorScheme.primary
+                                : (isDark
+                                      ? const Color(0xFF1E293B)
+                                      : Colors.grey.withAlpha(50)),
+                            padding: const EdgeInsets.all(10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
                         ),
                       );
                     },
@@ -707,6 +751,7 @@ class _OptionTile extends StatelessWidget {
   final double height;
   final VoidCallback? onTap;
   final bool isSelectable;
+  final bool isPrimary;
   final IconData? icon;
 
   const _OptionTile({
@@ -715,6 +760,7 @@ class _OptionTile extends StatelessWidget {
     required this.height,
     this.onTap,
     this.isSelectable = true,
+    this.isPrimary = false,
     this.icon,
   });
 
@@ -723,40 +769,61 @@ class _OptionTile extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return SizedBox(
-      height: height,
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 2, horizontal: 4),
       child: Material(
         color: Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: isSelectable ? onTap : null,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Container(
+            height: height,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: isPrimary
+                ? BoxDecoration(
+                    color: theme.colorScheme.primary.withAlpha(20),
+                    borderRadius: BorderRadius.circular(12),
+                  )
+                : null,
             child: Row(
               children: [
                 if (isSelectable) ...[
                   Container(
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: isDark
-                          ? Colors.white.withAlpha(10)
-                          : Colors.black.withAlpha(5),
-                      borderRadius: BorderRadius.circular(4),
+                      color: isPrimary
+                          ? theme.colorScheme.primary
+                          : (isDark
+                                ? const Color(0xFF1E293B)
+                                : Colors.black.withAlpha(5)),
+                      borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                        color: isDark ? Colors.white10 : Colors.black12,
+                        color: isDark
+                            ? const Color(0xFF334155)
+                            : Colors.black12,
                       ),
                     ),
                     child: icon != null
-                        ? Icon(icon, size: 14, color: theme.colorScheme.primary)
+                        ? Icon(
+                            icon,
+                            size: 16,
+                            color: isPrimary
+                                ? Colors.white
+                                : theme.colorScheme.primary,
+                          )
                         : Text(
                             '${index % 10}',
                             style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: index <= 10
-                                  ? theme.colorScheme.primary
-                                  : Colors.grey,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              color: isPrimary
+                                  ? Colors.white
+                                  : (index <= 10
+                                        ? theme.colorScheme.primary
+                                        : theme.textTheme.bodyMedium?.color),
                             ),
                           ),
                   ),
@@ -766,27 +833,37 @@ class _OptionTile extends StatelessWidget {
                   child: Text(
                     label,
                     style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: isSelectable
-                          ? FontWeight.w500
-                          : FontWeight.w400,
+                      fontSize: 15, // Increased
+                      fontWeight: isPrimary
+                          ? FontWeight.w700
+                          : (isSelectable ? FontWeight.w500 : FontWeight.w400),
                       color: isSelectable
-                          ? (isDark
-                                ? Colors.white.withAlpha(200)
-                                : Colors.black)
-                          : Colors.grey,
+                          ? (isDark ? Colors.white : Colors.black)
+                          : theme.textTheme.bodyMedium?.color,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 if (isSelectable && index <= 10)
-                  Padding(
-                    padding: const EdgeInsets.only(left: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withAlpha(10)
+                          : Colors.black.withAlpha(5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
                     child: Text(
-                      'Ctrl+$index',
+                      '⌘$index',
                       style: TextStyle(
-                        fontSize: 9,
-                        color: Colors.grey.withAlpha(100),
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        color: theme.textTheme.bodyMedium?.color?.withAlpha(
+                          150,
+                        ),
                       ),
                     ),
                   ),
