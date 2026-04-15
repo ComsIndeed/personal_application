@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/services/app_prefs.dart';
 import '../../core/services/llm_service.dart';
+import '../../core/database/database_utils.dart';
 import '../../core/models/message/enums.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -13,12 +14,6 @@ class SettingsTab extends StatefulWidget {
 }
 
 class _SettingsTabState extends State<SettingsTab> {
-  final Map<LLMProvider, List<String>> _models = {};
-  final Map<LLMProvider, bool> _isLoading = {};
-  final Map<LLMProvider, bool> _isSaving = {};
-  final Map<LLMProvider, String?> _errors = {};
-  final Map<LLMProvider, Timer?> _debounceTimers = {};
-
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
@@ -26,10 +21,12 @@ class _SettingsTabState extends State<SettingsTab> {
   String? _authError;
   User? _user;
 
+  // Global sync state
+  bool _isSyncing = false;
+
   @override
   void initState() {
     super.initState();
-    _fetchAllModels();
     _checkUser();
   }
 
@@ -82,127 +79,105 @@ class _SettingsTabState extends State<SettingsTab> {
     }
   }
 
-  @override
-  void dispose() {
-    for (var timer in _debounceTimers.values) {
-      timer?.cancel();
-    }
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _fetchAllModels() async {
-    await Future.wait([
-      _fetchModels(LLMProvider.gemini),
-      _fetchModels(LLMProvider.deepseek),
-      _fetchModels(LLMProvider.groq),
-    ]);
-  }
-
-  Future<void> _fetchModels(LLMProvider provider) async {
-    final apiKey = _getApiKey(provider);
-    if (apiKey.isEmpty) {
-      if (mounted) {
-        setState(() {
-          _models[provider] = [];
-          _errors[provider] = null;
-          _isLoading[provider] = false;
-        });
-      }
-      return;
-    }
-
-    if (mounted) {
-      setState(() {
-        _isLoading[provider] = true;
-        _errors[provider] = null;
-      });
-    }
-
+  Future<void> _uploadToCloud() async {
+    setState(() => _isSyncing = true);
     try {
-      final models = await LLMService().listModels(provider);
+      await DatabaseUtils().uploadSecrets();
       if (mounted) {
-        setState(() {
-          _models[provider] = models;
-          _isLoading[provider] = false;
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Secrets uploaded to cloud')),
+        );
       }
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _errors[provider] = 'Invalid API Key or connection error';
-          _isLoading[provider] = false;
-          _models[provider] = [];
-        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Upload failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
     }
   }
 
-  void _onApiKeyChanged(LLMProvider provider, String value) {
-    _debounceTimers[provider]?.cancel();
-
-    // Clear models/errors immediately if value is empty
-    if (value.isEmpty) {
-      setState(() {
-        _models[provider] = [];
-        _errors[provider] = null;
-        _isLoading[provider] = false;
-        _isSaving[provider] = false;
-      });
-      // Save the empty value immediately
-      _saveValue(provider, value);
-      return;
+  Future<void> _loadFromCloud() async {
+    setState(() => _isSyncing = true);
+    try {
+      await DatabaseUtils().loadSecrets();
+      // We need to trigger a rebuild of all tiles to show the new "active" status
+      setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Secrets loaded from cloud')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Load failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
     }
+  }
 
-    _debounceTimers[provider] = Timer(
-      const Duration(milliseconds: 500),
-      () async {
-        if (!mounted) return;
-
-        setState(() {
-          _isSaving[provider] = true;
-          _models[provider] = []; // Reset on new key
-          _errors[provider] = null;
-        });
-
-        // Save the key
-        _saveValue(provider, value);
-
-        // Visual beat for "Saving"
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (!mounted) return;
-
-        setState(() {
-          _isSaving[provider] = false;
-        });
-
-        // Fetch models
-        await _fetchModels(provider);
-      },
+  Future<void> _deleteCloudSecrets() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Cloud Secrets?'),
+        content: const Text(
+          'This will permanently remove your stored keys from Supabase. Your local keys will remain.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
     );
-  }
 
-  String _getApiKey(LLMProvider provider) {
-    return switch (provider) {
-      LLMProvider.gemini => AppPrefs().geminiApiKey,
-      LLMProvider.deepseek => AppPrefs().deepSeekApiKey,
-      LLMProvider.groq => AppPrefs().groqApiKey,
-    };
-  }
+    if (confirmed != true) return;
 
-  void _saveValue(LLMProvider provider, String value) {
-    switch (provider) {
-      case LLMProvider.gemini:
-        AppPrefs().geminiApiKey = value;
-        break;
-      case LLMProvider.deepseek:
-        AppPrefs().deepSeekApiKey = value;
-        break;
-      case LLMProvider.groq:
-        AppPrefs().groqApiKey = value;
-        break;
+    setState(() => _isSyncing = true);
+    try {
+      await DatabaseUtils().deleteCloudSecrets();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Cloud secrets deleted')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Deletion failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -233,6 +208,17 @@ class _SettingsTabState extends State<SettingsTab> {
             child: _user != null ? _buildUserPanel() : _buildAuthForm(),
           ),
         ),
+
+        if (_user != null) ...[
+          const SizedBox(height: 24),
+          const Text(
+            'Cloud Sync',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 16),
+          _buildCloudSyncCard(),
+        ],
+
         Divider(
           height: 48,
           color: isDark ? const Color(0xFF334155) : theme.dividerColor,
@@ -242,29 +228,31 @@ class _SettingsTabState extends State<SettingsTab> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
-        _buildApiKeyField(
+        ProviderApiKeyTile(
           provider: LLMProvider.gemini,
           label: 'Gemini API Key',
-          hint: 'Enter Gemini API Key',
-          value: AppPrefs().geminiApiKey,
-          onChanged: (v) => _onApiKeyChanged(LLMProvider.gemini, v),
+          hint: 'Paste new key...',
         ),
         const SizedBox(height: 12),
-        _buildApiKeyField(
+        ProviderApiKeyTile(
           provider: LLMProvider.deepseek,
           label: 'DeepSeek API Key',
-          hint: 'Enter DeepSeek API Key',
-          value: AppPrefs().deepSeekApiKey,
-          onChanged: (v) => _onApiKeyChanged(LLMProvider.deepseek, v),
+          hint: 'Paste new key...',
         ),
         const SizedBox(height: 12),
-        _buildApiKeyField(
+        ProviderApiKeyTile(
           provider: LLMProvider.groq,
           label: 'Groq API Key',
-          hint: 'Enter Groq API Key',
-          value: AppPrefs().groqApiKey,
-          onChanged: (v) => _onApiKeyChanged(LLMProvider.groq, v),
+          hint: 'Paste new key...',
         ),
+        const SizedBox(height: 24),
+        const Text(
+          'Storage (Backblaze B2)',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        const B2CredentialsTile(),
+
         Divider(
           height: 48,
           color: isDark ? const Color(0xFF334155) : theme.dividerColor,
@@ -274,36 +262,98 @@ class _SettingsTabState extends State<SettingsTab> {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
+        if (_user != null)
+          ListTile(
+            leading: const Icon(
+              Icons.cloud_off_outlined,
+              color: Colors.redAccent,
+            ),
+            title: const Text(
+              'Delete Cloud Secrets',
+              style: TextStyle(color: Colors.redAccent),
+            ),
+            subtitle: const Text('Remove your data from Supabase'),
+            onTap: _isSyncing ? null : _deleteCloudSecrets,
+          ),
         SwitchListTile(
           value: true,
           onChanged: (v) {},
           title: const Text('Enable Notifications'),
           secondary: const Icon(Icons.notifications_outlined),
         ),
-        SwitchListTile(
-          value: false,
-          onChanged: (v) {},
-          title: const Text('Start at Login'),
-          secondary: const Icon(Icons.login_outlined),
-        ),
-        ListTile(
-          leading: const Icon(Icons.language_outlined),
-          title: const Text('Language'),
-          subtitle: const Text('English (US)'),
-          onTap: () {},
-        ),
         ListTile(
           leading: const Icon(Icons.storage_outlined),
-          title: const Text('Clear Cache'),
+          title: const Text('Clear Local Cache'),
           onTap: () {},
         ),
         ListTile(
           leading: const Icon(Icons.info_outline),
           title: const Text('About Universal Hub'),
-          subtitle: const Text('Version 1.0.0'),
+          subtitle: const Text('Version 1.1.0'),
           onTap: () {},
         ),
       ],
+    );
+  }
+
+  Widget _buildCloudSyncCard() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    return Card(
+      elevation: 0,
+      color: isDark ? const Color(0xFF0B1120) : theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            const Text(
+              'Securely backup your keys to your private cloud storage.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 12, color: Colors.white38),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isSyncing ? null : _uploadToCloud,
+                    icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+                    label: const Text('Upload'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: theme.colorScheme.primary.withValues(
+                        alpha: 0.1,
+                      ),
+                      foregroundColor: theme.colorScheme.primary,
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isSyncing ? null : _loadFromCloud,
+                    icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                    label: const Text('Load'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.greenAccent.withValues(
+                        alpha: 0.1,
+                      ),
+                      foregroundColor: Colors.greenAccent,
+                      elevation: 0,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -378,7 +428,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Successfully authenticated via Supabase',
+          'Cloud sync enabled',
           style: TextStyle(
             fontSize: 12,
             color: isDark ? Colors.white38 : Colors.black38,
@@ -397,20 +447,139 @@ class _SettingsTabState extends State<SettingsTab> {
       ],
     );
   }
+}
 
-  Widget _buildApiKeyField({
-    required LLMProvider provider,
-    required String label,
-    required String hint,
-    required String value,
-    required ValueChanged<String> onChanged,
-  }) {
+class ProviderApiKeyTile extends StatefulWidget {
+  final LLMProvider provider;
+  final String label;
+  final String hint;
+
+  const ProviderApiKeyTile({
+    super.key,
+    required this.provider,
+    required this.label,
+    required this.hint,
+  });
+
+  @override
+  State<ProviderApiKeyTile> createState() => _ProviderApiKeyTileState();
+}
+
+class _ProviderApiKeyTileState extends State<ProviderApiKeyTile> {
+  final TextEditingController _controller = TextEditingController();
+  List<String> _models = [];
+  bool _isLoading = false;
+  bool _isSaving = false;
+  String? _error;
+  bool _isActive = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  void _checkStatus() {
+    final key = _getApiKeyFromPrefs();
+    if (key.isNotEmpty) {
+      setState(() => _isActive = true);
+      _fetchModels();
+    } else {
+      setState(() => _isActive = false);
+    }
+  }
+
+  String _getApiKeyFromPrefs() {
+    switch (widget.provider) {
+      case LLMProvider.gemini:
+        return AppPrefs().geminiApiKey;
+      case LLMProvider.deepseek:
+        return AppPrefs().deepSeekApiKey;
+      case LLMProvider.groq:
+        return AppPrefs().groqApiKey;
+    }
+  }
+
+  Future<void> _fetchModels() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final models = await LLMService().listModels(widget.provider);
+      if (mounted) {
+        setState(() {
+          _models = models;
+          _isLoading = false;
+          _isActive = true;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = 'Verification failed';
+          _isLoading = false;
+          _isActive = false;
+          _models = [];
+        });
+      }
+    }
+  }
+
+  Future<void> _saveLocally() async {
+    final value = _controller.text.trim();
+    if (value.isEmpty) return;
+
+    setState(() => _isSaving = true);
+
+    // Temporarily set the key to verify it
+    final oldKey = _getApiKeyFromPrefs();
+    _setApiKeyInPrefs(value);
+
+    try {
+      final models = await LLMService().listModels(widget.provider);
+      if (mounted) {
+        setState(() {
+          _models = models;
+          _isSaving = false;
+          _isActive = true;
+          _error = null;
+        });
+        _controller.clear();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('${widget.label} saved locally')),
+        );
+      }
+    } catch (e) {
+      // Revert if failed
+      _setApiKeyInPrefs(oldKey);
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+          _error = 'Invalid API key';
+        });
+      }
+    }
+  }
+
+  void _setApiKeyInPrefs(String value) {
+    switch (widget.provider) {
+      case LLMProvider.gemini:
+        AppPrefs().geminiApiKey = value;
+        break;
+      case LLMProvider.deepseek:
+        AppPrefs().deepSeekApiKey = value;
+        break;
+      case LLMProvider.groq:
+        AppPrefs().groqApiKey = value;
+        break;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final models = _models[provider] ?? [];
-    final isLoading = _isLoading[provider] ?? false;
-    final isSaving = _isSaving[provider] ?? false;
-    final error = _errors[provider];
 
     return Card(
       elevation: 0,
@@ -422,7 +591,7 @@ class _SettingsTabState extends State<SettingsTab> {
         ),
       ),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -430,85 +599,191 @@ class _SettingsTabState extends State<SettingsTab> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
+                  widget.label,
+                  style: const TextStyle(fontSize: 12, color: Colors.white70),
                 ),
-                if (isSaving || isLoading)
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                if (_isActive)
+                  const Row(
                     children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.greenAccent,
+                        size: 14,
+                      ),
+                      SizedBox(width: 4),
                       Text(
-                        isSaving ? 'Saving...' : 'Verifying...',
+                        'Active',
                         style: TextStyle(
                           fontSize: 10,
-                          color: isDark ? Colors.white38 : Colors.black38,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 10,
-                        height: 10,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 1.5,
-                          valueColor: AlwaysStoppedAnimation(
-                            isDark ? Colors.white54 : theme.colorScheme.primary,
-                          ),
+                          color: Colors.greenAccent,
                         ),
                       ),
                     ],
+                  ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                      hintText: widget.hint,
+                      border: InputBorder.none,
+                      isDense: true,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                if (_isSaving || _isLoading)
+                  const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                else if (models.isNotEmpty)
+                else
+                  TextButton(
+                    onPressed: _saveLocally,
+                    child: const Text('Save Locally'),
+                  ),
+              ],
+            ),
+            if (_error != null)
+              Text(
+                _error!,
+                style: const TextStyle(color: Colors.redAccent, fontSize: 10),
+              )
+            else if (_models.isNotEmpty)
+              Text(
+                'Models: ${_models.take(3).join(", ")}...',
+                style: const TextStyle(color: Colors.white24, fontSize: 10),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class B2CredentialsTile extends StatefulWidget {
+  const B2CredentialsTile({super.key});
+
+  @override
+  State<B2CredentialsTile> createState() => _B2CredentialsTileState();
+}
+
+class _B2CredentialsTileState extends State<B2CredentialsTile> {
+  final _keyIdController = TextEditingController();
+  final _appKeyController = TextEditingController();
+  final _endpointController = TextEditingController();
+  final _bucketController = TextEditingController();
+  bool _isSaved = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkStatus();
+  }
+
+  void _checkStatus() {
+    if (AppPrefs().b2KeyId.isNotEmpty) {
+      setState(() => _isSaved = true);
+    }
+  }
+
+  void _saveLocally() {
+    if (_keyIdController.text.isNotEmpty)
+      AppPrefs().b2KeyId = _keyIdController.text;
+    if (_appKeyController.text.isNotEmpty)
+      AppPrefs().b2AppKey = _appKeyController.text;
+    if (_endpointController.text.isNotEmpty)
+      AppPrefs().b2Endpoint = _endpointController.text;
+    if (_bucketController.text.isNotEmpty)
+      AppPrefs().b2BucketName = _bucketController.text;
+
+    _keyIdController.clear();
+    _appKeyController.clear();
+    _endpointController.clear();
+    _bucketController.clear();
+
+    setState(() => _isSaved = true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('B2 credentials saved locally')),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Card(
+      elevation: 0,
+      color: isDark ? const Color(0xFF0B1120) : theme.cardColor,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Credentials',
+                  style: TextStyle(fontSize: 12, color: Colors.white70),
+                ),
+                if (_isSaved)
                   const Icon(
-                    Icons.check_circle_outline,
-                    size: 14,
+                    Icons.check_circle,
                     color: Colors.greenAccent,
-                  )
-                else if (error != null)
-                  const Icon(
-                    Icons.error_outline,
                     size: 14,
-                    color: Colors.redAccent,
                   ),
               ],
             ),
             TextField(
-              obscureText: true,
-              controller: TextEditingController(text: value)
-                ..selection = TextSelection.fromPosition(
-                  TextPosition(offset: value.length),
-                ),
-              onChanged: onChanged,
-              decoration: InputDecoration(
-                hintText: hint,
-                border: InputBorder.none,
+              controller: _keyIdController,
+              decoration: const InputDecoration(
+                hintText: 'Key ID',
                 isDense: true,
-                contentPadding: const EdgeInsets.symmetric(vertical: 8),
               ),
             ),
-            if (error != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  error,
-                  style: const TextStyle(fontSize: 10, color: Colors.redAccent),
-                ),
-              )
-            else if (models.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Text(
-                  'Connected: ${models.take(5).join(", ")}${models.length > 5 ? "..." : ""}',
-                  style: TextStyle(
-                    fontSize: 10,
-                    color: isDark ? Colors.white38 : Colors.black45,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+            TextField(
+              controller: _appKeyController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                hintText: 'Application Key',
+                isDense: true,
               ),
+            ),
+            TextField(
+              controller: _endpointController,
+              decoration: const InputDecoration(
+                hintText: 'Endpoint (e.g. s3.us-west-004.backblazeb2.com)',
+                isDense: true,
+              ),
+            ),
+            TextField(
+              controller: _bucketController,
+              decoration: const InputDecoration(
+                hintText: 'Bucket Name',
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _saveLocally,
+                child: const Text('Save Locally'),
+              ),
+            ),
           ],
         ),
       ),
