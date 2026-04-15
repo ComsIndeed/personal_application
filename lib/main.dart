@@ -148,6 +148,12 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeController.themeMode,
+      builder: (context, child) {
+        return ScrollConfiguration(
+          behavior: const ScrollBehavior().copyWith(overscroll: false),
+          child: child!,
+        );
+      },
       home: const OverlayPage(),
     );
   }

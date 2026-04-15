@@ -6,12 +6,12 @@ class AppTheme {
   static const Color accent = Color(0xFF10B981); // Emerald
 
   // Midnight Palette (Solid, no opacity)
-  static const Color nightfallBg = Color(0xFF020617);
-  static const Color nightfallSurface = Color(0xFF0B1120);
-  static const Color nightfallCard = Color(0xFF1E293B);
-  static const Color nightfallBorder = Color(0xFF334155);
-  static const Color nightfallTextPrimary = Color(0xFFF1F5F9);
-  static const Color nightfallTextSecondary = Color(0xFF94A3B8);
+  static const Color nightfallBg = Color(0xFF000000);
+  static const Color nightfallSurface = Color(0xFF000000);
+  static const Color nightfallCard = Color(0xFF09090B);
+  static const Color nightfallBorder = Color(0xFF18181B);
+  static const Color nightfallTextPrimary = Color(0xFFFAFAFA);
+  static const Color nightfallTextSecondary = Color(0xFFA1A1AA);
 
   // Light Palette
   static const Color lightBg = Color(0xFFF8FAFC);

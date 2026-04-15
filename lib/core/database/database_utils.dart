@@ -9,14 +9,34 @@ class DatabaseUtils {
     final user = _supabase.auth.currentUser;
     if (user == null) throw Exception('User not logged in');
 
-    final b2Data = {
-      'keyId': _prefs.b2KeyId,
-      'appKey': _prefs.b2AppKey,
-      'endpoint': _prefs.b2Endpoint,
-      'bucketName': _prefs.b2BucketName,
-    };
+    // Filter B2 data to only include non-empty values
+    final b2Data = <String, dynamic>{};
+    if (_prefs.b2KeyId.isNotEmpty) b2Data['keyId'] = _prefs.b2KeyId;
+    if (_prefs.b2AppKey.isNotEmpty) b2Data['appKey'] = _prefs.b2AppKey;
+    if (_prefs.b2Endpoint.isNotEmpty) b2Data['endpoint'] = _prefs.b2Endpoint;
+    if (_prefs.b2BucketName.isNotEmpty)
+      b2Data['bucketName'] = _prefs.b2BucketName;
 
-    final Map<String, dynamic> data = {'user_id': user.id, 'b2': b2Data};
+    final Map<String, dynamic> data = {'user_id': user.id};
+
+    // Only include b2 if it has data
+    if (b2Data.isNotEmpty) {
+      // First, fetch existing B2 data to merge it if we want to avoid accidental deletion
+      final existing = await _supabase
+          .from('secrets')
+          .select('b2')
+          .eq('user_id', user.id)
+          .maybeSingle();
+      if (existing != null && existing['b2'] != null) {
+        final Map<String, dynamic> mergedB2 = Map<String, dynamic>.from(
+          existing['b2'] as Map,
+        );
+        mergedB2.addAll(b2Data);
+        data['b2'] = mergedB2;
+      } else {
+        data['b2'] = b2Data;
+      }
+    }
 
     if (_prefs.geminiApiKey.isNotEmpty) {
       data['gemini_api_key'] = _prefs.geminiApiKey;
@@ -28,7 +48,7 @@ class DatabaseUtils {
       data['groq_api_key'] = _prefs.groqApiKey;
     }
 
-    await _supabase.from('secrets').upsert(data);
+    await _supabase.from('secrets').upsert(data, onConflict: 'user_id');
   }
 
   Future<void> loadSecrets() async {
