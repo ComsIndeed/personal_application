@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../core/services/app_prefs.dart';
 import '../../core/services/llm_service.dart';
+import '../../core/services/storage_service.dart';
 import '../../core/database/database_utils.dart';
 import '../../core/models/message/enums.dart';
 
@@ -719,31 +720,88 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
   final _aKey = TextEditingController();
   final _end = TextEditingController();
   final _buck = TextEditingController();
-  bool _isSaved = false;
+  bool _isSaving = false;
+  bool _isVerifying = false;
+  bool _isVerified = false;
 
   @override
   void initState() {
     super.initState();
-    if (AppPrefs().b2KeyId.isNotEmpty) _isSaved = true;
+    _checkStatus();
   }
 
-  void _save() {
-    if (_kId.text.isNotEmpty) AppPrefs().b2KeyId = _kId.text;
-    if (_aKey.text.isNotEmpty) AppPrefs().b2AppKey = _aKey.text;
-    if (_end.text.isNotEmpty) AppPrefs().b2Endpoint = _end.text;
-    if (_buck.text.isNotEmpty) AppPrefs().b2BucketName = _buck.text;
-    _kId.clear();
-    _aKey.clear();
-    _end.clear();
-    _buck.clear();
-    setState(() => _isSaved = true);
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('B2 updated')));
+  void _checkStatus() {
+    if (AppPrefs().b2KeyId.isNotEmpty && AppPrefs().b2BucketName.isNotEmpty) {
+      _isVerified = true;
+    }
+  }
+
+  Future<void> _verifyOnly() async {
+    setState(() => _isVerifying = true);
+    try {
+      await StorageService().verifyCredentials();
+      if (mounted) {
+        setState(() => _isVerified = true);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('B2 Connection Verified')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isVerified = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification Failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isVerifying = false);
+    }
+  }
+
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      if (_kId.text.isNotEmpty) AppPrefs().b2KeyId = _kId.text;
+      if (_aKey.text.isNotEmpty) AppPrefs().b2AppKey = _aKey.text;
+      if (_end.text.isNotEmpty) AppPrefs().b2Endpoint = _end.text;
+      if (_buck.text.isNotEmpty) AppPrefs().b2BucketName = _buck.text;
+
+      // Verify connection
+      await StorageService().verifyCredentials();
+
+      if (mounted) {
+        setState(() => _isVerified = true);
+        _kId.clear();
+        _aKey.clear();
+        _end.clear();
+        _buck.clear();
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('B2 Verified & Saved')));
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isVerified = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Verification Failed: $e'),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final statusColor = _isVerified ? Colors.greenAccent : Colors.orangeAccent;
+    final statusLabel = _isVerified ? 'VERIFIED' : 'UNVERIFIED';
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.02),
@@ -766,12 +824,40 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
                       ),
                     ),
                     const Spacer(),
-                    if (_isSaved)
-                      const Icon(
-                        Icons.verified_user_rounded,
-                        size: 16,
-                        color: Colors.greenAccent,
+                    InkWell(
+                      onTap: _isVerifying ? null : _verifyOnly,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: statusColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: statusColor.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: _isVerifying
+                            ? const SizedBox(
+                                width: 8,
+                                height: 8,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                ),
+                              )
+                            : Text(
+                                statusLabel,
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w900,
+                                  color: statusColor,
+                                  letterSpacing: 1.0,
+                                ),
+                              ),
                       ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
@@ -796,22 +882,30 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
               bottom: Radius.circular(24),
             ),
             child: InkWell(
-              onTap: _save,
+              onTap: _isSaving ? null : _save,
               borderRadius: const BorderRadius.vertical(
                 bottom: Radius.circular(24),
               ),
               child: Container(
                 width: double.infinity,
                 padding: const EdgeInsets.symmetric(vertical: 20),
-                child: const Text(
-                  'CONFIRM UPDATE',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 12,
-                    letterSpacing: 2.0,
-                  ),
-                ),
+                child: _isSaving
+                    ? const Center(
+                        child: SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : const Text(
+                        'VERIFY & SAVE CONFIG',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 2.0,
+                        ),
+                      ),
               ),
             ),
           ),

@@ -52,16 +52,17 @@ class StorageService {
   B2AuthResponse? _cachedAuth;
 
   Future<B2AuthResponse> _authorize() async {
-    if (_prefs.b2KeyId.isEmpty || _prefs.b2AppKey.isEmpty) {
+    final keyId = _prefs.b2KeyId.trim();
+    final appKey = _prefs.b2AppKey.trim();
+
+    if (keyId.isEmpty || appKey.isEmpty) {
       throw Exception('B2 Credentials not set in settings');
     }
 
-    final basicAuth = base64Encode(
-      utf8.encode('${_prefs.b2KeyId}:${_prefs.b2AppKey}'),
-    );
+    final basicAuth = base64Encode(utf8.encode('$keyId:$appKey'));
 
     final response = await http.get(
-      Uri.parse('https://api.backblazeb2.com/b2api/v3/b2_authorize_account'),
+      Uri.parse('https://api.backblazeb2.com/b2api/v2/b2_authorize_account'),
       headers: {'Authorization': 'Basic $basicAuth'},
     );
 
@@ -74,10 +75,11 @@ class StorageService {
   }
 
   Future<String> _getBucketId(B2AuthResponse auth) async {
-    if (_prefs.b2BucketName.isEmpty) throw Exception('Bucket name not set');
+    if (_prefs.b2BucketName.trim().isEmpty)
+      throw Exception('Bucket name not set');
 
     final response = await http.post(
-      Uri.parse('${auth.apiUrl}/b2api/v3/b2_list_buckets'),
+      Uri.parse('${auth.apiUrl}/b2api/v2/b2_list_buckets'),
       headers: {'Authorization': auth.authorizationToken},
       body: jsonEncode({'accountId': auth.accountId}),
     );
@@ -88,9 +90,9 @@ class StorageService {
 
     final buckets = jsonDecode(response.body)['buckets'] as List;
     final bucket = buckets.firstWhere(
-      (b) => b['bucketName'] == _prefs.b2BucketName,
+      (b) => b['bucketName'] == _prefs.b2BucketName.trim(),
       orElse: () =>
-          throw Exception('Bucket "${_prefs.b2BucketName}" not found'),
+          throw Exception('Bucket "${_prefs.b2BucketName.trim()}" not found'),
     );
 
     return bucket['bucketId'];
@@ -102,7 +104,7 @@ class StorageService {
 
     // Get upload URL
     final uploadResponse = await http.post(
-      Uri.parse('${auth.apiUrl}/b2api/v3/b2_get_upload_url'),
+      Uri.parse('${auth.apiUrl}/b2api/v2/b2_get_upload_url'),
       headers: {'Authorization': auth.authorizationToken},
       body: jsonEncode({'bucketId': bucketId}),
     );
@@ -147,7 +149,7 @@ class StorageService {
     final bucketId = await _getBucketId(auth);
 
     final response = await http.post(
-      Uri.parse('${auth.apiUrl}/b2api/v3/b2_list_file_names'),
+      Uri.parse('${auth.apiUrl}/b2api/v2/b2_list_file_names'),
       headers: {'Authorization': auth.authorizationToken},
       body: jsonEncode({'bucketId': bucketId}),
     );
@@ -173,7 +175,7 @@ class StorageService {
     final auth = await _authorize();
 
     final response = await http.post(
-      Uri.parse('${auth.apiUrl}/b2api/v3/b2_delete_file_version'),
+      Uri.parse('${auth.apiUrl}/b2api/v2/b2_delete_file_version'),
       headers: {'Authorization': auth.authorizationToken},
       body: jsonEncode({'fileName': fileName, 'fileId': fileId}),
     );
@@ -185,6 +187,11 @@ class StorageService {
 
   Future<String> getDownloadUrl(String fileName) async {
     final auth = _cachedAuth ?? await _authorize();
-    return '${auth.downloadUrl}/file/${_prefs.b2BucketName}/${Uri.encodeComponent(fileName)}';
+    return '${auth.downloadUrl}/file/${_prefs.b2BucketName.trim()}/${Uri.encodeComponent(fileName)}';
+  }
+
+  Future<void> verifyCredentials() async {
+    final auth = await _authorize();
+    await _getBucketId(auth);
   }
 }
