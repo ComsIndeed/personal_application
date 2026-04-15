@@ -10,6 +10,8 @@ abstract class MessagePart {
     switch (type) {
       case 'text':
         return TextPart.fromJson(json);
+      case 'reasoning':
+        return ReasoningPart.fromJson(json);
       case 'asset':
         return AssetPart.fromJson(json);
       case 'command':
@@ -18,6 +20,20 @@ abstract class MessagePart {
         throw Exception('Unknown message part type: $type');
     }
   }
+}
+
+class ReasoningPart extends MessagePart {
+  @override
+  String get type => 'reasoning';
+  final String reasoning;
+
+  ReasoningPart({required this.reasoning});
+
+  @override
+  Map<String, dynamic> toJson() => {'type': type, 'reasoning': reasoning};
+
+  factory ReasoningPart.fromJson(Map<String, dynamic> json) =>
+      ReasoningPart(reasoning: json['reasoning'] as String);
 }
 
 class TextPart extends MessagePart {

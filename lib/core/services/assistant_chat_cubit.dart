@@ -10,6 +10,7 @@ import 'package:uuid/v4.dart';
 class AssistantChatState {
   final List<Message> messages;
   final String? streamingText;
+  final String? streamingReasoning;
   final String currentConversationId;
   final bool isLoading;
   final LLMProvider provider;
@@ -18,17 +19,19 @@ class AssistantChatState {
   const AssistantChatState({
     this.messages = const [],
     this.streamingText,
+    this.streamingReasoning,
     required this.currentConversationId,
     this.isLoading = false,
     this.provider = LLMProvider.gemini,
     this.model,
   });
 
-  bool get isStreaming => streamingText != null;
+  bool get isStreaming => streamingText != null || streamingReasoning != null;
 
   AssistantChatState copyWith({
     List<Message>? messages,
     String? streamingText,
+    String? streamingReasoning,
     String? currentConversationId,
     bool? isLoading,
     LLMProvider? provider,
@@ -40,6 +43,9 @@ class AssistantChatState {
       streamingText: clearStreaming
           ? null
           : (streamingText ?? this.streamingText),
+      streamingReasoning: clearStreaming
+          ? null
+          : (streamingReasoning ?? this.streamingReasoning),
       currentConversationId:
           currentConversationId ?? this.currentConversationId,
       isLoading: isLoading ?? this.isLoading,
@@ -82,6 +88,21 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
   void selectConversation(String conversationId) {
     emit(state.copyWith(currentConversationId: conversationId));
     loadMessages();
+  }
+
+  void startNewChat() {
+    emit(
+      state.copyWith(
+        currentConversationId: const UuidV4().generate(),
+        messages: [],
+      ),
+    );
+  }
+
+  Future<List<Conversation>> getConversations() async {
+    return await (_db.select(
+      _db.conversations,
+    )..orderBy([(t) => OrderingTerm.desc(t.createdAt)])).get();
   }
 
   Future<void> loadMessages() async {
@@ -132,7 +153,8 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
 
     // 3. Start streaming response
     String fullResponse = "";
-    emit(state.copyWith(streamingText: ""));
+    String fullReasoning = "";
+    emit(state.copyWith(streamingText: "", streamingReasoning: ""));
 
     if (state.model == null) {
       await loadInitialModel();
@@ -151,17 +173,31 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
       );
 
       _streamSubscription = stream.listen(
-        (chunk) {
-          fullResponse += chunk;
-          emit(state.copyWith(streamingText: fullResponse));
+        (delta) {
+          if (delta.reasoning != null) {
+            fullReasoning += delta.reasoning!;
+            emit(state.copyWith(streamingReasoning: fullReasoning));
+          }
+          if (delta.content != null) {
+            fullResponse += delta.content!;
+            emit(state.copyWith(streamingText: fullResponse));
+          }
         },
         onDone: () async {
           // 4. Save assistant message when done
-          if (fullResponse.isNotEmpty) {
+          if (fullResponse.isNotEmpty || fullReasoning.isNotEmpty) {
+            final parts = <MessagePart>[];
+            if (fullReasoning.isNotEmpty) {
+              parts.add(ReasoningPart(reasoning: fullReasoning));
+            }
+            if (fullResponse.isNotEmpty) {
+              parts.add(TextPart(text: fullResponse));
+            }
+
             final aiCompanion = MessagesCompanion.insert(
               conversationId: conversationId,
               role: MessageRole.model,
-              parts: [TextPart(text: fullResponse)],
+              parts: parts,
             );
             await _db.into(_db.messages).insert(aiCompanion);
             await loadMessages();

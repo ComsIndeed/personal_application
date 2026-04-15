@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
+import 'package:personal_application/core/database/app_database.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/services/assistant_chat_cubit.dart';
 import 'package:personal_application/core/services/llm_service.dart';
@@ -64,9 +65,11 @@ class _ChatComposerState extends State<ChatComposer> {
       'Edit',
       'History',
     ],
+    '!': [],
   };
 
   Map<LLMProvider, List<String>> _fetchedModels = {};
+  List<Conversation> _fetchedConversations = [];
   bool _isLoadingModels = false;
   String? _modelError;
 
@@ -145,6 +148,27 @@ class _ChatComposerState extends State<ChatComposer> {
     super.dispose();
   }
 
+  Future<void> _fetchConversations() async {
+    setState(() {
+      _isLoadingModels = true;
+      _modelError = null;
+    });
+    try {
+      final convos = await context
+          .read<AssistantChatCubit>()
+          .getConversations();
+      setState(() {
+        _fetchedConversations = convos;
+        _isLoadingModels = false;
+      });
+    } catch (e) {
+      setState(() {
+        _modelError = e.toString();
+        _isLoadingModels = false;
+      });
+    }
+  }
+
   void _onTextChanged() {
     WidgetsBinding.instance.addPostFrameCallback((_) => _measureHeight());
     final text = _controller.text;
@@ -165,156 +189,169 @@ class _ChatComposerState extends State<ChatComposer> {
     }
   }
 
+  void _selectConversation(String id) {
+    context.read<AssistantChatCubit>().selectConversation(id);
+    _hideOverlay();
+    _focusNode.requestFocus();
+  }
+
   void _showOverlay(String trigger) {
     _hideOverlay();
     _currentTrigger = trigger;
+
     final overlay = Overlay.of(context);
-    final renderBox = context.findRenderObject() as RenderBox;
-    final size = renderBox.size;
-
-    List<dynamic> items = [];
-    String headerTitle = '';
-
-    if (trigger == '@') {
-      headerTitle = 'MENTIONS';
-      items = _options['@']!;
-    } else if (trigger == '/') {
-      headerTitle = 'COMMANDS';
-      items = _options['/']!;
-    } else if (trigger == '#') {
-      headerTitle = 'MODELS';
-      if (_modelError != null) {
-        items = ['Error: $_modelError'];
-      } else if (_isLoadingModels) {
-        items = ['Loading models...'];
-      } else {
-        for (final provider in LLMProvider.values) {
-          items.add(provider);
-          final models = _fetchedModels[provider] ?? [];
-          if (models.isEmpty) {
-            if (!LLMService().hasApiKey(provider)) {
-              items.add('API key missing');
-            } else {
-              items.add('No models found');
-            }
-          } else {
-            items.addAll(models);
-          }
-        }
-      }
-    }
-
-    const double itemHeight = 36.0;
-    const double headerHeight = 36.0;
-    final double totalHeight = trigger == '#'
-        ? (items.length * itemHeight + headerHeight).clamp(100, 410)
-        : headerHeight + (itemHeight * 10.5);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     _overlayEntry = OverlayEntry(
-      builder: (context) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, -totalHeight),
-          child: Material(
-            elevation: 20,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            color: Theme.of(context).cardColor,
-            child: Container(
-              height: totalHeight,
-              decoration: const BoxDecoration(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                border: Border(
-                  top: BorderSide(color: Colors.white10),
-                  left: BorderSide(color: Colors.white10),
-                  right: BorderSide(color: Colors.white10),
+      builder: (context) {
+        final items = [];
+        if (trigger == '!') {
+          items.add('NEW_CHAT_ACTION');
+          items.addAll(_fetchedConversations);
+        } else if (trigger == '#') {
+          if (_modelError != null) {
+            items.add('Error: $_modelError');
+          } else if (_isLoadingModels) {
+            items.add('Loading models...');
+          } else {
+            final service = LLMService();
+            for (final provider in LLMProvider.values) {
+              items.add(provider);
+              final models = _fetchedModels[provider] ?? [];
+              if (models.isEmpty) {
+                if (!service.hasApiKey(provider)) {
+                  items.add('API key missing');
+                } else {
+                  items.add('No models found');
+                }
+              } else {
+                items.addAll(models);
+              }
+            }
+          }
+        } else {
+          items.addAll(_options[trigger] ?? []);
+        }
+
+        const double itemHeight = 36;
+        final double totalHeight = (items.length * itemHeight + 16).clamp(
+          0,
+          300,
+        );
+
+        return Positioned(
+          width: 280,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            offset: Offset(0, -totalHeight - 8),
+            child: Material(
+              elevation: 8,
+              borderRadius: BorderRadius.circular(16),
+              color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+              child: Container(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark ? Colors.white10 : Colors.black12,
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    height: headerHeight,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      headerTitle,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withAlpha(180),
-                        letterSpacing: 1.5,
+                constraints: BoxConstraints(maxHeight: totalHeight),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Expanded(
+                      child: ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: items.length,
+                        itemBuilder: (context, i) {
+                          final item = items[i];
+
+                          if (item is LLMProvider) {
+                            return Container(
+                              height: 24,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              alignment: Alignment.centerLeft,
+                              color: Colors.white.withAlpha(5),
+                              child: Text(
+                                item.name.toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.grey,
+                                ),
+                              ),
+                            );
+                          }
+
+                          if (item == 'NEW_CHAT_ACTION') {
+                            return _OptionTile(
+                              label: 'New Chat',
+                              index: 1,
+                              height: itemHeight,
+                              icon: Icons.add_rounded,
+                              onTap: () {
+                                context
+                                    .read<AssistantChatCubit>()
+                                    .startNewChat();
+                                _hideOverlay();
+                              },
+                            );
+                          }
+
+                          if (item is Conversation) {
+                            return _OptionTile(
+                              label: item.title ?? 'Untitled',
+                              index: i + 1,
+                              height: itemHeight,
+                              onTap: () => _selectConversation(item.id),
+                            );
+                          }
+
+                          final isSelectable =
+                              item != 'Loading models...' &&
+                              item != 'API key missing' &&
+                              item != 'No models found' &&
+                              !item.toString().startsWith('Error:');
+
+                          return _OptionTile(
+                            label: item.toString(),
+                            index: i + 1,
+                            height: itemHeight,
+                            isSelectable: isSelectable,
+                            onTap: isSelectable
+                                ? () {
+                                    if (trigger == '#') {
+                                      LLMProvider? provider;
+                                      for (final p in LLMProvider.values) {
+                                        if (_fetchedModels[p]?.contains(item) ??
+                                            false) {
+                                          provider = p;
+                                          break;
+                                        }
+                                      }
+                                      if (provider != null) {
+                                        _selectModel(provider, item.toString());
+                                      }
+                                    } else {
+                                      _selectOption(item.toString());
+                                    }
+                                  }
+                                : null,
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  Expanded(
-                    child: ListView.builder(
-                      padding: EdgeInsets.zero,
-                      itemCount: items.length,
-                      itemBuilder: (context, i) {
-                        final item = items[i];
-                        if (item is LLMProvider) {
-                          return Container(
-                            height: 24,
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            alignment: Alignment.centerLeft,
-                            color: Colors.white.withAlpha(5),
-                            child: Text(
-                              item.name.toUpperCase(),
-                              style: const TextStyle(
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          );
-                        }
-
-                        final isSelectable =
-                            item != 'Loading models...' &&
-                            item != 'API key missing' &&
-                            item != 'No models found';
-
-                        return _OptionTile(
-                          label: item.toString(),
-                          index: i + 1,
-                          height: itemHeight,
-                          isSelectable: isSelectable,
-                          onTap: isSelectable
-                              ? () {
-                                  if (trigger == '#') {
-                                    // Find provider for this model
-                                    LLMProvider? provider;
-                                    for (final p in LLMProvider.values) {
-                                      if (_fetchedModels[p]?.contains(item) ??
-                                          false) {
-                                        provider = p;
-                                        break;
-                                      }
-                                    }
-                                    if (provider != null) {
-                                      _selectModel(provider, item.toString());
-                                    }
-                                  } else {
-                                    _selectOption(item.toString());
-                                  }
-                                }
-                              : null,
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
-
     overlay.insert(_overlayEntry!);
     setState(() {});
   }
@@ -491,24 +528,37 @@ class _ChatComposerState extends State<ChatComposer> {
                 ],
               ),
               const SizedBox(height: 8),
-              Padding(
-                padding: const EdgeInsets.only(left: 48),
-                child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
-                  builder: (context, state) {
-                    return _ModelButton(
-                      provider: state.provider.name,
-                      model: state.model ?? 'Select model...',
-                      onPressed: () {
-                        if (_currentTrigger == '#') {
-                          _hideOverlay();
-                        } else {
-                          _fetchModels();
-                          _showOverlay('#');
-                        }
-                      },
-                    );
-                  },
-                ),
+              Row(
+                children: [
+                  const SizedBox(width: 44),
+                  _ComposerIconButton(
+                    icon: Icons.psychology_rounded,
+                    tooltip: 'Model Settings',
+                    isActive: _currentTrigger == '#',
+                    onPressed: () async {
+                      if (_currentTrigger == '#') {
+                        _hideOverlay();
+                      } else {
+                        await _fetchModels();
+                        _showOverlay('#');
+                      }
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  _ComposerIconButton(
+                    icon: Icons.forum_rounded,
+                    tooltip: 'Conversations',
+                    isActive: _currentTrigger == '!',
+                    onPressed: () async {
+                      if (_currentTrigger == '!') {
+                        _hideOverlay();
+                      } else {
+                        await _fetchConversations();
+                        _showOverlay('!');
+                      }
+                    },
+                  ),
+                ],
               ),
             ],
           ),
@@ -552,12 +602,11 @@ class _ChatComposerState extends State<ChatComposer> {
       } else if (_isLoadingModels) {
         items = ['Loading models...'];
       } else {
-        final service = LLMService();
         for (final provider in LLMProvider.values) {
           items.add(provider);
           final models = _fetchedModels[provider] ?? [];
           if (models.isEmpty) {
-            if (!service.hasApiKey(provider)) {
+            if (!LLMService().hasApiKey(provider)) {
               items.add('API key missing');
             } else {
               items.add('No models found');
@@ -590,6 +639,10 @@ class _ChatComposerState extends State<ChatComposer> {
           }
         }
       }
+    } else if (_currentTrigger == '!') {
+      if (index < _fetchedConversations.length) {
+        _selectConversation(_fetchedConversations[index].id);
+      }
     } else {
       final list = _options[_currentTrigger]!;
       if (index < list.length) {
@@ -599,14 +652,16 @@ class _ChatComposerState extends State<ChatComposer> {
   }
 }
 
-class _ModelButton extends StatelessWidget {
-  final String provider;
-  final String model;
+class _ComposerIconButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final bool isActive;
   final VoidCallback onPressed;
 
-  const _ModelButton({
-    required this.provider,
-    required this.model,
+  const _ComposerIconButton({
+    required this.icon,
+    required this.tooltip,
+    required this.isActive,
     required this.onPressed,
   });
 
@@ -615,61 +670,30 @@ class _ModelButton extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(8),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withAlpha(10)
-                : Colors.black.withAlpha(5),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: isDark ? Colors.white10 : Colors.black.withAlpha(20),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                provider.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  color: theme.colorScheme.primary.withAlpha(180),
-                  letterSpacing: 0.5,
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 10,
-                margin: const EdgeInsets.symmetric(horizontal: 6),
-                color: isDark ? Colors.white10 : Colors.black12,
-              ),
-              Flexible(
-                child: Text(
-                  model,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isDark
-                        ? Colors.white.withAlpha(200)
-                        : Colors.black87,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.keyboard_arrow_down_rounded,
-                size: 14,
-                color: isDark ? Colors.white60 : Colors.black45,
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: isActive
+            ? (isDark
+                  ? theme.colorScheme.primary.withAlpha(40)
+                  : theme.colorScheme.primary.withAlpha(20))
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(
+          icon,
+          size: 20,
+          color: isActive
+              ? theme.colorScheme.primary
+              : (isDark ? Colors.white60 : Colors.black45),
+        ),
+        tooltip: tooltip,
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+        padding: EdgeInsets.zero,
+        style: IconButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
@@ -683,6 +707,7 @@ class _OptionTile extends StatelessWidget {
   final double height;
   final VoidCallback? onTap;
   final bool isSelectable;
+  final IconData? icon;
 
   const _OptionTile({
     required this.label,
@@ -690,6 +715,7 @@ class _OptionTile extends StatelessWidget {
     required this.height,
     this.onTap,
     this.isSelectable = true,
+    this.icon,
   });
 
   @override
@@ -717,18 +743,22 @@ class _OptionTile extends StatelessWidget {
                           ? Colors.white.withAlpha(10)
                           : Colors.black.withAlpha(5),
                       borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: Text(
-                      '${index % 10}',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.bold,
-                        color: index <= 10
-                            ? theme.colorScheme.primary
-                            : Colors.grey,
+                      border: Border.all(
+                        color: isDark ? Colors.white10 : Colors.black12,
                       ),
                     ),
+                    child: icon != null
+                        ? Icon(icon, size: 14, color: theme.colorScheme.primary)
+                        : Text(
+                            '${index % 10}',
+                            style: TextStyle(
+                              fontSize: 9,
+                              fontWeight: FontWeight.bold,
+                              color: index <= 10
+                                  ? theme.colorScheme.primary
+                                  : Colors.grey,
+                            ),
+                          ),
                   ),
                   const SizedBox(width: 12),
                 ],

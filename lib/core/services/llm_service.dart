@@ -79,7 +79,7 @@ class LLMService {
     }
   }
 
-  Stream<String> generateContentStream({
+  Stream<LLMDelta> generateContentStream({
     required List<Message> history,
     required LLMProvider provider,
     required String model,
@@ -92,7 +92,20 @@ class LLMService {
           messages: history.map(_mapToOpenAI).toList(),
         ),
       );
-      yield* stream.textDeltas();
+
+      await for (final event in stream) {
+        final choices = event.choices;
+        if (choices == null) continue;
+        for (final choice in choices) {
+          final delta = choice.delta;
+          if (delta.content != null || delta.reasoningContent != null) {
+            yield LLMDelta(
+              content: delta.content,
+              reasoning: delta.reasoningContent,
+            );
+          }
+        }
+      }
     } finally {
       client.close();
     }
@@ -121,4 +134,10 @@ class LLMService {
         return _prefs.deepSeekApiKey.isNotEmpty;
     }
   }
+}
+
+class LLMDelta {
+  final String? content;
+  final String? reasoning;
+  LLMDelta({this.content, this.reasoning});
 }
