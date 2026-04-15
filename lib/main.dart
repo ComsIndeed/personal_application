@@ -6,6 +6,7 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:personal_application/core/services/assistant_chat_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
 import 'interfaces/main_interface.dart';
@@ -17,6 +18,16 @@ void main() async {
   await windowManager.ensureInitialized();
   await Window.initialize();
   await AppPrefs().init();
+
+  // Initialize Supabase with hardcoded keys
+  try {
+    await Supabase.initialize(
+      url: 'https://jzxfhtthknwegozofkvg.supabase.co',
+      anonKey: 'sb_publishable_B8rQ5TIbXMSCWhDX_P0gnw_S4_JRXeA',
+    );
+  } catch (e) {
+    debugPrint('Supabase initialization failed: $e');
+  }
 
   final database = AppDatabase();
 

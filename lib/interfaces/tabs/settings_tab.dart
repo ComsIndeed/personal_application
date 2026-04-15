@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/app_prefs.dart';
 import '../../core/services/llm_service.dart';
 import '../../core/models/message/enums.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -18,10 +19,67 @@ class _SettingsTabState extends State<SettingsTab> {
   final Map<LLMProvider, String?> _errors = {};
   final Map<LLMProvider, Timer?> _debounceTimers = {};
 
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  bool _isAuthLoading = false;
+  String? _authError;
+  User? _user;
+
   @override
   void initState() {
     super.initState();
     _fetchAllModels();
+    _checkUser();
+  }
+
+  void _checkUser() {
+    try {
+      setState(() {
+        _user = Supabase.instance.client.auth.currentUser;
+      });
+    } catch (_) {}
+  }
+
+  Future<void> _handleAuth(bool isSignIn) async {
+    setState(() {
+      _isAuthLoading = true;
+      _authError = null;
+    });
+
+    try {
+      if (isSignIn) {
+        await Supabase.instance.client.auth.signInWithPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      } else {
+        await Supabase.instance.client.auth.signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+      }
+      _checkUser();
+    } catch (e) {
+      setState(() {
+        _authError = e.toString().replaceAll('AuthException: ', '');
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isAuthLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleSignOut() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+      _checkUser();
+    } catch (e) {
+      debugPrint('Logout error: $e');
+    }
   }
 
   @override
@@ -29,6 +87,8 @@ class _SettingsTabState extends State<SettingsTab> {
     for (var timer in _debounceTimers.values) {
       timer?.cancel();
     }
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -165,66 +225,7 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                const TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Email',
-                    prefixIcon: Icon(Icons.email_outlined, size: 18),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const TextField(
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    hintText: 'Password',
-                    prefixIcon: Icon(Icons.lock_outline_rounded, size: 18),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    child: const Text('Sign In'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Row(
-                  children: [
-                    Expanded(child: Divider(color: Colors.white10)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 12),
-                      child: Text(
-                        'OR',
-                        style: TextStyle(fontSize: 12, color: Colors.white24),
-                      ),
-                    ),
-                    Expanded(child: Divider(color: Colors.white10)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.g_mobiledata_rounded),
-                        label: const Text('Google'),
-                        onPressed: () {},
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        icon: const Icon(Icons.code_rounded),
-                        label: const Text('GitHub'),
-                        onPressed: () {},
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            child: _user != null ? _buildUserPanel() : _buildAuthForm(),
           ),
         ),
         const Divider(height: 48, color: Colors.white10),
@@ -290,6 +291,92 @@ class _SettingsTabState extends State<SettingsTab> {
           title: const Text('About Universal Hub'),
           subtitle: const Text('Version 1.0.0'),
           onTap: () {},
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAuthForm() {
+    return Column(
+      children: [
+        TextField(
+          controller: _emailController,
+          decoration: const InputDecoration(
+            hintText: 'Email',
+            prefixIcon: Icon(Icons.email_outlined, size: 18),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _passwordController,
+          obscureText: true,
+          decoration: const InputDecoration(
+            hintText: 'Password',
+            prefixIcon: Icon(Icons.lock_outline_rounded, size: 18),
+          ),
+        ),
+        if (_authError != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            _authError!,
+            style: const TextStyle(color: Colors.redAccent, fontSize: 12),
+          ),
+        ],
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: ElevatedButton(
+                onPressed: _isAuthLoading ? null : () => _handleAuth(true),
+                child: _isAuthLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sign In'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _isAuthLoading ? null : () => _handleAuth(false),
+                child: const Text('Sign Up'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserPanel() {
+    return Column(
+      children: [
+        const Icon(
+          Icons.account_circle_outlined,
+          size: 48,
+          color: Colors.white24,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          _user?.email ?? 'Logged In',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Successfully authenticated via Supabase',
+          style: TextStyle(fontSize: 12, color: Colors.white38),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.logout_rounded, size: 18),
+            label: const Text('Sign Out'),
+            onPressed: _handleSignOut,
+            style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent),
+          ),
         ),
       ],
     );

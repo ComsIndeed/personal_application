@@ -33,6 +33,7 @@ dependencies:
   font_awesome_flutter: ^11.0.0
   google_fonts: ^8.0.2
   flyer_chat_text_message: ^2.6.0
+  supabase_flutter: ^2.12.2
 
 dev_dependencies:
   flutter_test:
