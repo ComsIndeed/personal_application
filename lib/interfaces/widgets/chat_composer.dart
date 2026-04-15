@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:personal_application/core/services/composer_height_notifier.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:provider/provider.dart';
 
 class ChatComposer extends StatefulWidget {
@@ -9,6 +9,7 @@ class ChatComposer extends StatefulWidget {
   final VoidCallback? onAddMedia;
   final bool isStreaming;
   final VoidCallback? onStop;
+  final String? selectedModel;
 
   const ChatComposer({
     super.key,
@@ -16,6 +17,7 @@ class ChatComposer extends StatefulWidget {
     this.onAddMedia,
     this.isStreaming = false,
     this.onStop,
+    this.selectedModel,
   });
 
   @override
@@ -272,11 +274,16 @@ class _ChatComposerState extends State<ChatComposer> {
                       minLines: 1,
                       textInputAction: TextInputAction.newline,
                       style: const TextStyle(fontSize: 15, height: 1.4),
-                      decoration: const InputDecoration(
-                        hintText: 'Message',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 15),
+                      decoration: InputDecoration(
+                        hintText: widget.selectedModel != null
+                            ? 'Message ${widget.selectedModel}'
+                            : 'Message',
+                        hintStyle: const TextStyle(
+                          color: Colors.grey,
+                          fontSize: 15,
+                        ),
                         border: InputBorder.none,
-                        contentPadding: EdgeInsets.symmetric(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 20,
                           vertical: 14,
                         ),

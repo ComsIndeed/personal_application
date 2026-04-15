@@ -13,6 +13,7 @@ import 'package:personal_application/interfaces/widgets/chat_composer.dart';
 import 'package:personal_application/core/database/app_database.dart' as db;
 import 'package:personal_application/core/services/llm_service.dart';
 import 'package:personal_application/core/services/tab_header_manager.dart';
+import 'package:provider/provider.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -104,6 +105,7 @@ class _ChatTabState extends State<ChatTab> {
 
     showMenu<dynamic>(
       context: context,
+      constraints: const BoxConstraints(maxHeight: 400, maxWidth: 220),
       position: RelativeRect.fromLTRB(
         MediaQuery.of(context).size.width - 200,
         80,
@@ -159,6 +161,7 @@ class _ChatTabState extends State<ChatTab> {
 
     showMenu<dynamic>(
       context: context,
+      constraints: const BoxConstraints(maxHeight: 400, maxWidth: 220),
       position: const RelativeRect.fromLTRB(100, 80, 20, 0),
       color: isDark ? const Color(0xFF0F172A) : Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -289,6 +292,7 @@ class _ChatTabState extends State<ChatTab> {
                               isStreaming: message.id == 'streaming-msg',
                             ),
                           flyer_stream.FlyerChatTextStreamMessage(
+                            mode: .instantMarkdown,
                             message: message,
                             index: index,
                             streamState: flyer_stream.StreamStateStreaming(
@@ -328,6 +332,7 @@ class _ChatTabState extends State<ChatTab> {
                 composerBuilder: (context) => Align(
                   alignment: Alignment.bottomCenter,
                   child: ChatComposer(
+                    selectedModel: state.model,
                     isStreaming: state.isStreaming,
                     onStop: () =>
                         context.read<AssistantChatCubit>().stopGeneration(),
@@ -450,12 +455,22 @@ class _HeaderActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
-      icon: Icon(icon, size: 20),
-      onPressed: onPressed,
-      tooltip: tooltip,
-      splashRadius: 20,
-      color: Colors.white70,
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.only(right: 4, top: 12),
+      child: IconButton(
+        icon: Icon(icon, size: 20),
+        onPressed: onPressed,
+        tooltip: tooltip,
+        style: IconButton.styleFrom(
+          backgroundColor: isDark
+              ? Colors.white.withValues(alpha: 0.05)
+              : Colors.black.withValues(alpha: 0.05),
+          foregroundColor: isDark ? Colors.white70 : Colors.black87,
+        ),
+      ),
     );
   }
 }

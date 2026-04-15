@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:provider/provider.dart';
 import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
@@ -12,7 +13,6 @@ import 'tabs/brain_dump/brain_dump_tab.dart';
 import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 import '../core/services/tab_header_manager.dart';
-import '../core/services/composer_height_notifier.dart';
 
 class TabIntent extends Intent {
   final int index;
@@ -77,7 +77,7 @@ class _MainInterfaceState extends State<MainInterface> {
 
             return Focus(
               focusNode: _focusNode,
-              autofocus: true,
+              autofocus: false,
               child: Shortcuts(
                 shortcuts: <ShortcutActivator, Intent>{
                   const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
@@ -92,8 +92,6 @@ class _MainInterfaceState extends State<MainInterface> {
                       const TabIntent(4),
                   const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
                       const TabIntent(5),
-                  const SingleActivator(LogicalKeyboardKey.escape):
-                      const HideIntent(),
                 },
                 child: Actions(
                   actions: <Type, Action<Intent>>{
@@ -103,48 +101,49 @@ class _MainInterfaceState extends State<MainInterface> {
                         return null;
                       },
                     ),
-                    HideIntent: CallbackAction<HideIntent>(
-                      onInvoke: (intent) {
-                        controller.close();
-                        return null;
-                      },
-                    ),
                   },
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-                            child: Consumer<TabHeaderManager>(
-                              builder: (context, header, _) {
-                                return ListenableBuilder(
-                                  listenable: tabController,
-                                  builder: (context, _) {
-                                    final defaultTitles = [
-                                      'Assistant',
-                                      'Brain Dump',
-                                      'Sprints',
-                                      'Notes',
-                                      'Dashboard',
-                                      'Settings',
-                                      'Utilities',
-                                    ];
-                                    return Text(
-                                      header.title ??
-                                          defaultTitles[tabController.index],
-                                      style: const TextStyle(
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                20,
+                                20,
+                                20,
+                                10,
+                              ),
+                              child: Consumer<TabHeaderManager>(
+                                builder: (context, header, _) {
+                                  return ListenableBuilder(
+                                    listenable: tabController,
+                                    builder: (context, _) {
+                                      final defaultTitles = [
+                                        'Assistant',
+                                        'Brain Dump',
+                                        'Sprints',
+                                        'Notes',
+                                        'Dashboard',
+                                        'Settings',
+                                        'Utilities',
+                                      ];
+                                      return Text(
+                                        header.title ??
+                                            defaultTitles[tabController.index],
+                                        style: const TextStyle(
+                                          fontSize: 18,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.5,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      );
+                                    },
+                                  );
+                                },
+                              ),
                             ),
                           ),
-                          const Spacer(),
                           Consumer<TabHeaderManager>(
                             builder: (context, header, _) {
                               if (header.actions != null &&
@@ -177,8 +176,13 @@ class _MainInterfaceState extends State<MainInterface> {
                                       },
                                       tooltip: 'Options',
                                       style: IconButton.styleFrom(
-                                        backgroundColor: Colors.white
-                                            .withValues(alpha: 0.05),
+                                        backgroundColor: theme.isDarkMode
+                                            ? Colors.white.withValues(
+                                                alpha: 0.05,
+                                              )
+                                            : Colors.black.withValues(
+                                                alpha: 0.05,
+                                              ),
                                       ),
                                     );
                                   },
@@ -215,12 +219,18 @@ class _MainInterfaceState extends State<MainInterface> {
                           Padding(
                             padding: const EdgeInsets.only(right: 12, top: 12),
                             child: IconButton(
-                              icon: const Icon(Icons.close_rounded, size: 20),
+                              icon: const Icon(
+                                Icons.close_rounded,
+                                size: 20,
+                                color: Colors.redAccent,
+                              ),
                               onPressed: controller.close,
                               style: IconButton.styleFrom(
-                                backgroundColor: Colors.white.withValues(
-                                  alpha: 0.05,
-                                ),
+                                backgroundColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05),
                                 hoverColor: Colors.red.withValues(alpha: 0.1),
                               ),
                             ),

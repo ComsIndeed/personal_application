@@ -207,6 +207,9 @@ class _SettingsTabState extends State<SettingsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
     return ListView(
       padding: const EdgeInsets.all(20),
       physics: const BouncingScrollPhysics(),
@@ -218,17 +221,22 @@ class _SettingsTabState extends State<SettingsTab> {
         const SizedBox(height: 16),
         Card(
           elevation: 0,
-          color: const Color(0xFF0B1120),
+          color: isDark ? const Color(0xFF0B1120) : theme.cardColor,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Color(0xFF334155)),
+            side: BorderSide(
+              color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: _user != null ? _buildUserPanel() : _buildAuthForm(),
           ),
         ),
-        const Divider(height: 48, color: Color(0xFF334155)),
+        Divider(
+          height: 48,
+          color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+        ),
         const Text(
           'AI Providers',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -257,7 +265,10 @@ class _SettingsTabState extends State<SettingsTab> {
           value: AppPrefs().groqApiKey,
           onChanged: (v) => _onApiKeyChanged(LLMProvider.groq, v),
         ),
-        const Divider(height: 48, color: Color(0xFF334155)),
+        Divider(
+          height: 48,
+          color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+        ),
         const Text(
           'App Settings',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
@@ -351,12 +362,14 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Widget _buildUserPanel() {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Column(
       children: [
-        const Icon(
+        Icon(
           Icons.account_circle_outlined,
           size: 48,
-          color: Colors.white24,
+          color: isDark ? Colors.white24 : Colors.black26,
         ),
         const SizedBox(height: 12),
         Text(
@@ -364,9 +377,12 @@ class _SettingsTabState extends State<SettingsTab> {
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
         ),
         const SizedBox(height: 4),
-        const Text(
+        Text(
           'Successfully authenticated via Supabase',
-          style: TextStyle(fontSize: 12, color: Colors.white38),
+          style: TextStyle(
+            fontSize: 12,
+            color: isDark ? Colors.white38 : Colors.black38,
+          ),
         ),
         const SizedBox(height: 24),
         SizedBox(
@@ -389,6 +405,8 @@ class _SettingsTabState extends State<SettingsTab> {
     required String value,
     required ValueChanged<String> onChanged,
   }) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final models = _models[provider] ?? [];
     final isLoading = _isLoading[provider] ?? false;
     final isSaving = _isSaving[provider] ?? false;
@@ -396,10 +414,12 @@ class _SettingsTabState extends State<SettingsTab> {
 
     return Card(
       elevation: 0,
-      color: const Color(0xFF0B1120),
+      color: isDark ? const Color(0xFF0B1120) : theme.cardColor,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: Color(0xFF334155)),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF334155) : theme.dividerColor,
+        ),
       ),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -411,7 +431,10 @@ class _SettingsTabState extends State<SettingsTab> {
               children: [
                 Text(
                   label,
-                  style: const TextStyle(fontSize: 12, color: Colors.white70),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white70 : Colors.black87,
+                  ),
                 ),
                 if (isSaving || isLoading)
                   Row(
@@ -419,18 +442,20 @@ class _SettingsTabState extends State<SettingsTab> {
                     children: [
                       Text(
                         isSaving ? 'Saving...' : 'Verifying...',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
-                          color: Colors.white38,
+                          color: isDark ? Colors.white38 : Colors.black38,
                         ),
                       ),
                       const SizedBox(width: 8),
-                      const SizedBox(
+                      SizedBox(
                         width: 10,
                         height: 10,
                         child: CircularProgressIndicator(
                           strokeWidth: 1.5,
-                          valueColor: AlwaysStoppedAnimation(Colors.white54),
+                          valueColor: AlwaysStoppedAnimation(
+                            isDark ? Colors.white54 : theme.colorScheme.primary,
+                          ),
                         ),
                       ),
                     ],
@@ -476,7 +501,10 @@ class _SettingsTabState extends State<SettingsTab> {
                 padding: const EdgeInsets.only(bottom: 4),
                 child: Text(
                   'Connected: ${models.take(5).join(", ")}${models.length > 5 ? "..." : ""}',
-                  style: const TextStyle(fontSize: 10, color: Colors.white38),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isDark ? Colors.white38 : Colors.black45,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
