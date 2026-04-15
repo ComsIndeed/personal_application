@@ -28,7 +28,7 @@ class BrainDumpInput extends StatelessWidget {
               ),
               child: IntrinsicHeight(
                 child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     IconButton(
                       icon: const Icon(Icons.add_rounded, size: 22),
@@ -38,7 +38,7 @@ class BrainDumpInput extends StatelessWidget {
                     ),
                     Expanded(
                       child: TextField(
-                        maxLines: 5,
+                        maxLines: 2,
                         minLines: 1,
                         style: const TextStyle(fontSize: 14),
                         decoration: InputDecoration(
@@ -51,7 +51,10 @@ class BrainDumpInput extends StatelessWidget {
                             vertical: 12,
                             horizontal: 4,
                           ),
+                          filled: false,
                           border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
                         ),
                       ),
                     ),
