@@ -8,6 +8,7 @@ import 'tabs/todo_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
 import 'tabs/notes_tab.dart';
+import 'tabs/brain_dump/brain_dump_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 
 class TabIntent extends Intent {
@@ -48,7 +49,7 @@ class _MainInterfaceState extends State<MainInterface> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 5,
+      length: 6,
       child: InterfaceContainer(
         isVisible: widget.isVisible,
         outerBuilder: (context, controller, container) {
@@ -81,6 +82,8 @@ class _MainInterfaceState extends State<MainInterface> {
                     const TabIntent(3),
                 const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
                     const TabIntent(4),
+                const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
+                    const TabIntent(5),
                 const SingleActivator(LogicalKeyboardKey.escape):
                     const HideIntent(),
               },
@@ -109,7 +112,8 @@ class _MainInterfaceState extends State<MainInterface> {
                             listenable: tabController,
                             builder: (context, _) {
                               final titles = [
-                                'Application',
+                                'Assistant',
+                                'Brain Dump',
                                 'Sprints',
                                 'Notes',
                                 'Dashboard',
@@ -177,6 +181,7 @@ class _MainInterfaceState extends State<MainInterface> {
                       child: VerticalTabBarView(
                         children: [
                           ChatTab(),
+                          BrainDumpTab(),
                           TodoTab(),
                           NotesTab(),
                           DashboardTab(),
