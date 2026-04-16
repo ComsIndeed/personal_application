@@ -4,7 +4,7 @@ import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:provider/provider.dart';
 import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
-import 'tabs/chat_tab.dart';
+import 'tabs/assistant_chat/chat_tab.dart';
 import 'tabs/todo_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';

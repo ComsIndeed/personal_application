@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_chat_core/flutter_chat_core.dart' as chat_core;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flyer_chat_text_message/flyer_chat_text_message.dart';
-import 'package:personal_application/core/services/assistant_chat_cubit.dart';
+import 'package:personal_application/interfaces/tabs/assistant_chat/assistant_chat_cubit.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/models/message/message_part.dart';
 import 'package:flyer_chat_text_stream_message/flyer_chat_text_stream_message.dart'

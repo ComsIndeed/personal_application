@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
-import 'package:personal_application/core/services/assistant_chat_cubit.dart';
+import 'package:personal_application/interfaces/tabs/assistant_chat/assistant_chat_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
