@@ -26,7 +26,7 @@ class AppDatabase extends _$AppDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'app.db'));
+    final file = File(p.join(dbFolder.path, 'app_v2.db'));
 
     if (Platform.isAndroid) {
       // await applyWorkaroundToOpenSqlite3OnOldAndroidDevices();

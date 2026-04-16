@@ -691,24 +691,79 @@ class $AssetItemsTable extends AssetItems
     requiredDuringInsert: false,
     clientDefault: () => const Uuid().v4(),
   );
-  static const VerificationMeta _dataMeta = const VerificationMeta('data');
-  @override
-  late final GeneratedColumn<Uint8List> data = GeneratedColumn<Uint8List>(
-    'data',
-    aliasedName,
-    false,
-    type: DriftSqlType.blob,
-    requiredDuringInsert: true,
+  static const VerificationMeta _b2FileIdMeta = const VerificationMeta(
+    'b2FileId',
   );
   @override
-  late final GeneratedColumnWithTypeConverter<MediaType, String> mediaType =
-      GeneratedColumn<String>(
-        'media_type',
-        aliasedName,
-        false,
-        type: DriftSqlType.string,
-        requiredDuringInsert: true,
-      ).withConverter<MediaType>($AssetItemsTable.$convertermediaType);
+  late final GeneratedColumn<String> b2FileId = GeneratedColumn<String>(
+    'b2_file_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _b2FileNameMeta = const VerificationMeta(
+    'b2FileName',
+  );
+  @override
+  late final GeneratedColumn<String> b2FileName = GeneratedColumn<String>(
+    'b2_file_name',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _b2UpdatedAtMeta = const VerificationMeta(
+    'b2UpdatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> b2UpdatedAt = GeneratedColumn<DateTime>(
+    'b2_updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _displayNameMeta = const VerificationMeta(
+    'displayName',
+  );
+  @override
+  late final GeneratedColumn<String> displayName = GeneratedColumn<String>(
+    'display_name',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _groupMeta = const VerificationMeta('group');
+  @override
+  late final GeneratedColumn<String> group = GeneratedColumn<String>(
+    'group',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _mimeTypeMeta = const VerificationMeta(
+    'mimeType',
+  );
+  @override
+  late final GeneratedColumn<String> mimeType = GeneratedColumn<String>(
+    'mime_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sizeMeta = const VerificationMeta('size');
+  @override
+  late final GeneratedColumn<int> size = GeneratedColumn<int>(
+    'size',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
   static const VerificationMeta _createdAtMeta = const VerificationMeta(
     'createdAt',
   );
@@ -721,8 +776,43 @@ class $AssetItemsTable extends AssetItems
     requiredDuringInsert: false,
     defaultValue: currentDateAndTime,
   );
+  static const VerificationMeta _cachedBytesMeta = const VerificationMeta(
+    'cachedBytes',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, data, mediaType, createdAt];
+  late final GeneratedColumn<Uint8List> cachedBytes =
+      GeneratedColumn<Uint8List>(
+        'cached_bytes',
+        aliasedName,
+        true,
+        type: DriftSqlType.blob,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cachedAtMeta = const VerificationMeta(
+    'cachedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> cachedAt = GeneratedColumn<DateTime>(
+    'cached_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    b2FileId,
+    b2FileName,
+    b2UpdatedAt,
+    displayName,
+    group,
+    mimeType,
+    size,
+    createdAt,
+    cachedBytes,
+    cachedAt,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -738,18 +828,86 @@ class $AssetItemsTable extends AssetItems
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('data')) {
+    if (data.containsKey('b2_file_id')) {
       context.handle(
-        _dataMeta,
-        this.data.isAcceptableOrUnknown(data['data']!, _dataMeta),
+        _b2FileIdMeta,
+        b2FileId.isAcceptableOrUnknown(data['b2_file_id']!, _b2FileIdMeta),
       );
     } else if (isInserting) {
-      context.missing(_dataMeta);
+      context.missing(_b2FileIdMeta);
+    }
+    if (data.containsKey('b2_file_name')) {
+      context.handle(
+        _b2FileNameMeta,
+        b2FileName.isAcceptableOrUnknown(
+          data['b2_file_name']!,
+          _b2FileNameMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_b2FileNameMeta);
+    }
+    if (data.containsKey('b2_updated_at')) {
+      context.handle(
+        _b2UpdatedAtMeta,
+        b2UpdatedAt.isAcceptableOrUnknown(
+          data['b2_updated_at']!,
+          _b2UpdatedAtMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_b2UpdatedAtMeta);
+    }
+    if (data.containsKey('display_name')) {
+      context.handle(
+        _displayNameMeta,
+        displayName.isAcceptableOrUnknown(
+          data['display_name']!,
+          _displayNameMeta,
+        ),
+      );
+    }
+    if (data.containsKey('group')) {
+      context.handle(
+        _groupMeta,
+        group.isAcceptableOrUnknown(data['group']!, _groupMeta),
+      );
+    }
+    if (data.containsKey('mime_type')) {
+      context.handle(
+        _mimeTypeMeta,
+        mimeType.isAcceptableOrUnknown(data['mime_type']!, _mimeTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_mimeTypeMeta);
+    }
+    if (data.containsKey('size')) {
+      context.handle(
+        _sizeMeta,
+        size.isAcceptableOrUnknown(data['size']!, _sizeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sizeMeta);
     }
     if (data.containsKey('created_at')) {
       context.handle(
         _createdAtMeta,
         createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('cached_bytes')) {
+      context.handle(
+        _cachedBytesMeta,
+        cachedBytes.isAcceptableOrUnknown(
+          data['cached_bytes']!,
+          _cachedBytesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cached_at')) {
+      context.handle(
+        _cachedAtMeta,
+        cachedAt.isAcceptableOrUnknown(data['cached_at']!, _cachedAtMeta),
       );
     }
     return context;
@@ -765,20 +923,46 @@ class $AssetItemsTable extends AssetItems
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
-      data: attachedDatabase.typeMapping.read(
-        DriftSqlType.blob,
-        data['${effectivePrefix}data'],
+      b2FileId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}b2_file_id'],
       )!,
-      mediaType: $AssetItemsTable.$convertermediaType.fromSql(
-        attachedDatabase.typeMapping.read(
-          DriftSqlType.string,
-          data['${effectivePrefix}media_type'],
-        )!,
+      b2FileName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}b2_file_name'],
+      )!,
+      b2UpdatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}b2_updated_at'],
+      )!,
+      displayName: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}display_name'],
       ),
+      group: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group'],
+      ),
+      mimeType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mime_type'],
+      )!,
+      size: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}size'],
+      )!,
       createdAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}created_at'],
       )!,
+      cachedBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.blob,
+        data['${effectivePrefix}cached_bytes'],
+      ),
+      cachedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}cached_at'],
+      ),
     );
   }
 
@@ -786,42 +970,100 @@ class $AssetItemsTable extends AssetItems
   $AssetItemsTable createAlias(String alias) {
     return $AssetItemsTable(attachedDatabase, alias);
   }
-
-  static JsonTypeConverter2<MediaType, String, String> $convertermediaType =
-      const EnumNameConverter<MediaType>(MediaType.values);
 }
 
 class AssetItem extends DataClass implements Insertable<AssetItem> {
+  /// Local UUID — use this as the stable reference everywhere in the app.
   final String id;
-  final Uint8List data;
-  final MediaType mediaType;
+
+  /// B2's own file ID — required for delete-by-version calls.
+  final String b2FileId;
+
+  /// Key in the bucket, e.g. `<uuid>/<original_name.ext>`.
+  final String b2FileName;
+
+  /// B2 upload timestamp — source of truth for cache freshness.
+  final DateTime b2UpdatedAt;
+
+  /// Optional human-readable label. Null = use original filename.
+  final String? displayName;
+
+  /// Optional grouping tag, e.g. "brain_dump", "avatars".
+  final String? group;
+
+  /// MIME type, e.g. "image/png".
+  final String mimeType;
+
+  /// File size in bytes.
+  final int size;
+
+  /// When this record was first inserted locally.
   final DateTime createdAt;
+
+  /// Locally cached file bytes. Null = not yet downloaded / cache cleared.
+  final Uint8List? cachedBytes;
+
+  /// When [cachedBytes] was last written. Null if never cached.
+  final DateTime? cachedAt;
   const AssetItem({
     required this.id,
-    required this.data,
-    required this.mediaType,
+    required this.b2FileId,
+    required this.b2FileName,
+    required this.b2UpdatedAt,
+    this.displayName,
+    this.group,
+    required this.mimeType,
+    required this.size,
     required this.createdAt,
+    this.cachedBytes,
+    this.cachedAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<String>(id);
-    map['data'] = Variable<Uint8List>(data);
-    {
-      map['media_type'] = Variable<String>(
-        $AssetItemsTable.$convertermediaType.toSql(mediaType),
-      );
+    map['b2_file_id'] = Variable<String>(b2FileId);
+    map['b2_file_name'] = Variable<String>(b2FileName);
+    map['b2_updated_at'] = Variable<DateTime>(b2UpdatedAt);
+    if (!nullToAbsent || displayName != null) {
+      map['display_name'] = Variable<String>(displayName);
     }
+    if (!nullToAbsent || group != null) {
+      map['group'] = Variable<String>(group);
+    }
+    map['mime_type'] = Variable<String>(mimeType);
+    map['size'] = Variable<int>(size);
     map['created_at'] = Variable<DateTime>(createdAt);
+    if (!nullToAbsent || cachedBytes != null) {
+      map['cached_bytes'] = Variable<Uint8List>(cachedBytes);
+    }
+    if (!nullToAbsent || cachedAt != null) {
+      map['cached_at'] = Variable<DateTime>(cachedAt);
+    }
     return map;
   }
 
   AssetItemsCompanion toCompanion(bool nullToAbsent) {
     return AssetItemsCompanion(
       id: Value(id),
-      data: Value(data),
-      mediaType: Value(mediaType),
+      b2FileId: Value(b2FileId),
+      b2FileName: Value(b2FileName),
+      b2UpdatedAt: Value(b2UpdatedAt),
+      displayName: displayName == null && nullToAbsent
+          ? const Value.absent()
+          : Value(displayName),
+      group: group == null && nullToAbsent
+          ? const Value.absent()
+          : Value(group),
+      mimeType: Value(mimeType),
+      size: Value(size),
       createdAt: Value(createdAt),
+      cachedBytes: cachedBytes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedBytes),
+      cachedAt: cachedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedAt),
     );
   }
 
@@ -832,11 +1074,16 @@ class AssetItem extends DataClass implements Insertable<AssetItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return AssetItem(
       id: serializer.fromJson<String>(json['id']),
-      data: serializer.fromJson<Uint8List>(json['data']),
-      mediaType: $AssetItemsTable.$convertermediaType.fromJson(
-        serializer.fromJson<String>(json['mediaType']),
-      ),
+      b2FileId: serializer.fromJson<String>(json['b2FileId']),
+      b2FileName: serializer.fromJson<String>(json['b2FileName']),
+      b2UpdatedAt: serializer.fromJson<DateTime>(json['b2UpdatedAt']),
+      displayName: serializer.fromJson<String?>(json['displayName']),
+      group: serializer.fromJson<String?>(json['group']),
+      mimeType: serializer.fromJson<String>(json['mimeType']),
+      size: serializer.fromJson<int>(json['size']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      cachedBytes: serializer.fromJson<Uint8List?>(json['cachedBytes']),
+      cachedAt: serializer.fromJson<DateTime?>(json['cachedAt']),
     );
   }
   @override
@@ -844,31 +1091,65 @@ class AssetItem extends DataClass implements Insertable<AssetItem> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<String>(id),
-      'data': serializer.toJson<Uint8List>(data),
-      'mediaType': serializer.toJson<String>(
-        $AssetItemsTable.$convertermediaType.toJson(mediaType),
-      ),
+      'b2FileId': serializer.toJson<String>(b2FileId),
+      'b2FileName': serializer.toJson<String>(b2FileName),
+      'b2UpdatedAt': serializer.toJson<DateTime>(b2UpdatedAt),
+      'displayName': serializer.toJson<String?>(displayName),
+      'group': serializer.toJson<String?>(group),
+      'mimeType': serializer.toJson<String>(mimeType),
+      'size': serializer.toJson<int>(size),
       'createdAt': serializer.toJson<DateTime>(createdAt),
+      'cachedBytes': serializer.toJson<Uint8List?>(cachedBytes),
+      'cachedAt': serializer.toJson<DateTime?>(cachedAt),
     };
   }
 
   AssetItem copyWith({
     String? id,
-    Uint8List? data,
-    MediaType? mediaType,
+    String? b2FileId,
+    String? b2FileName,
+    DateTime? b2UpdatedAt,
+    Value<String?> displayName = const Value.absent(),
+    Value<String?> group = const Value.absent(),
+    String? mimeType,
+    int? size,
     DateTime? createdAt,
+    Value<Uint8List?> cachedBytes = const Value.absent(),
+    Value<DateTime?> cachedAt = const Value.absent(),
   }) => AssetItem(
     id: id ?? this.id,
-    data: data ?? this.data,
-    mediaType: mediaType ?? this.mediaType,
+    b2FileId: b2FileId ?? this.b2FileId,
+    b2FileName: b2FileName ?? this.b2FileName,
+    b2UpdatedAt: b2UpdatedAt ?? this.b2UpdatedAt,
+    displayName: displayName.present ? displayName.value : this.displayName,
+    group: group.present ? group.value : this.group,
+    mimeType: mimeType ?? this.mimeType,
+    size: size ?? this.size,
     createdAt: createdAt ?? this.createdAt,
+    cachedBytes: cachedBytes.present ? cachedBytes.value : this.cachedBytes,
+    cachedAt: cachedAt.present ? cachedAt.value : this.cachedAt,
   );
   AssetItem copyWithCompanion(AssetItemsCompanion data) {
     return AssetItem(
       id: data.id.present ? data.id.value : this.id,
-      data: data.data.present ? data.data.value : this.data,
-      mediaType: data.mediaType.present ? data.mediaType.value : this.mediaType,
+      b2FileId: data.b2FileId.present ? data.b2FileId.value : this.b2FileId,
+      b2FileName: data.b2FileName.present
+          ? data.b2FileName.value
+          : this.b2FileName,
+      b2UpdatedAt: data.b2UpdatedAt.present
+          ? data.b2UpdatedAt.value
+          : this.b2UpdatedAt,
+      displayName: data.displayName.present
+          ? data.displayName.value
+          : this.displayName,
+      group: data.group.present ? data.group.value : this.group,
+      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
+      size: data.size.present ? data.size.value : this.size,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      cachedBytes: data.cachedBytes.present
+          ? data.cachedBytes.value
+          : this.cachedBytes,
+      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
     );
   }
 
@@ -876,75 +1157,152 @@ class AssetItem extends DataClass implements Insertable<AssetItem> {
   String toString() {
     return (StringBuffer('AssetItem(')
           ..write('id: $id, ')
-          ..write('data: $data, ')
-          ..write('mediaType: $mediaType, ')
-          ..write('createdAt: $createdAt')
+          ..write('b2FileId: $b2FileId, ')
+          ..write('b2FileName: $b2FileName, ')
+          ..write('b2UpdatedAt: $b2UpdatedAt, ')
+          ..write('displayName: $displayName, ')
+          ..write('group: $group, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('size: $size, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('cachedBytes: $cachedBytes, ')
+          ..write('cachedAt: $cachedAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, $driftBlobEquality.hash(data), mediaType, createdAt);
+  int get hashCode => Object.hash(
+    id,
+    b2FileId,
+    b2FileName,
+    b2UpdatedAt,
+    displayName,
+    group,
+    mimeType,
+    size,
+    createdAt,
+    $driftBlobEquality.hash(cachedBytes),
+    cachedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is AssetItem &&
           other.id == this.id &&
-          $driftBlobEquality.equals(other.data, this.data) &&
-          other.mediaType == this.mediaType &&
-          other.createdAt == this.createdAt);
+          other.b2FileId == this.b2FileId &&
+          other.b2FileName == this.b2FileName &&
+          other.b2UpdatedAt == this.b2UpdatedAt &&
+          other.displayName == this.displayName &&
+          other.group == this.group &&
+          other.mimeType == this.mimeType &&
+          other.size == this.size &&
+          other.createdAt == this.createdAt &&
+          $driftBlobEquality.equals(other.cachedBytes, this.cachedBytes) &&
+          other.cachedAt == this.cachedAt);
 }
 
 class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   final Value<String> id;
-  final Value<Uint8List> data;
-  final Value<MediaType> mediaType;
+  final Value<String> b2FileId;
+  final Value<String> b2FileName;
+  final Value<DateTime> b2UpdatedAt;
+  final Value<String?> displayName;
+  final Value<String?> group;
+  final Value<String> mimeType;
+  final Value<int> size;
   final Value<DateTime> createdAt;
+  final Value<Uint8List?> cachedBytes;
+  final Value<DateTime?> cachedAt;
   final Value<int> rowid;
   const AssetItemsCompanion({
     this.id = const Value.absent(),
-    this.data = const Value.absent(),
-    this.mediaType = const Value.absent(),
+    this.b2FileId = const Value.absent(),
+    this.b2FileName = const Value.absent(),
+    this.b2UpdatedAt = const Value.absent(),
+    this.displayName = const Value.absent(),
+    this.group = const Value.absent(),
+    this.mimeType = const Value.absent(),
+    this.size = const Value.absent(),
     this.createdAt = const Value.absent(),
+    this.cachedBytes = const Value.absent(),
+    this.cachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AssetItemsCompanion.insert({
     this.id = const Value.absent(),
-    required Uint8List data,
-    required MediaType mediaType,
+    required String b2FileId,
+    required String b2FileName,
+    required DateTime b2UpdatedAt,
+    this.displayName = const Value.absent(),
+    this.group = const Value.absent(),
+    required String mimeType,
+    required int size,
     this.createdAt = const Value.absent(),
+    this.cachedBytes = const Value.absent(),
+    this.cachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : data = Value(data),
-       mediaType = Value(mediaType);
+  }) : b2FileId = Value(b2FileId),
+       b2FileName = Value(b2FileName),
+       b2UpdatedAt = Value(b2UpdatedAt),
+       mimeType = Value(mimeType),
+       size = Value(size);
   static Insertable<AssetItem> custom({
     Expression<String>? id,
-    Expression<Uint8List>? data,
-    Expression<String>? mediaType,
+    Expression<String>? b2FileId,
+    Expression<String>? b2FileName,
+    Expression<DateTime>? b2UpdatedAt,
+    Expression<String>? displayName,
+    Expression<String>? group,
+    Expression<String>? mimeType,
+    Expression<int>? size,
     Expression<DateTime>? createdAt,
+    Expression<Uint8List>? cachedBytes,
+    Expression<DateTime>? cachedAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (data != null) 'data': data,
-      if (mediaType != null) 'media_type': mediaType,
+      if (b2FileId != null) 'b2_file_id': b2FileId,
+      if (b2FileName != null) 'b2_file_name': b2FileName,
+      if (b2UpdatedAt != null) 'b2_updated_at': b2UpdatedAt,
+      if (displayName != null) 'display_name': displayName,
+      if (group != null) 'group': group,
+      if (mimeType != null) 'mime_type': mimeType,
+      if (size != null) 'size': size,
       if (createdAt != null) 'created_at': createdAt,
+      if (cachedBytes != null) 'cached_bytes': cachedBytes,
+      if (cachedAt != null) 'cached_at': cachedAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
 
   AssetItemsCompanion copyWith({
     Value<String>? id,
-    Value<Uint8List>? data,
-    Value<MediaType>? mediaType,
+    Value<String>? b2FileId,
+    Value<String>? b2FileName,
+    Value<DateTime>? b2UpdatedAt,
+    Value<String?>? displayName,
+    Value<String?>? group,
+    Value<String>? mimeType,
+    Value<int>? size,
     Value<DateTime>? createdAt,
+    Value<Uint8List?>? cachedBytes,
+    Value<DateTime?>? cachedAt,
     Value<int>? rowid,
   }) {
     return AssetItemsCompanion(
       id: id ?? this.id,
-      data: data ?? this.data,
-      mediaType: mediaType ?? this.mediaType,
+      b2FileId: b2FileId ?? this.b2FileId,
+      b2FileName: b2FileName ?? this.b2FileName,
+      b2UpdatedAt: b2UpdatedAt ?? this.b2UpdatedAt,
+      displayName: displayName ?? this.displayName,
+      group: group ?? this.group,
+      mimeType: mimeType ?? this.mimeType,
+      size: size ?? this.size,
       createdAt: createdAt ?? this.createdAt,
+      cachedBytes: cachedBytes ?? this.cachedBytes,
+      cachedAt: cachedAt ?? this.cachedAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -955,16 +1313,35 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
     if (id.present) {
       map['id'] = Variable<String>(id.value);
     }
-    if (data.present) {
-      map['data'] = Variable<Uint8List>(data.value);
+    if (b2FileId.present) {
+      map['b2_file_id'] = Variable<String>(b2FileId.value);
     }
-    if (mediaType.present) {
-      map['media_type'] = Variable<String>(
-        $AssetItemsTable.$convertermediaType.toSql(mediaType.value),
-      );
+    if (b2FileName.present) {
+      map['b2_file_name'] = Variable<String>(b2FileName.value);
+    }
+    if (b2UpdatedAt.present) {
+      map['b2_updated_at'] = Variable<DateTime>(b2UpdatedAt.value);
+    }
+    if (displayName.present) {
+      map['display_name'] = Variable<String>(displayName.value);
+    }
+    if (group.present) {
+      map['group'] = Variable<String>(group.value);
+    }
+    if (mimeType.present) {
+      map['mime_type'] = Variable<String>(mimeType.value);
+    }
+    if (size.present) {
+      map['size'] = Variable<int>(size.value);
     }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (cachedBytes.present) {
+      map['cached_bytes'] = Variable<Uint8List>(cachedBytes.value);
+    }
+    if (cachedAt.present) {
+      map['cached_at'] = Variable<DateTime>(cachedAt.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -976,9 +1353,16 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   String toString() {
     return (StringBuffer('AssetItemsCompanion(')
           ..write('id: $id, ')
-          ..write('data: $data, ')
-          ..write('mediaType: $mediaType, ')
+          ..write('b2FileId: $b2FileId, ')
+          ..write('b2FileName: $b2FileName, ')
+          ..write('b2UpdatedAt: $b2UpdatedAt, ')
+          ..write('displayName: $displayName, ')
+          ..write('group: $group, ')
+          ..write('mimeType: $mimeType, ')
+          ..write('size: $size, ')
           ..write('createdAt: $createdAt, ')
+          ..write('cachedBytes: $cachedBytes, ')
+          ..write('cachedAt: $cachedAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1618,17 +2002,31 @@ typedef $$MessagesTableProcessedTableManager =
 typedef $$AssetItemsTableCreateCompanionBuilder =
     AssetItemsCompanion Function({
       Value<String> id,
-      required Uint8List data,
-      required MediaType mediaType,
+      required String b2FileId,
+      required String b2FileName,
+      required DateTime b2UpdatedAt,
+      Value<String?> displayName,
+      Value<String?> group,
+      required String mimeType,
+      required int size,
       Value<DateTime> createdAt,
+      Value<Uint8List?> cachedBytes,
+      Value<DateTime?> cachedAt,
       Value<int> rowid,
     });
 typedef $$AssetItemsTableUpdateCompanionBuilder =
     AssetItemsCompanion Function({
       Value<String> id,
-      Value<Uint8List> data,
-      Value<MediaType> mediaType,
+      Value<String> b2FileId,
+      Value<String> b2FileName,
+      Value<DateTime> b2UpdatedAt,
+      Value<String?> displayName,
+      Value<String?> group,
+      Value<String> mimeType,
+      Value<int> size,
       Value<DateTime> createdAt,
+      Value<Uint8List?> cachedBytes,
+      Value<DateTime?> cachedAt,
       Value<int> rowid,
     });
 
@@ -1646,19 +2044,53 @@ class $$AssetItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<Uint8List> get data => $composableBuilder(
-    column: $table.data,
+  ColumnFilters<String> get b2FileId => $composableBuilder(
+    column: $table.b2FileId,
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<MediaType, MediaType, String> get mediaType =>
-      $composableBuilder(
-        column: $table.mediaType,
-        builder: (column) => ColumnWithTypeConverterFilters(column),
-      );
+  ColumnFilters<String> get b2FileName => $composableBuilder(
+    column: $table.b2FileName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get b2UpdatedAt => $composableBuilder(
+    column: $table.b2UpdatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get group => $composableBuilder(
+    column: $table.group,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get size => $composableBuilder(
+    column: $table.size,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<Uint8List> get cachedBytes => $composableBuilder(
+    column: $table.cachedBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -1677,18 +2109,53 @@ class $$AssetItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<Uint8List> get data => $composableBuilder(
-    column: $table.data,
+  ColumnOrderings<String> get b2FileId => $composableBuilder(
+    column: $table.b2FileId,
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get mediaType => $composableBuilder(
-    column: $table.mediaType,
+  ColumnOrderings<String> get b2FileName => $composableBuilder(
+    column: $table.b2FileName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get b2UpdatedAt => $composableBuilder(
+    column: $table.b2UpdatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get group => $composableBuilder(
+    column: $table.group,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get mimeType => $composableBuilder(
+    column: $table.mimeType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get size => $composableBuilder(
+    column: $table.size,
     builder: (column) => ColumnOrderings(column),
   );
 
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
     column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<Uint8List> get cachedBytes => $composableBuilder(
+    column: $table.cachedBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get cachedAt => $composableBuilder(
+    column: $table.cachedAt,
     builder: (column) => ColumnOrderings(column),
   );
 }
@@ -1705,14 +2172,43 @@ class $$AssetItemsTableAnnotationComposer
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
 
-  GeneratedColumn<Uint8List> get data =>
-      $composableBuilder(column: $table.data, builder: (column) => column);
+  GeneratedColumn<String> get b2FileId =>
+      $composableBuilder(column: $table.b2FileId, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<MediaType, String> get mediaType =>
-      $composableBuilder(column: $table.mediaType, builder: (column) => column);
+  GeneratedColumn<String> get b2FileName => $composableBuilder(
+    column: $table.b2FileName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get b2UpdatedAt => $composableBuilder(
+    column: $table.b2UpdatedAt,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get displayName => $composableBuilder(
+    column: $table.displayName,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get group =>
+      $composableBuilder(column: $table.group, builder: (column) => column);
+
+  GeneratedColumn<String> get mimeType =>
+      $composableBuilder(column: $table.mimeType, builder: (column) => column);
+
+  GeneratedColumn<int> get size =>
+      $composableBuilder(column: $table.size, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<Uint8List> get cachedBytes => $composableBuilder(
+    column: $table.cachedBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get cachedAt =>
+      $composableBuilder(column: $table.cachedAt, builder: (column) => column);
 }
 
 class $$AssetItemsTableTableManager
@@ -1747,29 +2243,57 @@ class $$AssetItemsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<Uint8List> data = const Value.absent(),
-                Value<MediaType> mediaType = const Value.absent(),
+                Value<String> b2FileId = const Value.absent(),
+                Value<String> b2FileName = const Value.absent(),
+                Value<DateTime> b2UpdatedAt = const Value.absent(),
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> group = const Value.absent(),
+                Value<String> mimeType = const Value.absent(),
+                Value<int> size = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<Uint8List?> cachedBytes = const Value.absent(),
+                Value<DateTime?> cachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AssetItemsCompanion(
                 id: id,
-                data: data,
-                mediaType: mediaType,
+                b2FileId: b2FileId,
+                b2FileName: b2FileName,
+                b2UpdatedAt: b2UpdatedAt,
+                displayName: displayName,
+                group: group,
+                mimeType: mimeType,
+                size: size,
                 createdAt: createdAt,
+                cachedBytes: cachedBytes,
+                cachedAt: cachedAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                required Uint8List data,
-                required MediaType mediaType,
+                required String b2FileId,
+                required String b2FileName,
+                required DateTime b2UpdatedAt,
+                Value<String?> displayName = const Value.absent(),
+                Value<String?> group = const Value.absent(),
+                required String mimeType,
+                required int size,
                 Value<DateTime> createdAt = const Value.absent(),
+                Value<Uint8List?> cachedBytes = const Value.absent(),
+                Value<DateTime?> cachedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AssetItemsCompanion.insert(
                 id: id,
-                data: data,
-                mediaType: mediaType,
+                b2FileId: b2FileId,
+                b2FileName: b2FileName,
+                b2UpdatedAt: b2UpdatedAt,
+                displayName: displayName,
+                group: group,
+                mimeType: mimeType,
+                size: size,
                 createdAt: createdAt,
+                cachedBytes: cachedBytes,
+                cachedAt: cachedAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

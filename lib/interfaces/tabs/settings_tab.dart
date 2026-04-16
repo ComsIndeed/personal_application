@@ -166,6 +166,64 @@ class _SettingsTabState extends State<SettingsTab> {
         _buildSectionHeader('Storage (Backblaze B2)'),
         const _B2CredentialsTile(),
 
+        const SizedBox(height: 20),
+        _buildSectionHeader('Data & Storage'),
+        _buildSectionContainer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.table_chart_outlined,
+                    size: 16,
+                    color: Colors.white24,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Database Browser',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.white10),
+                    ),
+                    child: const Text(
+                      'COMING SOON',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.2,
+                        color: Colors.white24,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Browse all local tables, inspect rows, follow foreign keys, and manage cloud files — all in one place.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.white30,
+                  height: 1.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+
         if (_user != null) ...[
           const SizedBox(height: 32),
           Center(
