@@ -16,6 +16,7 @@ import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 import '../core/services/tab_header_manager.dart';
 import '../core/services/sync_service.dart';
+import '../core/database/app_database.dart';
 
 class TabIntent extends Intent {
   final int index;
@@ -49,7 +50,7 @@ class _MainInterfaceState extends State<MainInterface> {
       final Session? session = data.session;
 
       if (event == AuthChangeEvent.signedIn || session != null) {
-        SyncService().start();
+        SyncService().start(context.read<AppDatabase>());
       } else if (event == AuthChangeEvent.signedOut) {
         SyncService().stop();
       }
@@ -57,7 +58,7 @@ class _MainInterfaceState extends State<MainInterface> {
 
     // Check initial state
     if (Supabase.instance.client.auth.currentSession != null) {
-      SyncService().start();
+      SyncService().start(context.read<AppDatabase>());
     }
   }
 

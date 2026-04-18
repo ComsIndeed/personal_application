@@ -346,12 +346,12 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     ),
   );
   @override
-  late final GeneratedColumnWithTypeConverter<MessageRole, int> role =
-      GeneratedColumn<int>(
+  late final GeneratedColumnWithTypeConverter<MessageRole, String> role =
+      GeneratedColumn<String>(
         'role',
         aliasedName,
         false,
-        type: DriftSqlType.int,
+        type: DriftSqlType.string,
         requiredDuringInsert: true,
       ).withConverter<MessageRole>($MessagesTable.$converterrole);
   @override
@@ -467,7 +467,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
       )!,
       role: $MessagesTable.$converterrole.fromSql(
         attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
+          DriftSqlType.string,
           data['${effectivePrefix}role'],
         )!,
       ),
@@ -489,8 +489,8 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     return $MessagesTable(attachedDatabase, alias);
   }
 
-  static JsonTypeConverter2<MessageRole, int, int> $converterrole =
-      const EnumIndexConverter<MessageRole>(MessageRole.values);
+  static JsonTypeConverter2<MessageRole, String, String> $converterrole =
+      const EnumNameConverter<MessageRole>(MessageRole.values);
   static TypeConverter<List<MessagePart>, String> $converterparts =
       const MessagePartsConverter();
 }
@@ -535,7 +535,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     Expression<DateTime>? updatedAt,
     Expression<bool>? deleted,
     Expression<String>? conversationId,
-    Expression<int>? role,
+    Expression<String>? role,
     Expression<String>? parts,
     Expression<DateTime>? createdAt,
     Expression<int>? rowid,
@@ -596,7 +596,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
       map['conversation_id'] = Variable<String>(conversationId.value);
     }
     if (role.present) {
-      map['role'] = Variable<int>(
+      map['role'] = Variable<String>(
         $MessagesTable.$converterrole.toSql(role.value),
       );
     }
@@ -665,7 +665,8 @@ class $AssetItemsTable extends AssetItems
     aliasedName,
     false,
     type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
   );
   static const VerificationMeta _deletedMeta = const VerificationMeta(
     'deleted',
@@ -833,8 +834,6 @@ class $AssetItemsTable extends AssetItems
         _updatedAtMeta,
         updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
       );
-    } else if (isInserting) {
-      context.missing(_updatedAtMeta);
     }
     if (data.containsKey('deleted')) {
       context.handle(
@@ -1028,7 +1027,7 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   AssetItemsCompanion.insert({
     this.id = const Value.absent(),
     this.userId = const Value.absent(),
-    required DateTime updatedAt,
+    this.updatedAt = const Value.absent(),
     this.deleted = const Value.absent(),
     this.b2FileId = const Value.absent(),
     this.b2FileName = const Value.absent(),
@@ -1041,8 +1040,7 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
     this.cachedBytes = const Value.absent(),
     this.cachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : updatedAt = Value(updatedAt),
-       mimeType = Value(mimeType),
+  }) : mimeType = Value(mimeType),
        size = Value(size);
   static Insertable<AssetItem> custom({
     Expression<String>? id,
@@ -1243,12 +1241,12 @@ class $CommonNoteItemsTable extends CommonNoteItems
     defaultValue: const Constant(false),
   );
   @override
-  late final GeneratedColumnWithTypeConverter<NoteCategory, int> category =
-      GeneratedColumn<int>(
+  late final GeneratedColumnWithTypeConverter<NoteCategory, String> category =
+      GeneratedColumn<String>(
         'category',
         aliasedName,
         false,
-        type: DriftSqlType.int,
+        type: DriftSqlType.string,
         requiredDuringInsert: true,
       ).withConverter<NoteCategory>($CommonNoteItemsTable.$convertercategory);
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
@@ -1319,12 +1317,12 @@ class $CommonNoteItemsTable extends CommonNoteItems
     defaultValue: const Constant(false),
   );
   @override
-  late final GeneratedColumnWithTypeConverter<NotePriority?, int> priority =
-      GeneratedColumn<int>(
+  late final GeneratedColumnWithTypeConverter<NotePriority?, String> priority =
+      GeneratedColumn<String>(
         'priority',
         aliasedName,
         true,
-        type: DriftSqlType.int,
+        type: DriftSqlType.string,
         requiredDuringInsert: false,
       ).withConverter<NotePriority?>($CommonNoteItemsTable.$converterpriorityn);
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
@@ -1460,7 +1458,7 @@ class $CommonNoteItemsTable extends CommonNoteItems
       )!,
       category: $CommonNoteItemsTable.$convertercategory.fromSql(
         attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
+          DriftSqlType.string,
           data['${effectivePrefix}category'],
         )!,
       ),
@@ -1494,7 +1492,7 @@ class $CommonNoteItemsTable extends CommonNoteItems
       )!,
       priority: $CommonNoteItemsTable.$converterpriorityn.fromSql(
         attachedDatabase.typeMapping.read(
-          DriftSqlType.int,
+          DriftSqlType.string,
           data['${effectivePrefix}priority'],
         ),
       ),
@@ -1516,16 +1514,16 @@ class $CommonNoteItemsTable extends CommonNoteItems
     return $CommonNoteItemsTable(attachedDatabase, alias);
   }
 
-  static JsonTypeConverter2<NoteCategory, int, int> $convertercategory =
-      const EnumIndexConverter<NoteCategory>(NoteCategory.values);
+  static JsonTypeConverter2<NoteCategory, String, String> $convertercategory =
+      const EnumNameConverter<NoteCategory>(NoteCategory.values);
   static TypeConverter<List<String>, String> $converterassetIds =
       const ListConverter();
   static TypeConverter<List<String>, String> $convertertags =
       const ListConverter();
-  static JsonTypeConverter2<NotePriority, int, int> $converterpriority =
-      const EnumIndexConverter<NotePriority>(NotePriority.values);
-  static JsonTypeConverter2<NotePriority?, int?, int?> $converterpriorityn =
-      JsonTypeConverter2.asNullable($converterpriority);
+  static JsonTypeConverter2<NotePriority, String, String> $converterpriority =
+      const EnumNameConverter<NotePriority>(NotePriority.values);
+  static JsonTypeConverter2<NotePriority?, String?, String?>
+  $converterpriorityn = JsonTypeConverter2.asNullable($converterpriority);
   static TypeConverter<Map<String, dynamic>, String> $convertermetadata =
       const MapConverter();
   static TypeConverter<Map<String, dynamic>?, String?> $convertermetadatan =
@@ -1587,14 +1585,14 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Expression<String>? userId,
     Expression<DateTime>? updatedAt,
     Expression<bool>? deleted,
-    Expression<int>? category,
+    Expression<String>? category,
     Expression<String>? title,
     Expression<String>? textContent,
     Expression<String>? assetIds,
     Expression<String>? tags,
     Expression<DateTime>? createdAt,
     Expression<bool>? isPinned,
-    Expression<int>? priority,
+    Expression<String>? priority,
     Expression<DateTime>? dueDate,
     Expression<String>? metadata,
     Expression<int>? rowid,
@@ -1670,7 +1668,7 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       map['deleted'] = Variable<bool>(deleted.value);
     }
     if (category.present) {
-      map['category'] = Variable<int>(
+      map['category'] = Variable<String>(
         $CommonNoteItemsTable.$convertercategory.toSql(category.value),
       );
     }
@@ -1697,7 +1695,7 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       map['is_pinned'] = Variable<bool>(isPinned.value);
     }
     if (priority.present) {
-      map['priority'] = Variable<int>(
+      map['priority'] = Variable<String>(
         $CommonNoteItemsTable.$converterpriorityn.toSql(priority.value),
       );
     }
@@ -2167,7 +2165,7 @@ class $$MessagesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<MessageRole, MessageRole, int> get role =>
+  ColumnWithTypeConverterFilters<MessageRole, MessageRole, String> get role =>
       $composableBuilder(
         column: $table.role,
         builder: (column) => ColumnWithTypeConverterFilters(column),
@@ -2237,7 +2235,7 @@ class $$MessagesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get role => $composableBuilder(
+  ColumnOrderings<String> get role => $composableBuilder(
     column: $table.role,
     builder: (column) => ColumnOrderings(column),
   );
@@ -2297,7 +2295,7 @@ class $$MessagesTableAnnotationComposer
   GeneratedColumn<bool> get deleted =>
       $composableBuilder(column: $table.deleted, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<MessageRole, int> get role =>
+  GeneratedColumnWithTypeConverter<MessageRole, String> get role =>
       $composableBuilder(column: $table.role, builder: (column) => column);
 
   GeneratedColumnWithTypeConverter<List<MessagePart>, String> get parts =>
@@ -2471,7 +2469,7 @@ typedef $$AssetItemsTableCreateCompanionBuilder =
     AssetItemsCompanion Function({
       Value<String> id,
       Value<String?> userId,
-      required DateTime updatedAt,
+      Value<DateTime> updatedAt,
       Value<bool> deleted,
       Value<String?> b2FileId,
       Value<String?> b2FileName,
@@ -2791,7 +2789,7 @@ class $$AssetItemsTableTableManager
               ({
                 Value<String> id = const Value.absent(),
                 Value<String?> userId = const Value.absent(),
-                required DateTime updatedAt,
+                Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
                 Value<String?> b2FileId = const Value.absent(),
                 Value<String?> b2FileName = const Value.absent(),
@@ -2909,7 +2907,7 @@ class $$CommonNoteItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<NoteCategory, NoteCategory, int>
+  ColumnWithTypeConverterFilters<NoteCategory, NoteCategory, String>
   get category => $composableBuilder(
     column: $table.category,
     builder: (column) => ColumnWithTypeConverterFilters(column),
@@ -2947,7 +2945,7 @@ class $$CommonNoteItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<NotePriority?, NotePriority, int>
+  ColumnWithTypeConverterFilters<NotePriority?, NotePriority, String>
   get priority => $composableBuilder(
     column: $table.priority,
     builder: (column) => ColumnWithTypeConverterFilters(column),
@@ -2998,7 +2996,7 @@ class $$CommonNoteItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get category => $composableBuilder(
+  ColumnOrderings<String> get category => $composableBuilder(
     column: $table.category,
     builder: (column) => ColumnOrderings(column),
   );
@@ -3033,7 +3031,7 @@ class $$CommonNoteItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get priority => $composableBuilder(
+  ColumnOrderings<String> get priority => $composableBuilder(
     column: $table.priority,
     builder: (column) => ColumnOrderings(column),
   );
@@ -3070,7 +3068,7 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumn<bool> get deleted =>
       $composableBuilder(column: $table.deleted, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<NoteCategory, int> get category =>
+  GeneratedColumnWithTypeConverter<NoteCategory, String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
   GeneratedColumn<String> get title =>
@@ -3093,7 +3091,7 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<NotePriority?, int> get priority =>
+  GeneratedColumnWithTypeConverter<NotePriority?, String> get priority =>
       $composableBuilder(column: $table.priority, builder: (column) => column);
 
   GeneratedColumn<DateTime> get dueDate =>

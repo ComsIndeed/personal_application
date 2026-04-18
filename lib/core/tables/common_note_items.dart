@@ -45,7 +45,8 @@ class CommonNoteItems extends Table implements SyncableTable {
   BoolColumn get deleted => boolean().withDefault(const Constant(false))();
 
   // --- Core fields ---
-  IntColumn get category => intEnum<NoteCategory>()();
+  TextColumn get category =>
+      text().map(const EnumNameConverter<NoteCategory>(NoteCategory.values))();
   TextColumn get title => text().nullable()();
   TextColumn get textContent => text().nullable()();
 
@@ -58,7 +59,9 @@ class CommonNoteItems extends Table implements SyncableTable {
   // --- Additional helpful data ---
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get isPinned => boolean().withDefault(const Constant(false))();
-  IntColumn get priority => intEnum<NotePriority>().nullable()();
+  TextColumn get priority => text()
+      .map(const EnumNameConverter<NotePriority>(NotePriority.values))
+      .nullable()();
   DateTimeColumn get dueDate => dateTime().nullable()();
   TextColumn get metadata => text().map(const MapConverter()).nullable()();
 

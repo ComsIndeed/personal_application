@@ -39,7 +39,8 @@ class Messages extends Table implements SyncableTable {
 
   // --- Business columns ---
   TextColumn get conversationId => text().references(Conversations, #id)();
-  IntColumn get role => intEnum<MessageRole>()();
+  TextColumn get role =>
+      text().map(const EnumNameConverter<MessageRole>(MessageRole.values))();
   TextColumn get parts => text().map(const MessagePartsConverter())();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 

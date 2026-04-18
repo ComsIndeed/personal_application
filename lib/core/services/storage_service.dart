@@ -131,7 +131,7 @@ class StorageService {
         .insertReturning(
           AssetItemsCompanion.insert(
             userId: Value(userId),
-            updatedAt: now,
+            updatedAt: Value(now),
             mimeType: mimeType,
             size: bytes.length,
             displayName: Value(displayName),

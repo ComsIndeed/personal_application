@@ -12,7 +12,7 @@ class AssetItems extends Table implements SyncableTable {
   @override
   TextColumn get userId => text().nullable()();
   @override
-  DateTimeColumn get updatedAt => dateTime()();
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
   @override
   BoolColumn get deleted => boolean().withDefault(const Constant(false))();
 

@@ -32,7 +32,8 @@ class AppDatabase extends _$AppDatabase with SyncableDatabase {
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    final file = File(p.join(dbFolder.path, 'app_v2.db'));
+    // Using a dated filename to force a fresh schema for sync implementation
+    final file = File(p.join(dbFolder.path, 'db_20260419.db'));
 
     if (Platform.isAndroid) {
       // await applyWorkaroundToOpenSqlite3OnOldAndroidDevices();
