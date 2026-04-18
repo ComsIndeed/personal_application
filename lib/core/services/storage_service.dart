@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 import 'dart:io' as io;
 
 import 'package:connectivity_plus/connectivity_plus.dart';

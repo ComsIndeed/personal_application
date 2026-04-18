@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/models/message/message_part.dart';
+import 'package:personal_application/core/models/asset_item.dart';
 
 import '../tables/asset_items.dart';
 import '../tables/conversation_items.dart';
