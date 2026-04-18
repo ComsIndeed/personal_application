@@ -355,8 +355,9 @@ class _AssetPreviewState extends State<_AssetPreview> {
   }
 
   Future<Uint8List> _getBytes(AssetItem asset) {
-    if (_bytesFuture != null && _lastAssetId == widget.assetId)
+    if (_bytesFuture != null && _lastAssetId == widget.assetId) {
       return _bytesFuture!;
+    }
     _bytesFuture = StorageService().getBytes(asset);
     return _bytesFuture!;
   }

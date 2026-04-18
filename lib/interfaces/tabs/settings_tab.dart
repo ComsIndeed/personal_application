@@ -273,15 +273,17 @@ class _SettingsTabState extends State<SettingsTab> {
       setState(() => _isSyncing = true);
       try {
         await DatabaseUtils().deleteCloudSecrets();
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(const SnackBar(content: Text('Cloud secrets wiped')));
+        }
       } catch (e) {
-        if (mounted)
+        if (mounted) {
           ScaffoldMessenger.of(
             context,
           ).showSnackBar(SnackBar(content: Text('Wipe failed: $e')));
+        }
       } finally {
         if (mounted) setState(() => _isSyncing = false);
       }
@@ -658,19 +660,21 @@ class _ProviderApiKeyTileState extends State<_ProviderApiKeyTile> {
         widget.provider,
         force: force,
       );
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isActive = true;
           _isLoading = false;
           _count = '${models.length} Models';
         });
+      }
     } catch (_) {
-      if (mounted)
+      if (mounted) {
         setState(() {
           _isActive = false;
           _isLoading = false;
           _count = 'Off';
         });
+      }
     }
   }
 

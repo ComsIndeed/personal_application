@@ -216,7 +216,14 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
           }
           emit(state.copyWith(clearStreaming: true));
         },
-        onError: (error) {
+        onError: (error) async {
+          final errorMessage = MessagesCompanion.insert(
+            conversationId: conversationId,
+            role: MessageRole.error,
+            parts: [TextPart(text: error.toString())],
+          );
+          await _db.into(_db.messages).insert(errorMessage);
+          await loadMessages();
           emit(state.copyWith(clearStreaming: true));
         },
       );

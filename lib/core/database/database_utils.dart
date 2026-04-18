@@ -15,8 +15,9 @@ class DatabaseUtils {
     if (_prefs.b2KeyId.isNotEmpty) b2Data['keyId'] = _prefs.b2KeyId;
     if (_prefs.b2AppKey.isNotEmpty) b2Data['appKey'] = _prefs.b2AppKey;
     if (_prefs.b2Endpoint.isNotEmpty) b2Data['endpoint'] = _prefs.b2Endpoint;
-    if (_prefs.b2BucketName.isNotEmpty)
+    if (_prefs.b2BucketName.isNotEmpty) {
       b2Data['bucketName'] = _prefs.b2BucketName;
+    }
 
     final Map<String, dynamic> data = {'user_id': user.id};
 
@@ -77,12 +78,15 @@ class DatabaseUtils {
     final b2 = response['b2'] as Map<String, dynamic>?;
     if (b2 != null) {
       if (b2['keyId'] != null) _prefs.b2KeyId = (b2['keyId'] as String).trim();
-      if (b2['appKey'] != null)
+      if (b2['appKey'] != null) {
         _prefs.b2AppKey = (b2['appKey'] as String).trim();
-      if (b2['endpoint'] != null)
+      }
+      if (b2['endpoint'] != null) {
         _prefs.b2Endpoint = (b2['endpoint'] as String).trim();
-      if (b2['bucketName'] != null)
+      }
+      if (b2['bucketName'] != null) {
         _prefs.b2BucketName = (b2['bucketName'] as String).trim();
+      }
     }
 
     // Trigger re-verification after storage settings are loaded

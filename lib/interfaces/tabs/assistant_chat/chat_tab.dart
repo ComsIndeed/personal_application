@@ -13,6 +13,7 @@ import 'package:personal_application/interfaces/widgets/chat_composer.dart';
 import 'package:personal_application/core/models/conversation.dart';
 import 'package:personal_application/core/services/llm_service.dart';
 import 'package:personal_application/core/services/tab_header_manager.dart';
+import 'package:personal_application/interfaces/tabs/assistant_chat/widgets/model_recommendation_grid.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -270,6 +271,33 @@ class _ChatTabState extends State<ChatTab> {
         ],
         child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
           builder: (context, state) {
+            if (state.messages.isEmpty) {
+              return Column(
+                children: [
+                  Expanded(
+                    child: ModelRecommendationGrid(
+                      currentModelId: state.model,
+                      onModelSelected: (provider, modelId) {
+                        context.read<AssistantChatCubit>().setModel(
+                          provider,
+                          modelId,
+                        );
+                      },
+                    ),
+                  ),
+                  ChatComposer(
+                    selectedModel: state.model,
+                    isStreaming: state.isStreaming,
+                    onStop: () =>
+                        context.read<AssistantChatCubit>().stopGeneration(),
+                    onSend: (text) {
+                      context.read<AssistantChatCubit>().sendMessage(text);
+                    },
+                  ),
+                ],
+              );
+            }
+
             return Chat(
               theme: isDark
                   ? chat_core.ChatTheme.fromThemeData(AppTheme.dark())
@@ -300,7 +328,9 @@ class _ChatTabState extends State<ChatTab> {
                               isStreaming: message.id == 'streaming-msg',
                             ),
                           flyer_stream.FlyerChatTextStreamMessage(
-                            mode: .instantMarkdown,
+                            mode: flyer_stream
+                                .TextStreamMessageMode
+                                .instantMarkdown,
                             message: message,
                             index: index,
                             streamState: flyer_stream.StreamStateStreaming(
