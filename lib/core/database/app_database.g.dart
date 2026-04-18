@@ -1234,12 +1234,563 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   }
 }
 
+class $CommonNoteItemsTable extends CommonNoteItems
+    with TableInfo<$CommonNoteItemsTable, CommonNoteItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CommonNoteItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<NoteCategory, int> category =
+      GeneratedColumn<int>(
+        'category',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: true,
+      ).withConverter<NoteCategory>($CommonNoteItemsTable.$convertercategory);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _textContentMeta = const VerificationMeta(
+    'textContent',
+  );
+  @override
+  late final GeneratedColumn<String> textContent = GeneratedColumn<String>(
+    'text_content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> assetIds =
+      GeneratedColumn<String>(
+        'asset_ids',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<String>>($CommonNoteItemsTable.$converterassetIds);
+  @override
+  late final GeneratedColumnWithTypeConverter<List<String>, String> tags =
+      GeneratedColumn<String>(
+        'tags',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      ).withConverter<List<String>>($CommonNoteItemsTable.$convertertags);
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _isPinnedMeta = const VerificationMeta(
+    'isPinned',
+  );
+  @override
+  late final GeneratedColumn<bool> isPinned = GeneratedColumn<bool>(
+    'is_pinned',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_pinned" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<NotePriority?, int> priority =
+      GeneratedColumn<int>(
+        'priority',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      ).withConverter<NotePriority?>($CommonNoteItemsTable.$converterpriorityn);
+  static const VerificationMeta _dueDateMeta = const VerificationMeta(
+    'dueDate',
+  );
+  @override
+  late final GeneratedColumn<DateTime> dueDate = GeneratedColumn<DateTime>(
+    'due_date',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
+  metadata =
+      GeneratedColumn<String>(
+        'metadata',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      ).withConverter<Map<String, dynamic>?>(
+        $CommonNoteItemsTable.$convertermetadatan,
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    updatedAt,
+    deleted,
+    category,
+    title,
+    textContent,
+    assetIds,
+    tags,
+    createdAt,
+    isPinned,
+    priority,
+    dueDate,
+    metadata,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'common_note_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<CommonNoteItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    }
+    if (data.containsKey('text_content')) {
+      context.handle(
+        _textContentMeta,
+        textContent.isAcceptableOrUnknown(
+          data['text_content']!,
+          _textContentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('is_pinned')) {
+      context.handle(
+        _isPinnedMeta,
+        isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('due_date')) {
+      context.handle(
+        _dueDateMeta,
+        dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CommonNoteItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CommonNoteItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      category: $CommonNoteItemsTable.$convertercategory.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}category'],
+        )!,
+      ),
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      ),
+      textContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}text_content'],
+      ),
+      assetIds: $CommonNoteItemsTable.$converterassetIds.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}asset_ids'],
+        )!,
+      ),
+      tags: $CommonNoteItemsTable.$convertertags.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}tags'],
+        )!,
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      isPinned: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_pinned'],
+      )!,
+      priority: $CommonNoteItemsTable.$converterpriorityn.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.int,
+          data['${effectivePrefix}priority'],
+        ),
+      ),
+      dueDate: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}due_date'],
+      ),
+      metadata: $CommonNoteItemsTable.$convertermetadatan.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}metadata'],
+        ),
+      ),
+    );
+  }
+
+  @override
+  $CommonNoteItemsTable createAlias(String alias) {
+    return $CommonNoteItemsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<NoteCategory, int, int> $convertercategory =
+      const EnumIndexConverter<NoteCategory>(NoteCategory.values);
+  static TypeConverter<List<String>, String> $converterassetIds =
+      const ListConverter();
+  static TypeConverter<List<String>, String> $convertertags =
+      const ListConverter();
+  static JsonTypeConverter2<NotePriority, int, int> $converterpriority =
+      const EnumIndexConverter<NotePriority>(NotePriority.values);
+  static JsonTypeConverter2<NotePriority?, int?, int?> $converterpriorityn =
+      JsonTypeConverter2.asNullable($converterpriority);
+  static TypeConverter<Map<String, dynamic>, String> $convertermetadata =
+      const MapConverter();
+  static TypeConverter<Map<String, dynamic>?, String?> $convertermetadatan =
+      NullAwareTypeConverter.wrap($convertermetadata);
+}
+
+class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
+  final Value<String> id;
+  final Value<String?> userId;
+  final Value<DateTime> updatedAt;
+  final Value<bool> deleted;
+  final Value<NoteCategory> category;
+  final Value<String?> title;
+  final Value<String?> textContent;
+  final Value<List<String>> assetIds;
+  final Value<List<String>> tags;
+  final Value<DateTime> createdAt;
+  final Value<bool> isPinned;
+  final Value<NotePriority?> priority;
+  final Value<DateTime?> dueDate;
+  final Value<Map<String, dynamic>?> metadata;
+  final Value<int> rowid;
+  const CommonNoteItemsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.category = const Value.absent(),
+    this.title = const Value.absent(),
+    this.textContent = const Value.absent(),
+    this.assetIds = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CommonNoteItemsCompanion.insert({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    required NoteCategory category,
+    this.title = const Value.absent(),
+    this.textContent = const Value.absent(),
+    this.assetIds = const Value.absent(),
+    this.tags = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.isPinned = const Value.absent(),
+    this.priority = const Value.absent(),
+    this.dueDate = const Value.absent(),
+    this.metadata = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : category = Value(category);
+  static Insertable<CommonNoteItem> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? deleted,
+    Expression<int>? category,
+    Expression<String>? title,
+    Expression<String>? textContent,
+    Expression<String>? assetIds,
+    Expression<String>? tags,
+    Expression<DateTime>? createdAt,
+    Expression<bool>? isPinned,
+    Expression<int>? priority,
+    Expression<DateTime>? dueDate,
+    Expression<String>? metadata,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deleted != null) 'deleted': deleted,
+      if (category != null) 'category': category,
+      if (title != null) 'title': title,
+      if (textContent != null) 'text_content': textContent,
+      if (assetIds != null) 'asset_ids': assetIds,
+      if (tags != null) 'tags': tags,
+      if (createdAt != null) 'created_at': createdAt,
+      if (isPinned != null) 'is_pinned': isPinned,
+      if (priority != null) 'priority': priority,
+      if (dueDate != null) 'due_date': dueDate,
+      if (metadata != null) 'metadata': metadata,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CommonNoteItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? userId,
+    Value<DateTime>? updatedAt,
+    Value<bool>? deleted,
+    Value<NoteCategory>? category,
+    Value<String?>? title,
+    Value<String?>? textContent,
+    Value<List<String>>? assetIds,
+    Value<List<String>>? tags,
+    Value<DateTime>? createdAt,
+    Value<bool>? isPinned,
+    Value<NotePriority?>? priority,
+    Value<DateTime?>? dueDate,
+    Value<Map<String, dynamic>?>? metadata,
+    Value<int>? rowid,
+  }) {
+    return CommonNoteItemsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deleted: deleted ?? this.deleted,
+      category: category ?? this.category,
+      title: title ?? this.title,
+      textContent: textContent ?? this.textContent,
+      assetIds: assetIds ?? this.assetIds,
+      tags: tags ?? this.tags,
+      createdAt: createdAt ?? this.createdAt,
+      isPinned: isPinned ?? this.isPinned,
+      priority: priority ?? this.priority,
+      dueDate: dueDate ?? this.dueDate,
+      metadata: metadata ?? this.metadata,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (category.present) {
+      map['category'] = Variable<int>(
+        $CommonNoteItemsTable.$convertercategory.toSql(category.value),
+      );
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (textContent.present) {
+      map['text_content'] = Variable<String>(textContent.value);
+    }
+    if (assetIds.present) {
+      map['asset_ids'] = Variable<String>(
+        $CommonNoteItemsTable.$converterassetIds.toSql(assetIds.value),
+      );
+    }
+    if (tags.present) {
+      map['tags'] = Variable<String>(
+        $CommonNoteItemsTable.$convertertags.toSql(tags.value),
+      );
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (isPinned.present) {
+      map['is_pinned'] = Variable<bool>(isPinned.value);
+    }
+    if (priority.present) {
+      map['priority'] = Variable<int>(
+        $CommonNoteItemsTable.$converterpriorityn.toSql(priority.value),
+      );
+    }
+    if (dueDate.present) {
+      map['due_date'] = Variable<DateTime>(dueDate.value);
+    }
+    if (metadata.present) {
+      map['metadata'] = Variable<String>(
+        $CommonNoteItemsTable.$convertermetadatan.toSql(metadata.value),
+      );
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CommonNoteItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('category: $category, ')
+          ..write('title: $title, ')
+          ..write('textContent: $textContent, ')
+          ..write('assetIds: $assetIds, ')
+          ..write('tags: $tags, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('isPinned: $isPinned, ')
+          ..write('priority: $priority, ')
+          ..write('dueDate: $dueDate, ')
+          ..write('metadata: $metadata, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $ConversationsTable conversations = $ConversationsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
   late final $AssetItemsTable assetItems = $AssetItemsTable(this);
+  late final $CommonNoteItemsTable commonNoteItems = $CommonNoteItemsTable(
+    this,
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1248,6 +1799,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     conversations,
     messages,
     assetItems,
+    commonNoteItems,
   ];
 }
 
@@ -2240,6 +2792,395 @@ typedef $$AssetItemsTableProcessedTableManager =
       AssetItem,
       PrefetchHooks Function()
     >;
+typedef $$CommonNoteItemsTableCreateCompanionBuilder =
+    CommonNoteItemsCompanion Function({
+      Value<String> id,
+      Value<String?> userId,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      required NoteCategory category,
+      Value<String?> title,
+      Value<String?> textContent,
+      Value<List<String>> assetIds,
+      Value<List<String>> tags,
+      Value<DateTime> createdAt,
+      Value<bool> isPinned,
+      Value<NotePriority?> priority,
+      Value<DateTime?> dueDate,
+      Value<Map<String, dynamic>?> metadata,
+      Value<int> rowid,
+    });
+typedef $$CommonNoteItemsTableUpdateCompanionBuilder =
+    CommonNoteItemsCompanion Function({
+      Value<String> id,
+      Value<String?> userId,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<NoteCategory> category,
+      Value<String?> title,
+      Value<String?> textContent,
+      Value<List<String>> assetIds,
+      Value<List<String>> tags,
+      Value<DateTime> createdAt,
+      Value<bool> isPinned,
+      Value<NotePriority?> priority,
+      Value<DateTime?> dueDate,
+      Value<Map<String, dynamic>?> metadata,
+      Value<int> rowid,
+    });
+
+class $$CommonNoteItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $CommonNoteItemsTable> {
+  $$CommonNoteItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<NoteCategory, NoteCategory, int>
+  get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get textContent => $composableBuilder(
+    column: $table.textContent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String>
+  get assetIds => $composableBuilder(
+    column: $table.assetIds,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<List<String>, List<String>, String> get tags =>
+      $composableBuilder(
+        column: $table.tags,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<NotePriority?, NotePriority, int>
+  get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<
+    Map<String, dynamic>?,
+    Map<String, dynamic>,
+    String
+  >
+  get metadata => $composableBuilder(
+    column: $table.metadata,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+}
+
+class $$CommonNoteItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $CommonNoteItemsTable> {
+  $$CommonNoteItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get category => $composableBuilder(
+    column: $table.category,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get textContent => $composableBuilder(
+    column: $table.textContent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get assetIds => $composableBuilder(
+    column: $table.assetIds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tags => $composableBuilder(
+    column: $table.tags,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isPinned => $composableBuilder(
+    column: $table.isPinned,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get priority => $composableBuilder(
+    column: $table.priority,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get dueDate => $composableBuilder(
+    column: $table.dueDate,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get metadata => $composableBuilder(
+    column: $table.metadata,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$CommonNoteItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CommonNoteItemsTable> {
+  $$CommonNoteItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<NoteCategory, int> get category =>
+      $composableBuilder(column: $table.category, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get textContent => $composableBuilder(
+    column: $table.textContent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get assetIds =>
+      $composableBuilder(column: $table.assetIds, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<List<String>, String> get tags =>
+      $composableBuilder(column: $table.tags, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get isPinned =>
+      $composableBuilder(column: $table.isPinned, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<NotePriority?, int> get priority =>
+      $composableBuilder(column: $table.priority, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get dueDate =>
+      $composableBuilder(column: $table.dueDate, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
+  get metadata =>
+      $composableBuilder(column: $table.metadata, builder: (column) => column);
+}
+
+class $$CommonNoteItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $CommonNoteItemsTable,
+          CommonNoteItem,
+          $$CommonNoteItemsTableFilterComposer,
+          $$CommonNoteItemsTableOrderingComposer,
+          $$CommonNoteItemsTableAnnotationComposer,
+          $$CommonNoteItemsTableCreateCompanionBuilder,
+          $$CommonNoteItemsTableUpdateCompanionBuilder,
+          (
+            CommonNoteItem,
+            BaseReferences<
+              _$AppDatabase,
+              $CommonNoteItemsTable,
+              CommonNoteItem
+            >,
+          ),
+          CommonNoteItem,
+          PrefetchHooks Function()
+        > {
+  $$CommonNoteItemsTableTableManager(
+    _$AppDatabase db,
+    $CommonNoteItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CommonNoteItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CommonNoteItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CommonNoteItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<NoteCategory> category = const Value.absent(),
+                Value<String?> title = const Value.absent(),
+                Value<String?> textContent = const Value.absent(),
+                Value<List<String>> assetIds = const Value.absent(),
+                Value<List<String>> tags = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<NotePriority?> priority = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<Map<String, dynamic>?> metadata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommonNoteItemsCompanion(
+                id: id,
+                userId: userId,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                category: category,
+                title: title,
+                textContent: textContent,
+                assetIds: assetIds,
+                tags: tags,
+                createdAt: createdAt,
+                isPinned: isPinned,
+                priority: priority,
+                dueDate: dueDate,
+                metadata: metadata,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                required NoteCategory category,
+                Value<String?> title = const Value.absent(),
+                Value<String?> textContent = const Value.absent(),
+                Value<List<String>> assetIds = const Value.absent(),
+                Value<List<String>> tags = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<bool> isPinned = const Value.absent(),
+                Value<NotePriority?> priority = const Value.absent(),
+                Value<DateTime?> dueDate = const Value.absent(),
+                Value<Map<String, dynamic>?> metadata = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => CommonNoteItemsCompanion.insert(
+                id: id,
+                userId: userId,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                category: category,
+                title: title,
+                textContent: textContent,
+                assetIds: assetIds,
+                tags: tags,
+                createdAt: createdAt,
+                isPinned: isPinned,
+                priority: priority,
+                dueDate: dueDate,
+                metadata: metadata,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$CommonNoteItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $CommonNoteItemsTable,
+      CommonNoteItem,
+      $$CommonNoteItemsTableFilterComposer,
+      $$CommonNoteItemsTableOrderingComposer,
+      $$CommonNoteItemsTableAnnotationComposer,
+      $$CommonNoteItemsTableCreateCompanionBuilder,
+      $$CommonNoteItemsTableUpdateCompanionBuilder,
+      (
+        CommonNoteItem,
+        BaseReferences<_$AppDatabase, $CommonNoteItemsTable, CommonNoteItem>,
+      ),
+      CommonNoteItem,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2250,4 +3191,6 @@ class $AppDatabaseManager {
       $$MessagesTableTableManager(_db, _db.messages);
   $$AssetItemsTableTableManager get assetItems =>
       $$AssetItemsTableTableManager(_db, _db.assetItems);
+  $$CommonNoteItemsTableTableManager get commonNoteItems =>
+      $$CommonNoteItemsTableTableManager(_db, _db.commonNoteItems);
 }
