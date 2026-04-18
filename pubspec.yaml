@@ -40,6 +40,7 @@ dependencies:
   syncable: ^1.0.3
   json_annotation: ^4.11.0
   connectivity_plus: ^7.1.1
+  pasteboard: ^0.5.0
 
 dev_dependencies:
   flutter_test:
