@@ -54,7 +54,7 @@ void main() async {
       providers: [
         Provider<AppDatabase>.value(value: database),
         BlocProvider(create: (context) => AssistantChatCubit(db: database)),
-        BlocProvider(create: (context) => BrainDumpCubit()),
+        BlocProvider(create: (context) => BrainDumpCubit(database)),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],

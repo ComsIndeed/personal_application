@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:personal_application/core/services/tab_header_manager.dart';
+import 'package:personal_application/core/widgets/brain_dump_item_widget.dart';
+import 'brain_dump_cubit.dart';
 import 'brain_dump_input.dart';
 
 class BrainDumpTab extends StatefulWidget {
@@ -65,25 +68,39 @@ class _BrainDumpTabState extends State<BrainDumpTab> {
       children: [
         // Content Area (Clean)
         Expanded(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.auto_awesome_outlined,
-                  size: 64,
-                  color: isDark ? Color(0xFF1E293B) : Colors.black12,
-                ),
-                SizedBox(height: 16),
-                Text(
-                  'Ready for a brain dump?',
-                  style: TextStyle(
-                    color: isDark ? Color(0xFF334155) : Colors.black26,
-                    fontWeight: FontWeight.w600,
+          child: BlocBuilder<BrainDumpCubit, BrainDumpState>(
+            builder: (context, state) {
+              if (state.items.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.auto_awesome_outlined,
+                        size: 64,
+                        color: isDark ? Color(0xFF1E293B) : Colors.black12,
+                      ),
+                      SizedBox(height: 16),
+                      Text(
+                        'Ready for a brain dump?',
+                        style: TextStyle(
+                          color: isDark ? Color(0xFF334155) : Colors.black26,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            ),
+                );
+              }
+
+              return ListView.builder(
+                padding: const EdgeInsets.only(top: 8, bottom: 20),
+                itemCount: state.items.length,
+                itemBuilder: (context, index) {
+                  return BrainDumpItemWidget(item: state.items[index]);
+                },
+              );
+            },
           ),
         ),
         // Input Interface

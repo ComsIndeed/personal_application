@@ -16,6 +16,25 @@ class BrainDumpInput extends StatefulWidget {
 }
 
 class _BrainDumpInputState extends State<BrainDumpInput> {
+  final TextEditingController _textController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _textController.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    _textController.removeListener(_onTextChanged);
+    _textController.dispose();
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    context.read<BrainDumpCubit>().updateText(_textController.text);
+  }
+
   void _addFiles(
     List<PlatformFile> currentFiles, [
     List<PlatformFile>? newFiles,
@@ -79,7 +98,13 @@ class _BrainDumpInputState extends State<BrainDumpInput> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    return BlocBuilder<BrainDumpCubit, BrainDumpState>(
+    return BlocConsumer<BrainDumpCubit, BrainDumpState>(
+      listenWhen: (prev, curr) => prev.text != curr.text && curr.text.isEmpty,
+      listener: (context, state) {
+        if (_textController.text != state.text) {
+          _textController.text = state.text;
+        }
+      },
       builder: (context, state) {
         return CallbackShortcuts(
           bindings: {
@@ -147,7 +172,8 @@ class _BrainDumpInputState extends State<BrainDumpInput> {
                               ),
                               Expanded(
                                 child: TextField(
-                                  maxLines: 2,
+                                  controller: _textController,
+                                  maxLines: 5,
                                   minLines: 1,
                                   style: const TextStyle(fontSize: 14),
                                   decoration: InputDecoration(
@@ -186,7 +212,8 @@ class _BrainDumpInputState extends State<BrainDumpInput> {
                       _SideButton(
                         icon: Icons.send_rounded,
                         isOutlined: false,
-                        onPressed: () {},
+                        onPressed: () =>
+                            context.read<BrainDumpCubit>().sendRaw(),
                       ),
                     ],
                   ),
