@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
   // Brand Colors
@@ -23,6 +24,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       primaryColor: primary,
+      fontFamily: GoogleFonts.ebGaramond().fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: primary,
         onPrimary: Colors.white,
@@ -35,34 +37,37 @@ class AppTheme {
       cardColor: nightfallCard,
       dividerColor: nightfallBorder,
       iconTheme: const IconThemeData(color: nightfallTextSecondary),
-      textTheme: const TextTheme(
-        headlineMedium: TextStyle(
-          color: nightfallTextPrimary,
-          fontSize: 24,
-          fontWeight: FontWeight.bold,
-          letterSpacing: -0.5,
-        ),
-        titleLarge: TextStyle(
-          color: nightfallTextPrimary,
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-        ),
-        bodyLarge: TextStyle(
-          color: nightfallTextPrimary,
-          fontSize: 16,
-          height: 1.5,
-        ),
-        bodyMedium: TextStyle(
-          color: nightfallTextSecondary,
-          fontSize: 14,
-          height: 1.4,
-        ),
-        labelLarge: TextStyle(
-          color: nightfallTextPrimary,
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
+      textTheme: GoogleFonts.ebGaramondTextTheme(
+        const TextTheme(
+          headlineMedium: TextStyle(
+            color: nightfallTextPrimary,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.5,
+          ),
+          titleLarge: TextStyle(
+            color: nightfallTextPrimary,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+          bodyLarge: TextStyle(
+            color: nightfallTextPrimary,
+            fontSize: 16,
+            height: 1.5,
+          ),
+          bodyMedium: TextStyle(
+            color: nightfallTextSecondary,
+            fontSize: 14,
+            height: 1.4,
+          ),
+          labelLarge: TextStyle(
+            color: nightfallTextPrimary,
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
+
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: nightfallSurface,
@@ -91,6 +96,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.light,
       primaryColor: primary,
+      fontFamily: GoogleFonts.ebGaramond().fontFamily,
       colorScheme: const ColorScheme.light(
         primary: primary,
         secondary: accent,
@@ -101,9 +107,11 @@ class AppTheme {
       cardColor: lightCard,
       dividerColor: Colors.black12,
       iconTheme: const IconThemeData(color: Color(0xFF64748B)),
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: Color(0xFF0F172A), fontSize: 16),
-        bodyMedium: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+      textTheme: GoogleFonts.ebGaramondTextTheme(
+        const TextTheme(
+          bodyLarge: TextStyle(color: Color(0xFF0F172A), fontSize: 16),
+          bodyMedium: TextStyle(color: Color(0xFF64748B), fontSize: 14),
+        ),
       ),
     );
   }
