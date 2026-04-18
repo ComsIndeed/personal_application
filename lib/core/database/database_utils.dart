@@ -1,5 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/app_prefs.dart';
+import '../services/storage_service.dart';
 
 class DatabaseUtils {
   final _supabase = Supabase.instance.client;
@@ -75,13 +76,17 @@ class DatabaseUtils {
 
     final b2 = response['b2'] as Map<String, dynamic>?;
     if (b2 != null) {
-      if (b2['keyId'] != null) _prefs.b2KeyId = b2['keyId'];
-      if (b2['appKey'] != null) _prefs.b2AppKey = b2['appKey'];
-      if (b2['endpoint'] != null) _prefs.b2Endpoint = b2['endpoint'];
-      if (b2['bucketName'] != null) _prefs.b2BucketName = b2['bucketName'];
+      if (b2['keyId'] != null) _prefs.b2KeyId = (b2['keyId'] as String).trim();
+      if (b2['appKey'] != null)
+        _prefs.b2AppKey = (b2['appKey'] as String).trim();
+      if (b2['endpoint'] != null)
+        _prefs.b2Endpoint = (b2['endpoint'] as String).trim();
+      if (b2['bucketName'] != null)
+        _prefs.b2BucketName = (b2['bucketName'] as String).trim();
     }
 
-    await _prefs.reloadAll();
+    // Trigger re-verification after storage settings are loaded
+    StorageService().verifyCredentials().catchError((_) {});
   }
 
   Future<void> deleteCloudSecrets() async {

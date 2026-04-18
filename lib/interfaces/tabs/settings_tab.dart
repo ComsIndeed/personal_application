@@ -789,17 +789,25 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
   bool _isSaving = false;
   bool _isVerifying = false;
   bool _isVerified = false;
+  StreamSubscription<bool>? _sub;
 
   @override
   void initState() {
     super.initState();
-    _checkStatus();
+    _isVerified = StorageService().isLastVerified;
+    _sub = StorageService().isVerifiedStream.listen((val) {
+      if (mounted) setState(() => _isVerified = val);
+    });
   }
 
-  void _checkStatus() {
-    if (AppPrefs().b2KeyId.isNotEmpty && AppPrefs().b2BucketName.isNotEmpty) {
-      _isVerified = true;
-    }
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _kId.dispose();
+    _aKey.dispose();
+    _end.dispose();
+    _buck.dispose();
+    super.dispose();
   }
 
   Future<void> _verifyOnly() async {

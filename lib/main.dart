@@ -34,6 +34,11 @@ void main() async {
   final database = AppDatabase();
   StorageService().setDatabase(database);
 
+  // Background verification of B2 on launch
+  StorageService().verifyCredentials().catchError((e) {
+    debugPrint('B2 auto-verification failed: $e');
+  });
+
   const windowOptions = WindowOptions(
     center: true,
     skipTaskbar: true,

@@ -97,8 +97,17 @@ class StorageService {
   final _uploadingIds = StreamController<Set<String>>.broadcast();
   final _currentlyUploading = <String>{};
 
+  final _verifiedController = StreamController<bool>.broadcast();
+  bool _isLastVerified = false;
+
   /// Broadcast stream of asset IDs currently being uploaded to B2.
   Stream<Set<String>> get uploadingIds => _uploadingIds.stream;
+
+  /// Broadcast stream of whether B2 credentials are verified.
+  Stream<bool> get isVerifiedStream => _verifiedController.stream;
+
+  /// Sync access to the last known verification status.
+  bool get isLastVerified => _isLastVerified;
 
   // -------------------------------------------------------------------------
   // Public API
@@ -270,8 +279,19 @@ class StorageService {
 
   /// Test B2 credentials and bucket access.
   Future<void> verifyCredentials() async {
-    final auth = await _authorize();
-    await _getBucketId(auth);
+    try {
+      final auth = await _authorize();
+      await _getBucketId(auth);
+      _updateVerified(true);
+    } catch (e) {
+      _updateVerified(false);
+      rethrow;
+    }
+  }
+
+  void _updateVerified(bool val) {
+    _isLastVerified = val;
+    _verifiedController.add(val);
   }
 
   // -------------------------------------------------------------------------
