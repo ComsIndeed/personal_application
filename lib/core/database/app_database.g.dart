@@ -691,6 +691,41 @@ class $AssetItemsTable extends AssetItems
     requiredDuringInsert: false,
     clientDefault: () => const Uuid().v4(),
   );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _b2FileIdMeta = const VerificationMeta(
     'b2FileId',
   );
@@ -698,9 +733,9 @@ class $AssetItemsTable extends AssetItems
   late final GeneratedColumn<String> b2FileId = GeneratedColumn<String>(
     'b2_file_id',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _b2FileNameMeta = const VerificationMeta(
     'b2FileName',
@@ -709,9 +744,9 @@ class $AssetItemsTable extends AssetItems
   late final GeneratedColumn<String> b2FileName = GeneratedColumn<String>(
     'b2_file_name',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.string,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _b2UpdatedAtMeta = const VerificationMeta(
     'b2UpdatedAt',
@@ -720,9 +755,9 @@ class $AssetItemsTable extends AssetItems
   late final GeneratedColumn<DateTime> b2UpdatedAt = GeneratedColumn<DateTime>(
     'b2_updated_at',
     aliasedName,
-    false,
+    true,
     type: DriftSqlType.dateTime,
-    requiredDuringInsert: true,
+    requiredDuringInsert: false,
   );
   static const VerificationMeta _displayNameMeta = const VerificationMeta(
     'displayName',
@@ -802,6 +837,9 @@ class $AssetItemsTable extends AssetItems
   @override
   List<GeneratedColumn> get $columns => [
     id,
+    userId,
+    updatedAt,
+    deleted,
     b2FileId,
     b2FileName,
     b2UpdatedAt,
@@ -828,13 +866,31 @@ class $AssetItemsTable extends AssetItems
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
     if (data.containsKey('b2_file_id')) {
       context.handle(
         _b2FileIdMeta,
         b2FileId.isAcceptableOrUnknown(data['b2_file_id']!, _b2FileIdMeta),
       );
-    } else if (isInserting) {
-      context.missing(_b2FileIdMeta);
     }
     if (data.containsKey('b2_file_name')) {
       context.handle(
@@ -844,8 +900,6 @@ class $AssetItemsTable extends AssetItems
           _b2FileNameMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_b2FileNameMeta);
     }
     if (data.containsKey('b2_updated_at')) {
       context.handle(
@@ -855,8 +909,6 @@ class $AssetItemsTable extends AssetItems
           _b2UpdatedAtMeta,
         ),
       );
-    } else if (isInserting) {
-      context.missing(_b2UpdatedAtMeta);
     }
     if (data.containsKey('display_name')) {
       context.handle(
@@ -923,18 +975,30 @@ class $AssetItemsTable extends AssetItems
         DriftSqlType.string,
         data['${effectivePrefix}id'],
       )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
       b2FileId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}b2_file_id'],
-      )!,
+      ),
       b2FileName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}b2_file_name'],
-      )!,
+      ),
       b2UpdatedAt: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}b2_updated_at'],
-      )!,
+      ),
       displayName: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}display_name'],
@@ -972,241 +1036,14 @@ class $AssetItemsTable extends AssetItems
   }
 }
 
-class AssetItem extends DataClass implements Insertable<AssetItem> {
-  /// Local UUID — use this as the stable reference everywhere in the app.
-  final String id;
-
-  /// B2's own file ID — required for delete-by-version calls.
-  final String b2FileId;
-
-  /// Key in the bucket, e.g. `<uuid>/<original_name.ext>`.
-  final String b2FileName;
-
-  /// B2 upload timestamp — source of truth for cache freshness.
-  final DateTime b2UpdatedAt;
-
-  /// Optional human-readable label. Null = use original filename.
-  final String? displayName;
-
-  /// Optional grouping tag, e.g. "brain_dump", "avatars".
-  final String? group;
-
-  /// MIME type, e.g. "image/png".
-  final String mimeType;
-
-  /// File size in bytes.
-  final int size;
-
-  /// When this record was first inserted locally.
-  final DateTime createdAt;
-
-  /// Locally cached file bytes. Null = not yet downloaded / cache cleared.
-  final Uint8List? cachedBytes;
-
-  /// When [cachedBytes] was last written. Null if never cached.
-  final DateTime? cachedAt;
-  const AssetItem({
-    required this.id,
-    required this.b2FileId,
-    required this.b2FileName,
-    required this.b2UpdatedAt,
-    this.displayName,
-    this.group,
-    required this.mimeType,
-    required this.size,
-    required this.createdAt,
-    this.cachedBytes,
-    this.cachedAt,
-  });
-  @override
-  Map<String, Expression> toColumns(bool nullToAbsent) {
-    final map = <String, Expression>{};
-    map['id'] = Variable<String>(id);
-    map['b2_file_id'] = Variable<String>(b2FileId);
-    map['b2_file_name'] = Variable<String>(b2FileName);
-    map['b2_updated_at'] = Variable<DateTime>(b2UpdatedAt);
-    if (!nullToAbsent || displayName != null) {
-      map['display_name'] = Variable<String>(displayName);
-    }
-    if (!nullToAbsent || group != null) {
-      map['group'] = Variable<String>(group);
-    }
-    map['mime_type'] = Variable<String>(mimeType);
-    map['size'] = Variable<int>(size);
-    map['created_at'] = Variable<DateTime>(createdAt);
-    if (!nullToAbsent || cachedBytes != null) {
-      map['cached_bytes'] = Variable<Uint8List>(cachedBytes);
-    }
-    if (!nullToAbsent || cachedAt != null) {
-      map['cached_at'] = Variable<DateTime>(cachedAt);
-    }
-    return map;
-  }
-
-  AssetItemsCompanion toCompanion(bool nullToAbsent) {
-    return AssetItemsCompanion(
-      id: Value(id),
-      b2FileId: Value(b2FileId),
-      b2FileName: Value(b2FileName),
-      b2UpdatedAt: Value(b2UpdatedAt),
-      displayName: displayName == null && nullToAbsent
-          ? const Value.absent()
-          : Value(displayName),
-      group: group == null && nullToAbsent
-          ? const Value.absent()
-          : Value(group),
-      mimeType: Value(mimeType),
-      size: Value(size),
-      createdAt: Value(createdAt),
-      cachedBytes: cachedBytes == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cachedBytes),
-      cachedAt: cachedAt == null && nullToAbsent
-          ? const Value.absent()
-          : Value(cachedAt),
-    );
-  }
-
-  factory AssetItem.fromJson(
-    Map<String, dynamic> json, {
-    ValueSerializer? serializer,
-  }) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return AssetItem(
-      id: serializer.fromJson<String>(json['id']),
-      b2FileId: serializer.fromJson<String>(json['b2FileId']),
-      b2FileName: serializer.fromJson<String>(json['b2FileName']),
-      b2UpdatedAt: serializer.fromJson<DateTime>(json['b2UpdatedAt']),
-      displayName: serializer.fromJson<String?>(json['displayName']),
-      group: serializer.fromJson<String?>(json['group']),
-      mimeType: serializer.fromJson<String>(json['mimeType']),
-      size: serializer.fromJson<int>(json['size']),
-      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
-      cachedBytes: serializer.fromJson<Uint8List?>(json['cachedBytes']),
-      cachedAt: serializer.fromJson<DateTime?>(json['cachedAt']),
-    );
-  }
-  @override
-  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
-    serializer ??= driftRuntimeOptions.defaultSerializer;
-    return <String, dynamic>{
-      'id': serializer.toJson<String>(id),
-      'b2FileId': serializer.toJson<String>(b2FileId),
-      'b2FileName': serializer.toJson<String>(b2FileName),
-      'b2UpdatedAt': serializer.toJson<DateTime>(b2UpdatedAt),
-      'displayName': serializer.toJson<String?>(displayName),
-      'group': serializer.toJson<String?>(group),
-      'mimeType': serializer.toJson<String>(mimeType),
-      'size': serializer.toJson<int>(size),
-      'createdAt': serializer.toJson<DateTime>(createdAt),
-      'cachedBytes': serializer.toJson<Uint8List?>(cachedBytes),
-      'cachedAt': serializer.toJson<DateTime?>(cachedAt),
-    };
-  }
-
-  AssetItem copyWith({
-    String? id,
-    String? b2FileId,
-    String? b2FileName,
-    DateTime? b2UpdatedAt,
-    Value<String?> displayName = const Value.absent(),
-    Value<String?> group = const Value.absent(),
-    String? mimeType,
-    int? size,
-    DateTime? createdAt,
-    Value<Uint8List?> cachedBytes = const Value.absent(),
-    Value<DateTime?> cachedAt = const Value.absent(),
-  }) => AssetItem(
-    id: id ?? this.id,
-    b2FileId: b2FileId ?? this.b2FileId,
-    b2FileName: b2FileName ?? this.b2FileName,
-    b2UpdatedAt: b2UpdatedAt ?? this.b2UpdatedAt,
-    displayName: displayName.present ? displayName.value : this.displayName,
-    group: group.present ? group.value : this.group,
-    mimeType: mimeType ?? this.mimeType,
-    size: size ?? this.size,
-    createdAt: createdAt ?? this.createdAt,
-    cachedBytes: cachedBytes.present ? cachedBytes.value : this.cachedBytes,
-    cachedAt: cachedAt.present ? cachedAt.value : this.cachedAt,
-  );
-  AssetItem copyWithCompanion(AssetItemsCompanion data) {
-    return AssetItem(
-      id: data.id.present ? data.id.value : this.id,
-      b2FileId: data.b2FileId.present ? data.b2FileId.value : this.b2FileId,
-      b2FileName: data.b2FileName.present
-          ? data.b2FileName.value
-          : this.b2FileName,
-      b2UpdatedAt: data.b2UpdatedAt.present
-          ? data.b2UpdatedAt.value
-          : this.b2UpdatedAt,
-      displayName: data.displayName.present
-          ? data.displayName.value
-          : this.displayName,
-      group: data.group.present ? data.group.value : this.group,
-      mimeType: data.mimeType.present ? data.mimeType.value : this.mimeType,
-      size: data.size.present ? data.size.value : this.size,
-      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
-      cachedBytes: data.cachedBytes.present
-          ? data.cachedBytes.value
-          : this.cachedBytes,
-      cachedAt: data.cachedAt.present ? data.cachedAt.value : this.cachedAt,
-    );
-  }
-
-  @override
-  String toString() {
-    return (StringBuffer('AssetItem(')
-          ..write('id: $id, ')
-          ..write('b2FileId: $b2FileId, ')
-          ..write('b2FileName: $b2FileName, ')
-          ..write('b2UpdatedAt: $b2UpdatedAt, ')
-          ..write('displayName: $displayName, ')
-          ..write('group: $group, ')
-          ..write('mimeType: $mimeType, ')
-          ..write('size: $size, ')
-          ..write('createdAt: $createdAt, ')
-          ..write('cachedBytes: $cachedBytes, ')
-          ..write('cachedAt: $cachedAt')
-          ..write(')'))
-        .toString();
-  }
-
-  @override
-  int get hashCode => Object.hash(
-    id,
-    b2FileId,
-    b2FileName,
-    b2UpdatedAt,
-    displayName,
-    group,
-    mimeType,
-    size,
-    createdAt,
-    $driftBlobEquality.hash(cachedBytes),
-    cachedAt,
-  );
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      (other is AssetItem &&
-          other.id == this.id &&
-          other.b2FileId == this.b2FileId &&
-          other.b2FileName == this.b2FileName &&
-          other.b2UpdatedAt == this.b2UpdatedAt &&
-          other.displayName == this.displayName &&
-          other.group == this.group &&
-          other.mimeType == this.mimeType &&
-          other.size == this.size &&
-          other.createdAt == this.createdAt &&
-          $driftBlobEquality.equals(other.cachedBytes, this.cachedBytes) &&
-          other.cachedAt == this.cachedAt);
-}
-
 class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   final Value<String> id;
-  final Value<String> b2FileId;
-  final Value<String> b2FileName;
-  final Value<DateTime> b2UpdatedAt;
+  final Value<String?> userId;
+  final Value<DateTime> updatedAt;
+  final Value<bool> deleted;
+  final Value<String?> b2FileId;
+  final Value<String?> b2FileName;
+  final Value<DateTime?> b2UpdatedAt;
   final Value<String?> displayName;
   final Value<String?> group;
   final Value<String> mimeType;
@@ -1217,6 +1054,9 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   final Value<int> rowid;
   const AssetItemsCompanion({
     this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
     this.b2FileId = const Value.absent(),
     this.b2FileName = const Value.absent(),
     this.b2UpdatedAt = const Value.absent(),
@@ -1231,9 +1071,12 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   });
   AssetItemsCompanion.insert({
     this.id = const Value.absent(),
-    required String b2FileId,
-    required String b2FileName,
-    required DateTime b2UpdatedAt,
+    this.userId = const Value.absent(),
+    required DateTime updatedAt,
+    this.deleted = const Value.absent(),
+    this.b2FileId = const Value.absent(),
+    this.b2FileName = const Value.absent(),
+    this.b2UpdatedAt = const Value.absent(),
     this.displayName = const Value.absent(),
     this.group = const Value.absent(),
     required String mimeType,
@@ -1242,13 +1085,14 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
     this.cachedBytes = const Value.absent(),
     this.cachedAt = const Value.absent(),
     this.rowid = const Value.absent(),
-  }) : b2FileId = Value(b2FileId),
-       b2FileName = Value(b2FileName),
-       b2UpdatedAt = Value(b2UpdatedAt),
+  }) : updatedAt = Value(updatedAt),
        mimeType = Value(mimeType),
        size = Value(size);
   static Insertable<AssetItem> custom({
     Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? deleted,
     Expression<String>? b2FileId,
     Expression<String>? b2FileName,
     Expression<DateTime>? b2UpdatedAt,
@@ -1263,6 +1107,9 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deleted != null) 'deleted': deleted,
       if (b2FileId != null) 'b2_file_id': b2FileId,
       if (b2FileName != null) 'b2_file_name': b2FileName,
       if (b2UpdatedAt != null) 'b2_updated_at': b2UpdatedAt,
@@ -1279,9 +1126,12 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
 
   AssetItemsCompanion copyWith({
     Value<String>? id,
-    Value<String>? b2FileId,
-    Value<String>? b2FileName,
-    Value<DateTime>? b2UpdatedAt,
+    Value<String?>? userId,
+    Value<DateTime>? updatedAt,
+    Value<bool>? deleted,
+    Value<String?>? b2FileId,
+    Value<String?>? b2FileName,
+    Value<DateTime?>? b2UpdatedAt,
     Value<String?>? displayName,
     Value<String?>? group,
     Value<String>? mimeType,
@@ -1293,6 +1143,9 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   }) {
     return AssetItemsCompanion(
       id: id ?? this.id,
+      userId: userId ?? this.userId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deleted: deleted ?? this.deleted,
       b2FileId: b2FileId ?? this.b2FileId,
       b2FileName: b2FileName ?? this.b2FileName,
       b2UpdatedAt: b2UpdatedAt ?? this.b2UpdatedAt,
@@ -1312,6 +1165,15 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
     final map = <String, Expression>{};
     if (id.present) {
       map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
     }
     if (b2FileId.present) {
       map['b2_file_id'] = Variable<String>(b2FileId.value);
@@ -1353,6 +1215,9 @@ class AssetItemsCompanion extends UpdateCompanion<AssetItem> {
   String toString() {
     return (StringBuffer('AssetItemsCompanion(')
           ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
           ..write('b2FileId: $b2FileId, ')
           ..write('b2FileName: $b2FileName, ')
           ..write('b2UpdatedAt: $b2UpdatedAt, ')
@@ -2002,9 +1867,12 @@ typedef $$MessagesTableProcessedTableManager =
 typedef $$AssetItemsTableCreateCompanionBuilder =
     AssetItemsCompanion Function({
       Value<String> id,
-      required String b2FileId,
-      required String b2FileName,
-      required DateTime b2UpdatedAt,
+      Value<String?> userId,
+      required DateTime updatedAt,
+      Value<bool> deleted,
+      Value<String?> b2FileId,
+      Value<String?> b2FileName,
+      Value<DateTime?> b2UpdatedAt,
       Value<String?> displayName,
       Value<String?> group,
       required String mimeType,
@@ -2017,9 +1885,12 @@ typedef $$AssetItemsTableCreateCompanionBuilder =
 typedef $$AssetItemsTableUpdateCompanionBuilder =
     AssetItemsCompanion Function({
       Value<String> id,
-      Value<String> b2FileId,
-      Value<String> b2FileName,
-      Value<DateTime> b2UpdatedAt,
+      Value<String?> userId,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<String?> b2FileId,
+      Value<String?> b2FileName,
+      Value<DateTime?> b2UpdatedAt,
       Value<String?> displayName,
       Value<String?> group,
       Value<String> mimeType,
@@ -2041,6 +1912,21 @@ class $$AssetItemsTableFilterComposer
   });
   ColumnFilters<String> get id => $composableBuilder(
     column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2109,6 +1995,21 @@ class $$AssetItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get b2FileId => $composableBuilder(
     column: $table.b2FileId,
     builder: (column) => ColumnOrderings(column),
@@ -2171,6 +2072,15 @@ class $$AssetItemsTableAnnotationComposer
   });
   GeneratedColumn<String> get id =>
       $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
 
   GeneratedColumn<String> get b2FileId =>
       $composableBuilder(column: $table.b2FileId, builder: (column) => column);
@@ -2243,9 +2153,12 @@ class $$AssetItemsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                Value<String> b2FileId = const Value.absent(),
-                Value<String> b2FileName = const Value.absent(),
-                Value<DateTime> b2UpdatedAt = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<String?> b2FileId = const Value.absent(),
+                Value<String?> b2FileName = const Value.absent(),
+                Value<DateTime?> b2UpdatedAt = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
                 Value<String?> group = const Value.absent(),
                 Value<String> mimeType = const Value.absent(),
@@ -2256,6 +2169,9 @@ class $$AssetItemsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AssetItemsCompanion(
                 id: id,
+                userId: userId,
+                updatedAt: updatedAt,
+                deleted: deleted,
                 b2FileId: b2FileId,
                 b2FileName: b2FileName,
                 b2UpdatedAt: b2UpdatedAt,
@@ -2271,9 +2187,12 @@ class $$AssetItemsTableTableManager
           createCompanionCallback:
               ({
                 Value<String> id = const Value.absent(),
-                required String b2FileId,
-                required String b2FileName,
-                required DateTime b2UpdatedAt,
+                Value<String?> userId = const Value.absent(),
+                required DateTime updatedAt,
+                Value<bool> deleted = const Value.absent(),
+                Value<String?> b2FileId = const Value.absent(),
+                Value<String?> b2FileName = const Value.absent(),
+                Value<DateTime?> b2UpdatedAt = const Value.absent(),
                 Value<String?> displayName = const Value.absent(),
                 Value<String?> group = const Value.absent(),
                 required String mimeType,
@@ -2284,6 +2203,9 @@ class $$AssetItemsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AssetItemsCompanion.insert(
                 id: id,
+                userId: userId,
+                updatedAt: updatedAt,
+                deleted: deleted,
                 b2FileId: b2FileId,
                 b2FileName: b2FileName,
                 b2UpdatedAt: b2UpdatedAt,

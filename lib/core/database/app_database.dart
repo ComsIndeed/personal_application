@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:syncable/syncable.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:personal_application/core/models/message/enums.dart';
@@ -16,7 +17,7 @@ import '../tables/message_items.dart';
 part 'app_database.g.dart';
 
 @DriftDatabase(tables: [Conversations, Messages, AssetItems])
-class AppDatabase extends _$AppDatabase {
+class AppDatabase extends _$AppDatabase with SyncableDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
