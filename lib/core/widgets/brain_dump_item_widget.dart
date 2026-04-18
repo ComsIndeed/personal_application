@@ -7,37 +7,111 @@ import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/storage_service.dart';
 import 'package:intl/intl.dart';
 
-class BrainDumpItemWidget extends StatelessWidget {
+class BrainDumpItemWidget extends StatefulWidget {
   final CommonNoteItem item;
 
   const BrainDumpItemWidget({super.key, required this.item});
+
+  @override
+  State<BrainDumpItemWidget> createState() => _BrainDumpItemWidgetState();
+}
+
+class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
+  bool _isHovered = false;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    final text = item.textContent ?? '';
-    final assetIds = item.assetIds;
+    final text = widget.item.textContent ?? '';
+    final assetIds = widget.item.assetIds;
     final isSingleMedia = assetIds.length == 1 && text.length < 250;
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: isDark
-            ? const Color(0xFF0F172A).withAlpha(128)
-            : Colors.white.withAlpha(200),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
           color: isDark
-              ? Colors.white.withAlpha(10)
-              : Colors.black.withAlpha(10),
+              ? (_isHovered
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFF0F172A).withAlpha(128))
+              : (_isHovered ? Colors.white : Colors.white.withAlpha(200)),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark
+                ? (_isHovered
+                      ? Colors.white.withAlpha(40)
+                      : Colors.white.withAlpha(10))
+                : (_isHovered
+                      ? Colors.black.withAlpha(20)
+                      : Colors.black.withAlpha(10)),
+          ),
+          boxShadow: _isHovered
+              ? [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(isDark ? 50 : 20),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            isSingleMedia
+                ? _buildSingleMediaLayout(context)
+                : _buildTextHeavyLayout(context),
+            AnimatedSize(
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeInOut,
+              child: _isHovered
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                      child: Row(
+                        children: [
+                          _ActionButton(
+                            icon: Icons.check_rounded,
+                            onPressed: () {},
+                            tooltip: 'Complete',
+                          ),
+                          _ActionButton(
+                            icon: Icons.close_rounded,
+                            onPressed: () {},
+                            tooltip: 'Delete',
+                          ),
+                          const Spacer(),
+                          _ActionButton(
+                            icon: Icons.copy_rounded,
+                            onPressed: () {},
+                            tooltip: 'Copy Text',
+                          ),
+                          _ActionButton(
+                            icon: Icons.edit_rounded,
+                            onPressed: () {},
+                            tooltip: 'Edit',
+                          ),
+                          const SizedBox(width: 8),
+                          _ActionButton(
+                            icon: Icons.auto_awesome_rounded,
+                            onPressed: () {},
+                            tooltip: 'AI Actions',
+                            isSpecial: true,
+                          ),
+                        ],
+                      ),
+                    )
+                  : const SizedBox(width: double.infinity, height: 0),
+            ),
+          ],
         ),
       ),
-      clipBehavior: Clip.antiAlias,
-      child: isSingleMedia
-          ? _buildSingleMediaLayout(context)
-          : _buildTextHeavyLayout(context),
     );
   }
 
@@ -53,7 +127,7 @@ class BrainDumpItemWidget extends StatelessWidget {
           SizedBox(
             width: 120,
             height: 120,
-            child: _AssetPreview(assetId: item.assetIds.first),
+            child: _AssetPreview(assetId: widget.item.assetIds.first),
           ),
           // Content Part
           Expanded(
@@ -63,9 +137,10 @@ class BrainDumpItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (item.title != null && item.title!.isNotEmpty)
+                  if (widget.item.title != null &&
+                      widget.item.title!.isNotEmpty)
                     Text(
-                      item.title!,
+                      widget.item.title!,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 15,
@@ -73,9 +148,10 @@ class BrainDumpItemWidget extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                  if (item.textContent != null && item.textContent!.isNotEmpty)
+                  if (widget.item.textContent != null &&
+                      widget.item.textContent!.isNotEmpty)
                     Text(
-                      item.textContent!,
+                      widget.item.textContent!,
                       style: TextStyle(
                         color: isDark ? Colors.white54 : Colors.black54,
                         fontSize: 13,
@@ -103,38 +179,41 @@ class BrainDumpItemWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (item.title != null && item.title!.isNotEmpty) ...[
+          if (widget.item.title != null && widget.item.title!.isNotEmpty) ...[
             Text(
-              item.title!,
+              widget.item.title!,
               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
             const SizedBox(height: 4),
           ],
-          if (item.textContent != null && item.textContent!.isNotEmpty) ...[
+          if (widget.item.textContent != null &&
+              widget.item.textContent!.isNotEmpty) ...[
             Text(
-              item.textContent!,
+              widget.item.textContent!,
               style: TextStyle(
                 color: isDark ? Colors.white60 : Colors.black54,
                 fontSize: 14,
               ),
-              maxLines: item.assetIds.isEmpty ? 10 : 4,
+              maxLines: widget.item.assetIds.isEmpty ? 10 : 4,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 12),
           ],
-          if (item.assetIds.isNotEmpty) ...[
+          if (widget.item.assetIds.isNotEmpty) ...[
             SizedBox(
               height: 100,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
-                itemCount: item.assetIds.length,
+                itemCount: widget.item.assetIds.length,
                 separatorBuilder: (context, index) => const SizedBox(width: 8),
                 itemBuilder: (context, index) {
                   return SizedBox(
                     width: 100,
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(8),
-                      child: _AssetPreview(assetId: item.assetIds[index]),
+                      child: _AssetPreview(
+                        assetId: widget.item.assetIds[index],
+                      ),
                     ),
                   );
                 },
@@ -150,7 +229,7 @@ class BrainDumpItemWidget extends StatelessWidget {
 
   Widget _buildFooter(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final timeStr = DateFormat('MMM d, h:mm a').format(item.createdAt);
+    final timeStr = DateFormat('MMM d, h:mm a').format(widget.item.createdAt);
 
     return Row(
       children: [
@@ -168,6 +247,49 @@ class BrainDumpItemWidget extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+  final String tooltip;
+  final bool isSpecial;
+
+  const _ActionButton({
+    required this.icon,
+    required this.onPressed,
+    required this.tooltip,
+    this.isSpecial = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Tooltip(
+      message: tooltip,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 2),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.all(6.0),
+              child: Icon(
+                icon,
+                size: 18,
+                color: isSpecial
+                    ? (isDark ? Colors.amber.shade200 : Colors.amber.shade700)
+                    : (isDark ? Colors.white38 : Colors.black38),
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
