@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/app_prefs.dart';
 import '../../core/services/llm_service.dart';
 import '../../core/services/storage_service.dart';
+import '../../core/services/sync_service.dart';
 import '../../core/database/database_utils.dart';
 import '../../core/models/message/enums.dart';
 
@@ -54,6 +55,7 @@ class _SettingsTabState extends State<SettingsTab> {
         );
       }
       _checkUser();
+      SyncService().start();
     } catch (e) {
       setState(
         () => _authError = e.toString().replaceAll('AuthException: ', ''),
@@ -64,6 +66,7 @@ class _SettingsTabState extends State<SettingsTab> {
   }
 
   Future<void> _handleSignOut() async {
+    SyncService().stop();
     await Supabase.instance.client.auth.signOut();
     _checkUser();
   }

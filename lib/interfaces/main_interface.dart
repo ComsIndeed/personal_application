@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
 import 'tabs/assistant_chat/chat_tab.dart';
@@ -13,6 +15,7 @@ import 'tabs/brain_dump/brain_dump_tab.dart';
 import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 import '../core/services/tab_header_manager.dart';
+import '../core/services/sync_service.dart';
 
 class TabIntent extends Intent {
   final int index;
@@ -34,6 +37,30 @@ class MainInterface extends StatefulWidget {
 
 class _MainInterfaceState extends State<MainInterface> {
   final FocusNode _focusNode = FocusNode();
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Start listening for auth changes to manage SyncService
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      data,
+    ) {
+      final AuthChangeEvent event = data.event;
+      final Session? session = data.session;
+
+      if (event == AuthChangeEvent.signedIn || session != null) {
+        SyncService().start();
+      } else if (event == AuthChangeEvent.signedOut) {
+        SyncService().stop();
+      }
+    });
+
+    // Check initial state
+    if (Supabase.instance.client.auth.currentSession != null) {
+      SyncService().start();
+    }
+  }
 
   @override
   void didUpdateWidget(MainInterface oldWidget) {
@@ -46,6 +73,7 @@ class _MainInterfaceState extends State<MainInterface> {
   @override
   void dispose() {
     _focusNode.dispose();
+    _authSubscription?.cancel();
     super.dispose();
   }
 
