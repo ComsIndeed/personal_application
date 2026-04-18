@@ -108,7 +108,7 @@ class _MainInterfaceState extends State<MainInterface> {
                     const TabIntent(4),
                 const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
                     const TabIntent(5),
-                const SingleActivator(LogicalKeyboardKey.digit7, alt: true):
+                const SingleActivator(LogicalKeyboardKey.backquote, alt: true):
                     const TabIntent(6),
               },
               child: Actions(
@@ -141,13 +141,13 @@ class _MainInterfaceState extends State<MainInterface> {
                                     listenable: tabController,
                                     builder: (context, _) {
                                       final defaultTitles = [
-                                        'Assistant',
                                         'Brain Dump',
-                                        'Sprints',
                                         'Notes',
+                                        'Sprints',
                                         'Dashboard',
-                                        'Settings',
                                         'Utilities',
+                                        'Settings',
+                                        'Assistant',
                                       ];
                                       return Text(
                                         header.title ??
@@ -272,13 +272,13 @@ class _MainInterfaceState extends State<MainInterface> {
                       const Expanded(
                         child: VerticalTabBarView(
                           children: [
-                            ChatTab(),
                             BrainDumpTab(),
-                            TodoTab(),
                             NotesTab(),
+                            TodoTab(),
                             DashboardTab(),
-                            SettingsTab(),
                             UtilitiesTab(),
+                            SettingsTab(),
+                            ChatTab(),
                           ],
                         ),
                       ),
