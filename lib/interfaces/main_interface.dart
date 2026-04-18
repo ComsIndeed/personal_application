@@ -36,7 +36,6 @@ class MainInterface extends StatefulWidget {
 }
 
 class _MainInterfaceState extends State<MainInterface> {
-  final FocusNode _focusNode = FocusNode();
   StreamSubscription<AuthState>? _authSubscription;
 
   @override
@@ -63,16 +62,7 @@ class _MainInterfaceState extends State<MainInterface> {
   }
 
   @override
-  void didUpdateWidget(MainInterface oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.isVisible && !oldWidget.isVisible) {
-      _focusNode.requestFocus();
-    }
-  }
-
-  @override
   void dispose() {
-    _focusNode.dispose();
     _authSubscription?.cancel();
     super.dispose();
   }
@@ -103,33 +93,33 @@ class _MainInterfaceState extends State<MainInterface> {
           builder: (context, controller) {
             final tabController = DefaultTabController.of(context);
 
-            return Focus(
-              focusNode: _focusNode,
-              autofocus: false,
-              child: Shortcuts(
-                shortcuts: <ShortcutActivator, Intent>{
-                  const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
-                      const TabIntent(0),
-                  const SingleActivator(LogicalKeyboardKey.digit2, alt: true):
-                      const TabIntent(1),
-                  const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
-                      const TabIntent(2),
-                  const SingleActivator(LogicalKeyboardKey.digit4, alt: true):
-                      const TabIntent(3),
-                  const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
-                      const TabIntent(4),
-                  const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
-                      const TabIntent(5),
+            return Shortcuts(
+              shortcuts: <ShortcutActivator, Intent>{
+                const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
+                    const TabIntent(0),
+                const SingleActivator(LogicalKeyboardKey.digit2, alt: true):
+                    const TabIntent(1),
+                const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
+                    const TabIntent(2),
+                const SingleActivator(LogicalKeyboardKey.digit4, alt: true):
+                    const TabIntent(3),
+                const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
+                    const TabIntent(4),
+                const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
+                    const TabIntent(5),
+              },
+              child: Actions(
+                actions: <Type, Action<Intent>>{
+                  TabIntent: CallbackAction<TabIntent>(
+                    onInvoke: (intent) {
+                      tabController.animateTo(intent.index);
+                      return null;
+                    },
+                  ),
                 },
-                child: Actions(
-                  actions: <Type, Action<Intent>>{
-                    TabIntent: CallbackAction<TabIntent>(
-                      onInvoke: (intent) {
-                        tabController.animateTo(intent.index);
-                        return null;
-                      },
-                    ),
-                  },
+                child: Focus(
+                  autofocus: true,
+                  includeSemantics: false,
                   child: Column(
                     children: [
                       Row(

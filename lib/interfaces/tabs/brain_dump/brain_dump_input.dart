@@ -88,107 +88,110 @@ class _BrainDumpInputState extends State<BrainDumpInput> {
             const SingleActivator(LogicalKeyboardKey.keyV, meta: true): () =>
                 _handlePaste(state.files),
           },
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-            child: Column(
-              children: [
-                if (state.files.isNotEmpty) ...[
-                  SizedBox(
-                    height: 100,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: state.files.length,
-                      separatorBuilder: (context, index) =>
-                          const SizedBox(width: 12),
-                      itemBuilder: (context, index) {
-                        final file = state.files[index];
-                        return FilePreviewItem(
-                          file: file,
-                          onRemove: () {
-                            final newFiles = List<PlatformFile>.from(
-                              state.files,
-                            )..remove(file);
-                            context.read<BrainDumpCubit>().updateFiles(
-                              newFiles,
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: isDark
-                              ? const Color(0xFF0B1120)
-                              : Colors.black.withAlpha(5),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                            color: isDark
-                                ? const Color(0xFF334155)
-                                : Colors.black.withAlpha(10),
-                          ),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.add_rounded, size: 22),
-                              onPressed: () => _addFiles(state.files),
-                              tooltip: 'Add files',
-                              color: isDark ? Colors.white54 : Colors.black45,
-                            ),
-                            Expanded(
-                              child: TextField(
-                                maxLines: 2,
-                                minLines: 1,
-                                style: const TextStyle(fontSize: 14),
-                                decoration: InputDecoration(
-                                  hintText: 'Dump anything here...',
-                                  hintStyle: TextStyle(
-                                    color: isDark
-                                        ? Colors.white24
-                                        : Colors.black26,
-                                    fontSize: 14,
-                                  ),
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 12,
-                                    horizontal: 4,
-                                  ),
-                                  filled: false,
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                ),
-                              ),
-                            ),
+          child: Focus(
+            canRequestFocus: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+              child: Column(
+                children: [
+                  if (state.files.isNotEmpty) ...[
+                    SizedBox(
+                      height: 100,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        itemCount: state.files.length,
+                        separatorBuilder: (context, index) =>
                             const SizedBox(width: 12),
-                          ],
-                        ),
+                        itemBuilder: (context, index) {
+                          final file = state.files[index];
+                          return FilePreviewItem(
+                            file: file,
+                            onRemove: () {
+                              final newFiles = List<PlatformFile>.from(
+                                state.files,
+                              )..remove(file);
+                              context.read<BrainDumpCubit>().updateFiles(
+                                newFiles,
+                              );
+                            },
+                          );
+                        },
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    // Outlined Button
-                    _SideButton(
-                      icon: Icons.auto_awesome_outlined,
-                      isOutlined: true,
-                      onPressed: () {},
-                    ),
-                    const SizedBox(width: 8),
-                    // Filled Button
-                    _SideButton(
-                      icon: Icons.send_rounded,
-                      isOutlined: false,
-                      onPressed: () {},
-                    ),
+                    const SizedBox(height: 16),
                   ],
-                ),
-              ],
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF0B1120)
+                                : Colors.black.withAlpha(5),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : Colors.black.withAlpha(10),
+                            ),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.add_rounded, size: 22),
+                                onPressed: () => _addFiles(state.files),
+                                tooltip: 'Add files',
+                                color: isDark ? Colors.white54 : Colors.black45,
+                              ),
+                              Expanded(
+                                child: TextField(
+                                  maxLines: 2,
+                                  minLines: 1,
+                                  style: const TextStyle(fontSize: 14),
+                                  decoration: InputDecoration(
+                                    hintText: 'Dump anything here...',
+                                    hintStyle: TextStyle(
+                                      color: isDark
+                                          ? Colors.white24
+                                          : Colors.black26,
+                                      fontSize: 14,
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      vertical: 12,
+                                      horizontal: 4,
+                                    ),
+                                    filled: false,
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      // Outlined Button
+                      _SideButton(
+                        icon: Icons.auto_awesome_outlined,
+                        isOutlined: true,
+                        onPressed: () {},
+                      ),
+                      const SizedBox(width: 8),
+                      // Filled Button
+                      _SideButton(
+                        icon: Icons.send_rounded,
+                        isOutlined: false,
+                        onPressed: () {},
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );
