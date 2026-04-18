@@ -50,7 +50,7 @@ class _MainInterfaceState extends State<MainInterface> {
       final Session? session = data.session;
 
       if (event == AuthChangeEvent.signedIn || session != null) {
-        SyncService().start(context.read<AppDatabase>());
+        if (mounted) SyncService().start(context.read<AppDatabase>());
       } else if (event == AuthChangeEvent.signedOut) {
         SyncService().stop();
       }
@@ -127,14 +127,10 @@ class _MainInterfaceState extends State<MainInterface> {
                     children: [
                       Row(
                         children: [
-                          Flexible(
+                          Expanded(
+                            flex: 2,
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                20,
-                                20,
-                                20, // Restored right padding for consistent gap
-                                10,
-                              ),
+                              padding: const EdgeInsets.fromLTRB(20, 20, 8, 10),
                               child: Consumer<TabHeaderManager>(
                                 builder: (context, header, _) {
                                   return ListenableBuilder(
@@ -158,6 +154,7 @@ class _MainInterfaceState extends State<MainInterface> {
                                           letterSpacing: 0.5,
                                           overflow: TextOverflow.ellipsis,
                                         ),
+                                        maxLines: 1,
                                       );
                                     },
                                   );
@@ -170,6 +167,7 @@ class _MainInterfaceState extends State<MainInterface> {
                               if (header.actions != null &&
                                   header.actions!.isNotEmpty) {
                                 return Expanded(
+                                  flex: 3,
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: header.actions!,
