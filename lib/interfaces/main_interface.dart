@@ -125,12 +125,12 @@ class _MainInterfaceState extends State<MainInterface> {
                     children: [
                       Row(
                         children: [
-                          Expanded(
+                          Flexible(
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(
                                 20,
                                 20,
-                                20,
+                                20, // Restored right padding for consistent gap
                                 10,
                               ),
                               child: Consumer<TabHeaderManager>(
@@ -167,12 +167,14 @@ class _MainInterfaceState extends State<MainInterface> {
                             builder: (context, header, _) {
                               if (header.actions != null &&
                                   header.actions!.isNotEmpty) {
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: header.actions!,
+                                return Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.end,
+                                    children: header.actions!,
+                                  ),
                                 );
                               }
-                              return const SizedBox.shrink();
+                              return const Spacer();
                             },
                           ),
                           Padding(

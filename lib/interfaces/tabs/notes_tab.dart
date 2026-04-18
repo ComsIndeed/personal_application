@@ -16,7 +16,6 @@ class _NotesTabState extends State<NotesTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TabHeaderManager>().update(
         actions: [
-          const SizedBox(width: 20),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(top: 12),
