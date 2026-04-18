@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/database/app_database.dart';
+import 'package:personal_application/core/models/conversation.dart';
+import 'package:personal_application/core/models/message/message.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/models/message/message_part.dart';
 import 'package:personal_application/core/services/llm_service.dart';

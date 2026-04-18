@@ -1,5 +1,5 @@
 import 'package:openai_dart/openai_dart.dart' as openai;
-import 'package:personal_application/core/database/app_database.dart';
+import 'package:personal_application/core/models/message/message.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/models/message/message_part.dart';
 import 'package:personal_application/core/services/app_prefs.dart';

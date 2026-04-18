@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:drift/drift.dart';
+import 'package:syncable/syncable.dart';
+import 'package:uuid/uuid.dart';
+
 import 'package:personal_application/core/models/message/message_part.dart';
 import 'package:personal_application/core/models/message/enums.dart';
-import 'package:uuid/uuid.dart';
-import 'conversation_items.dart';
+import 'package:personal_application/core/models/message/message.dart';
+import 'package:personal_application/core/tables/conversation_items.dart';
 
 class MessagePartsConverter extends TypeConverter<List<MessagePart>, String> {
   const MessagePartsConverter();
@@ -22,12 +25,23 @@ class MessagePartsConverter extends TypeConverter<List<MessagePart>, String> {
   }
 }
 
-class Messages extends Table {
+@UseRowClass(Message)
+class Messages extends Table implements SyncableTable {
+  // --- Syncable required ---
+  @override
   TextColumn get id => text().clientDefault(() => const Uuid().v4())();
+  @override
+  TextColumn get userId => text().nullable()();
+  @override
+  DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
+  @override
+  BoolColumn get deleted => boolean().withDefault(const Constant(false))();
+
+  // --- Business columns ---
   TextColumn get conversationId => text().references(Conversations, #id)();
-  TextColumn get role => textEnum<MessageRole>()();
-  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+  IntColumn get role => intEnum<MessageRole>()();
   TextColumn get parts => text().map(const MessagePartsConverter())();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override
   Set<Column> get primaryKey => {id};

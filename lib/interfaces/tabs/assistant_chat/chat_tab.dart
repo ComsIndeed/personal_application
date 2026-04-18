@@ -10,10 +10,9 @@ import 'package:flyer_chat_text_stream_message/flyer_chat_text_stream_message.da
     as flyer_stream;
 import 'package:personal_application/theme/app_theme.dart';
 import 'package:personal_application/interfaces/widgets/chat_composer.dart';
-import 'package:personal_application/core/database/app_database.dart' as db;
+import 'package:personal_application/core/models/conversation.dart';
 import 'package:personal_application/core/services/llm_service.dart';
 import 'package:personal_application/core/services/tab_header_manager.dart';
-import 'package:provider/provider.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -24,7 +23,7 @@ class ChatTab extends StatefulWidget {
 
 class _ChatTabState extends State<ChatTab> {
   final _chatController = chat_core.InMemoryChatController();
-  List<db.Conversation> _conversations = [];
+  List<Conversation> _conversations = [];
 
   @override
   void initState() {
@@ -52,10 +51,11 @@ class _ChatTabState extends State<ChatTab> {
 
     final currentConvo = _conversations.firstWhere(
       (c) => c.id == state.currentConversationId,
-      orElse: () => db.Conversation(
+      orElse: () => Conversation(
         id: state.currentConversationId,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        deleted: false,
       ),
     );
 
