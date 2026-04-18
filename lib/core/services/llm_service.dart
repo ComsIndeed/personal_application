@@ -111,17 +111,32 @@ class LLMService {
     }
   }
 
-  Future<List<String>> listModels(LLMProvider provider) async {
+  static final Map<LLMProvider, List<String>> _modelCache = {};
+
+  Future<List<String>> listModels(
+    LLMProvider provider, {
+    bool force = false,
+  }) async {
+    if (!force && _modelCache.containsKey(provider)) {
+      return _modelCache[provider]!;
+    }
+
     if (!hasApiKey(provider)) {
       throw Exception('API key missing');
     }
     final client = _getClient(provider);
     try {
       final models = await client.models.list();
-      return models.data.map((m) => m.id).toList();
+      final ids = models.data.map((m) => m.id).toList();
+      _modelCache[provider] = ids;
+      return ids;
     } finally {
       client.close();
     }
+  }
+
+  void invalidateCache(LLMProvider provider) {
+    _modelCache.remove(provider);
   }
 
   bool hasApiKey(LLMProvider provider) {

@@ -108,6 +108,8 @@ class _MainInterfaceState extends State<MainInterface> {
                     const TabIntent(4),
                 const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
                     const TabIntent(5),
+                const SingleActivator(LogicalKeyboardKey.digit7, alt: true):
+                    const TabIntent(6),
               },
               child: Actions(
                 actions: <Type, Action<Intent>>{

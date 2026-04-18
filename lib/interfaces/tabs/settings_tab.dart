@@ -649,12 +649,15 @@ class _ProviderApiKeyTileState extends State<_ProviderApiKeyTile> {
     }
   }
 
-  Future<void> _fetchModels() async {
+  Future<void> _fetchModels({bool force = false}) async {
     setState(() {
       _isLoading = true;
     });
     try {
-      final models = await LLMService().listModels(widget.provider);
+      final models = await LLMService().listModels(
+        widget.provider,
+        force: force,
+      );
       if (mounted)
         setState(() {
           _isActive = true;
@@ -689,7 +692,7 @@ class _ProviderApiKeyTileState extends State<_ProviderApiKeyTile> {
         break;
     }
     _controller.clear();
-    await _fetchModels();
+    await _fetchModels(force: true);
     if (mounted) setState(() => _isSaving = false);
   }
 

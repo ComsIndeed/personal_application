@@ -22,12 +22,14 @@ class _B2Auth {
   final String apiUrl;
   final String authorizationToken;
   final String downloadUrl;
+  final DateTime expiresAt;
   final String accountId;
 
   _B2Auth({
     required this.apiUrl,
     required this.authorizationToken,
     required this.downloadUrl,
+    required this.expiresAt,
     required this.accountId,
   });
 
@@ -35,6 +37,7 @@ class _B2Auth {
     apiUrl: json['apiUrl'],
     authorizationToken: json['authorizationToken'],
     downloadUrl: json['downloadUrl'],
+    expiresAt: DateTime.now().add(const Duration(hours: 23)),
     accountId: json['accountId'],
   );
 }
@@ -81,8 +84,15 @@ class StorageService {
   StorageService._internal();
 
   final _prefs = AppPrefs();
+  AppDatabase? _db;
   _B2Auth? _cachedAuth;
   String? _cachedBucketId;
+
+  /// Inject the database instance. Must be called before use.
+  void setDatabase(AppDatabase db) => _db = db;
+
+  AppDatabase get _database =>
+      _db ?? (throw StateError('StorageService not initialized with database'));
 
   final _uploadingIds = StreamController<Set<String>>.broadcast();
   final _currentlyUploading = <String>{};
@@ -121,7 +131,7 @@ class StorageService {
     String? displayName,
     String? group,
   }) async {
-    final db = AppDatabase();
+    final db = _database;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final now = DateTime.now();
 
@@ -159,22 +169,20 @@ class StorageService {
     // Use cache if available and either freshness check is off or cache is current
     if (record.cachedBytes != null &&
         (!checkFreshness || record.isCacheFresh)) {
-      return Uint8List.fromList(record.cachedBytes!);
+      return record.cachedBytes!;
     }
 
-    // No B2 yet — can only serve from cache
     if (!record.isUploaded) {
       if (record.cachedBytes != null) {
-        return Uint8List.fromList(record.cachedBytes!);
+        return record.cachedBytes!;
       }
       throw StateError('Asset ${record.id} has no cache and no B2 upload yet');
     }
 
-    // Check connectivity before hitting network
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) {
       if (record.cachedBytes != null) {
-        return Uint8List.fromList(record.cachedBytes!);
+        return record.cachedBytes!;
       }
       throw StateError('Offline and no local cache for asset ${record.id}');
     }
@@ -184,7 +192,7 @@ class StorageService {
 
   /// List asset records from Drift. Optionally filter by [group].
   Future<List<AssetItem>> listFiles({String? group}) async {
-    final db = AppDatabase();
+    final db = _database;
     final q = db.select(db.assetItems)..where((t) => t.deleted.equals(false));
     if (group != null) q.where((t) => t.group.equals(group));
     q.orderBy([(t) => OrderingTerm.desc(t.createdAt)]);
@@ -206,13 +214,13 @@ class StorageService {
       _assertOk(resp, 'delete from B2');
     }
 
-    final db = AppDatabase();
+    final db = _database;
     await (db.delete(db.assetItems)..where((t) => t.id.equals(record.id))).go();
   }
 
   /// Clear local cache bytes without touching B2.
   Future<void> clearCache(AssetItem record) async {
-    final db = AppDatabase();
+    final db = _database;
     await (db.update(
       db.assetItems,
     )..where((t) => t.id.equals(record.id))).write(
@@ -320,7 +328,7 @@ class StorageService {
     );
 
     // Update Drift record with B2 fields + bump updatedAt for syncable
-    final db = AppDatabase();
+    final db = _database;
     final now = DateTime.now();
     await (db.update(
       db.assetItems,
@@ -350,7 +358,7 @@ class StorageService {
     _assertOk(resp, 'download');
 
     final bytes = resp.bodyBytes;
-    final db = AppDatabase();
+    final db = _database;
     await (db.update(
       db.assetItems,
     )..where((t) => t.id.equals(record.id))).write(
@@ -368,7 +376,9 @@ class StorageService {
   // -------------------------------------------------------------------------
 
   Future<_B2Auth> _authorize() async {
-    if (_cachedAuth != null) return _cachedAuth!;
+    if (_cachedAuth != null && _cachedAuth!.expiresAt.isAfter(DateTime.now())) {
+      return _cachedAuth!;
+    }
     final keyId = _prefs.b2KeyId.trim();
     final appKey = _prefs.b2AppKey.trim();
     if (keyId.isEmpty || appKey.isEmpty) {
@@ -440,6 +450,9 @@ class StorageService {
   }
 
   void _assertOk(http.Response resp, String op) {
+    if (resp.statusCode == 401) {
+      _cachedAuth = null; // Token likely expired, force re-auth next time
+    }
     if (resp.statusCode != 200) {
       throw Exception('B2 $op failed (${resp.statusCode}): ${resp.body}');
     }

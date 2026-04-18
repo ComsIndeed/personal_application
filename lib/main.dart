@@ -10,6 +10,7 @@ import 'package:window_manager/window_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
+import 'core/services/storage_service.dart';
 import 'interfaces/main_interface.dart';
 import 'theme/app_theme.dart';
 
@@ -31,6 +32,7 @@ void main() async {
   }
 
   final database = AppDatabase();
+  StorageService().setDatabase(database);
 
   const windowOptions = WindowOptions(
     center: true,

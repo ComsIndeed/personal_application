@@ -56,7 +56,7 @@ class AssetItem extends Equatable implements Syncable {
 
   // --- Device-local cache (excluded from toJson) ---
   @JsonKey(includeFromJson: false, includeToJson: false)
-  final List<int>? cachedBytes;
+  final Uint8List? cachedBytes;
   @JsonKey(includeFromJson: false, includeToJson: false)
   final DateTime? cachedAt;
 
@@ -87,6 +87,7 @@ class AssetItem extends Equatable implements Syncable {
           mimeType: Value(mimeType),
           size: Value(size),
           createdAt: Value(createdAt),
+          // cachedBytes and cachedAt are device-local and excluded from syncable companions
         )
         as UpdateCompanion<AssetItem>;
   }
@@ -104,7 +105,7 @@ class AssetItem extends Equatable implements Syncable {
     String? mimeType,
     int? size,
     DateTime? createdAt,
-    List<int>? cachedBytes,
+    Uint8List? cachedBytes,
     DateTime? cachedAt,
   }) {
     return AssetItem(

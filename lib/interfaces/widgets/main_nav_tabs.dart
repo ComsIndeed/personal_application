@@ -99,6 +99,13 @@ class MainNavTabs extends StatelessWidget {
                       label: 'Settings',
                       onTap: () => tabController.animateTo(5),
                     ),
+                    const SizedBox(height: spacing),
+                    _NavButton(
+                      index: 6,
+                      icon: Icon(Icons.build_circle_rounded),
+                      label: 'Utilities',
+                      onTap: () => tabController.animateTo(6),
+                    ),
                   ],
                 ),
               ),

@@ -26,14 +26,25 @@ class AppDatabase extends _$AppDatabase with SyncableDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+    onCreate: (m) => m.createAll(),
+    onUpgrade: (m, from, to) async {
+      // Dev-only: nuke everything and recreate for fast schema iterations
+      for (final table in allTables) {
+        await m.deleteTable(table.actualTableName);
+      }
+      await m.createAll();
+    },
+  );
 }
 
 LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
-    // Using a dated filename to force a fresh schema for sync implementation
-    final file = File(p.join(dbFolder.path, 'db_20260419.db'));
+    final file = File(p.join(dbFolder.path, 'pa.db'));
 
     if (Platform.isAndroid) {
       // await applyWorkaroundToOpenSqlite3OnOldAndroidDevices();

@@ -14,6 +14,7 @@ class AssistantChatState {
   final String? streamingText;
   final String? streamingReasoning;
   final String currentConversationId;
+  final bool isStreaming;
   final bool isLoading;
   final LLMProvider provider;
   final String? model;
@@ -23,12 +24,13 @@ class AssistantChatState {
     this.streamingText,
     this.streamingReasoning,
     required this.currentConversationId,
+    this.isStreaming = false,
     this.isLoading = false,
     this.provider = LLMProvider.gemini,
     this.model,
   });
 
-  bool get isStreaming => streamingText != null || streamingReasoning != null;
+  // Removed getter to use explicit state field
 
   AssistantChatState copyWith({
     List<Message>? messages,
@@ -38,6 +40,7 @@ class AssistantChatState {
     bool? isLoading,
     LLMProvider? provider,
     String? model,
+    bool? isStreaming,
     bool clearStreaming = false,
   }) {
     return AssistantChatState(
@@ -53,6 +56,7 @@ class AssistantChatState {
       isLoading: isLoading ?? this.isLoading,
       provider: provider ?? this.provider,
       model: model ?? this.model,
+      isStreaming: isStreaming ?? (clearStreaming ? false : this.isStreaming),
     );
   }
 }
@@ -156,7 +160,13 @@ class AssistantChatCubit extends Cubit<AssistantChatState> {
     // 3. Start streaming response
     String fullResponse = "";
     String fullReasoning = "";
-    emit(state.copyWith(streamingText: "", streamingReasoning: ""));
+    emit(
+      state.copyWith(
+        streamingText: "",
+        streamingReasoning: "",
+        isStreaming: true,
+      ),
+    );
 
     if (state.model == null) {
       await loadInitialModel();

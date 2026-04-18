@@ -255,11 +255,19 @@ class _ChatTabState extends State<ChatTab> {
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: BlocListener<AssistantChatCubit, AssistantChatState>(
-        listener: (context, state) {
-          _syncMessages(state);
-          _loadConversations();
-        },
+      body: MultiBlocListener(
+        listeners: [
+          BlocListener<AssistantChatCubit, AssistantChatState>(
+            listener: (context, state) => _syncMessages(state),
+          ),
+          BlocListener<AssistantChatCubit, AssistantChatState>(
+            listenWhen: (previous, current) =>
+                previous.currentConversationId !=
+                    current.currentConversationId ||
+                (previous.isStreaming && !current.isStreaming),
+            listener: (context, state) => _loadConversations(),
+          ),
+        ],
         child: BlocBuilder<AssistantChatCubit, AssistantChatState>(
           builder: (context, state) {
             return Chat(

@@ -17,14 +17,17 @@ class SyncService {
   SyncService._internal();
 
   SyncManager<AppDatabase>? _manager;
+  AppDatabase? _activeDb;
 
   bool get isRunning => _manager != null;
 
   /// Start syncing records for the current authenticated user.
-  /// Safe to call multiple times — no-op if already running.
+  /// Safe to call multiple times — no-op if already running with same DB.
   void start(AppDatabase db) {
-    if (_manager != null) return;
+    if (_manager != null && _activeDb == db) return;
+    if (_manager != null) stop();
 
+    _activeDb = db;
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
