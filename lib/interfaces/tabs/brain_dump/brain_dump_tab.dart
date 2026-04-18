@@ -47,8 +47,11 @@ class _BrainDumpTabState extends State<BrainDumpTab> {
         // Content Area (Clean)
         Expanded(
           child: BlocBuilder<BrainDumpCubit, BrainDumpState>(
+            buildWhen: (previous, current) =>
+                previous.items != current.items ||
+                previous.pendingItems != current.pendingItems,
             builder: (context, state) {
-              if (state.items.isEmpty) {
+              if (state.items.isEmpty && state.pendingItems.isEmpty) {
                 return Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
@@ -71,11 +74,21 @@ class _BrainDumpTabState extends State<BrainDumpTab> {
                 );
               }
 
+              final allCount = state.pendingItems.length + state.items.length;
+
               return ListView.builder(
                 padding: const EdgeInsets.only(top: 8, bottom: 20),
-                itemCount: state.items.length,
+                itemCount: allCount,
                 itemBuilder: (context, index) {
-                  return BrainDumpItemWidget(item: state.items[index]);
+                  if (index < state.pendingItems.length) {
+                    return BrainDumpItemWidget(
+                      item: state.pendingItems[index],
+                      isPending: true,
+                    );
+                  }
+                  return BrainDumpItemWidget(
+                    item: state.items[index - state.pendingItems.length],
+                  );
                 },
               );
             },

@@ -7,10 +7,17 @@ import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/storage_service.dart';
 import 'package:intl/intl.dart';
 
+import 'package:flutter_animate/flutter_animate.dart';
+
 class BrainDumpItemWidget extends StatefulWidget {
   final CommonNoteItem item;
+  final bool isPending;
 
-  const BrainDumpItemWidget({super.key, required this.item});
+  const BrainDumpItemWidget({
+    super.key,
+    required this.item,
+    this.isPending = false,
+  });
 
   @override
   State<BrainDumpItemWidget> createState() => _BrainDumpItemWidgetState();
@@ -31,87 +38,103 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
     return MouseRegion(
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: isDark
-              ? (_isHovered
-                    ? const Color(0xFF1E293B)
-                    : const Color(0xFF0F172A).withAlpha(128))
-              : (_isHovered ? Colors.white : Colors.white.withAlpha(200)),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: isDark
-                ? (_isHovered
-                      ? Colors.white.withAlpha(40)
-                      : Colors.white.withAlpha(10))
-                : (_isHovered
-                      ? Colors.black.withAlpha(20)
-                      : Colors.black.withAlpha(10)),
-          ),
-          boxShadow: _isHovered
-              ? [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(isDark ? 50 : 20),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+      child:
+          AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeInOut,
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? (_isHovered
+                            ? const Color(0xFF1E293B)
+                            : const Color(0xFF0F172A).withAlpha(128))
+                      : (_isHovered
+                            ? Colors.white
+                            : Colors.white.withAlpha(200)),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isDark
+                        ? (_isHovered
+                              ? Colors.white.withAlpha(40)
+                              : Colors.white.withAlpha(10))
+                        : (_isHovered
+                              ? Colors.black.withAlpha(20)
+                              : Colors.black.withAlpha(10)),
                   ),
-                ]
-              : null,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            isSingleMedia
-                ? _buildSingleMediaLayout(context)
-                : _buildTextHeavyLayout(context),
-            AnimatedSize(
-              duration: const Duration(milliseconds: 200),
-              curve: Curves.easeInOut,
-              child: _isHovered
-                  ? Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                      child: Row(
-                        children: [
-                          _ActionButton(
-                            icon: Icons.check_rounded,
-                            onPressed: () {},
-                            tooltip: 'Complete',
+                  boxShadow: _isHovered
+                      ? [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(isDark ? 50 : 20),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          _ActionButton(
-                            icon: Icons.close_rounded,
-                            onPressed: () {},
-                            tooltip: 'Delete',
-                          ),
-                          const Spacer(),
-                          _ActionButton(
-                            icon: Icons.copy_rounded,
-                            onPressed: () {},
-                            tooltip: 'Copy Text',
-                          ),
-                          _ActionButton(
-                            icon: Icons.edit_rounded,
-                            onPressed: () {},
-                            tooltip: 'Edit',
-                          ),
-                          const SizedBox(width: 8),
-                          _ActionButton(
-                            icon: Icons.auto_awesome_rounded,
-                            onPressed: () {},
-                            tooltip: 'AI Actions',
-                            isSpecial: true,
-                          ),
-                        ],
+                        ]
+                      : null,
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Opacity(
+                  opacity: widget.isPending ? 0.6 : 1.0,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      isSingleMedia
+                          ? _buildSingleMediaLayout(context)
+                          : _buildTextHeavyLayout(context),
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 200),
+                        curve: Curves.easeInOut,
+                        child: _isHovered && !widget.isPending
+                            ? Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16,
+                                  0,
+                                  16,
+                                  12,
+                                ),
+                                child: Row(
+                                  children: [
+                                    _ActionButton(
+                                      icon: Icons.check_rounded,
+                                      onPressed: () {},
+                                      tooltip: 'Complete',
+                                    ),
+                                    _ActionButton(
+                                      icon: Icons.close_rounded,
+                                      onPressed: () {},
+                                      tooltip: 'Delete',
+                                    ),
+                                    const Spacer(),
+                                    _ActionButton(
+                                      icon: Icons.copy_rounded,
+                                      onPressed: () {},
+                                      tooltip: 'Copy Text',
+                                    ),
+                                    _ActionButton(
+                                      icon: Icons.edit_rounded,
+                                      onPressed: () {},
+                                      tooltip: 'Edit',
+                                    ),
+                                    const SizedBox(width: 8),
+                                    _ActionButton(
+                                      icon: Icons.auto_awesome_rounded,
+                                      onPressed: () {},
+                                      tooltip: 'AI Actions',
+                                      isSpecial: true,
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : const SizedBox(width: double.infinity, height: 0),
                       ),
-                    )
-                  : const SizedBox(width: double.infinity, height: 0),
-            ),
-          ],
-        ),
-      ),
+                    ],
+                  ),
+                ),
+              )
+              .animate(target: widget.isPending ? 1 : 0)
+              .shimmer(
+                duration: 1.5.seconds,
+                color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
+              ),
     );
   }
 
@@ -294,20 +317,54 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _AssetPreview extends StatelessWidget {
+class _AssetPreview extends StatefulWidget {
   final String assetId;
 
   const _AssetPreview({required this.assetId});
 
   @override
-  Widget build(BuildContext context) {
-    final db = context.read<AppDatabase>();
-    final storage = StorageService();
+  State<_AssetPreview> createState() => _AssetPreviewState();
+}
 
+class _AssetPreviewState extends State<_AssetPreview> {
+  Future<AssetItem?>? _assetFuture;
+  Future<Uint8List>? _bytesFuture;
+  String? _lastAssetId;
+
+  @override
+  void initState() {
+    super.initState();
+    _initFutures();
+  }
+
+  @override
+  void didUpdateWidget(_AssetPreview oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.assetId != widget.assetId) {
+      _initFutures();
+    }
+  }
+
+  void _initFutures() {
+    final db = context.read<AppDatabase>();
+
+    _assetFuture = (db.select(
+      db.assetItems,
+    )..where((t) => t.id.equals(widget.assetId))).getSingleOrNull();
+    _lastAssetId = widget.assetId;
+  }
+
+  Future<Uint8List> _getBytes(AssetItem asset) {
+    if (_bytesFuture != null && _lastAssetId == widget.assetId)
+      return _bytesFuture!;
+    _bytesFuture = StorageService().getBytes(asset);
+    return _bytesFuture!;
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return FutureBuilder<AssetItem?>(
-      future: (db.select(
-        db.assetItems,
-      )..where((t) => t.id.equals(assetId))).getSingleOrNull(),
+      future: _assetFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
           return const Center(child: CircularProgressIndicator(strokeWidth: 2));
@@ -315,7 +372,7 @@ class _AssetPreview extends StatelessWidget {
 
         final asset = snapshot.data!;
         return FutureBuilder<Uint8List>(
-          future: storage.getBytes(asset),
+          future: _getBytes(asset),
           builder: (context, byteSnapshot) {
             if (!byteSnapshot.hasData) {
               return Container(
@@ -325,7 +382,11 @@ class _AssetPreview extends StatelessWidget {
             }
 
             if (asset.mimeType.startsWith('image/')) {
-              return Image.memory(byteSnapshot.data!, fit: BoxFit.cover);
+              return Image.memory(
+                byteSnapshot.data!,
+                fit: BoxFit.cover,
+                cacheWidth: 400, // Optimization for list views
+              );
             }
 
             return Container(
