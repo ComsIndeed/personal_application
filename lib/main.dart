@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:personal_application/interfaces/tabs/assistant_chat/assistant_chat_cubit.dart';
 import 'package:personal_application/interfaces/tabs/brain_dump/brain_dump_cubit.dart';
+import 'package:personal_application/interfaces/tabs/notes/notes_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -60,6 +61,7 @@ void main() async {
         Provider<AppDatabase>.value(value: database),
         BlocProvider(create: (context) => AssistantChatCubit(db: database)),
         BlocProvider(create: (context) => BrainDumpCubit(database)),
+        BlocProvider(create: (context) => NotesCubit(database)),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],

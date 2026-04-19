@@ -10,7 +10,7 @@ import 'tabs/assistant_chat/chat_tab.dart';
 import 'tabs/todo_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
-import 'tabs/notes_tab.dart';
+import 'tabs/notes/notes_tab.dart';
 import 'tabs/brain_dump/brain_dump_tab.dart';
 import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
