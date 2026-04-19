@@ -177,8 +177,6 @@ class OverlayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isVisible = context.watch<WindowOverlayState>().isVisible;
-
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
@@ -191,14 +189,8 @@ class OverlayPage extends StatelessWidget {
             ),
           ),
 
-          // Side panel (always in tree, driven by isVisible)
-          Positioned(
-            top: 0,
-            bottom: 0,
-            right: 0,
-            width: panelWidth,
-            child: MainInterface(isVisible: isVisible),
-          ),
+          // Side panel (always in tree, positioning handled by InterfaceContainer)
+          const MainInterface(),
         ],
       ),
     );

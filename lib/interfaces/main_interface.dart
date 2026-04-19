@@ -28,9 +28,7 @@ class HideIntent extends Intent {
 }
 
 class MainInterface extends StatefulWidget {
-  final bool isVisible;
-
-  const MainInterface({super.key, required this.isVisible});
+  const MainInterface({super.key});
 
   @override
   State<MainInterface> createState() => _MainInterfaceState();
@@ -78,7 +76,6 @@ class _MainInterfaceState extends State<MainInterface> {
       child: DefaultTabController(
         length: 7, // Increased to 7 for Utilities
         child: InterfaceContainer(
-          isVisible: widget.isVisible,
           outerBuilder: (context, controller, container) {
             return Row(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -87,7 +84,7 @@ class _MainInterfaceState extends State<MainInterface> {
                 // Floating Tab Navigation
                 const MainNavTabs(),
                 // Main Animated Container
-                SizedBox(width: 420, child: container),
+                container,
               ],
             );
           },
@@ -176,6 +173,34 @@ class _MainInterfaceState extends State<MainInterface> {
                               }
                               return const Spacer();
                             },
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 4, top: 12),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.aspect_ratio_rounded,
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                if (controller.width == 420) {
+                                  controller.updateSize(width: 800);
+                                  controller.updateAlignment(Alignment.center);
+                                } else {
+                                  controller.updateSize(width: 420);
+                                  controller.updateAlignment(
+                                    Alignment.centerRight,
+                                  );
+                                }
+                              },
+                              tooltip: 'Test Layout',
+                              style: IconButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).brightness ==
+                                        Brightness.dark
+                                    ? Colors.white.withValues(alpha: 0.05)
+                                    : Colors.black.withValues(alpha: 0.05),
+                              ),
+                            ),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(right: 4, top: 12),
