@@ -97,11 +97,11 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
         // Taskbar aware padding (consistent with InterfaceContainer)
         EdgeInsets effectivePadding = const EdgeInsets.all(16.0);
         if (!kIsWeb && Platform.isWindows) {
-          // Use taskbar padding if available, fallback to 64 if not
-          final bottomPadding = MediaQuery.of(context).padding.bottom;
-          effectivePadding = effectivePadding.copyWith(
-            bottom: bottomPadding > 0 ? bottomPadding : 64.0,
-          );
+          if (MediaQuery.of(context).padding.bottom == 0) {
+            effectivePadding = effectivePadding.copyWith(
+              bottom: effectivePadding.bottom + 48,
+            );
+          }
         }
 
         return Positioned(

@@ -37,19 +37,21 @@ void main() async {
   final database = AppDatabase();
   StorageService().setDatabase(database);
 
-  // We moved the verification to inside MainApp to avoid startup contention
-  // but we keep the instance ready.
+  // Background verification of B2 on launch
+  StorageService().verifyCredentials().catchError((e) {
+    debugPrint('B2 auto-verification failed: $e');
+  });
 
   const windowOptions = WindowOptions(
+    center: true,
     skipTaskbar: true,
     titleBarStyle: TitleBarStyle.hidden,
+    fullScreen: true,
   );
 
   windowManager
       .waitUntilReadyToShow(windowOptions, () async {
-        await windowManager.setAsFrameless();
         await windowManager.setOpacity(0.0);
-        await windowManager.maximize();
       })
       .then((_) {
         Window.setEffect(effect: WindowEffect.transparent);
@@ -96,38 +98,19 @@ class WindowOverlayState extends ChangeNotifier {
 
   Future<void> open() async {
     if (_isVisible) return;
-    debugPrint('[Overlay] Opening window...');
     _isVisible = true;
-    notifyListeners();
-
-    // Ensure window is frameless, on top, and maximized
-    await windowManager.setAsFrameless();
-    await windowManager.setAlwaysOnTop(true);
-    await windowManager.maximize();
+    notifyListeners(); // trigger panel slide-in immediately
     await windowManager.show();
     await windowManager.focus();
-
-    _controller
-        .forward()
-        .then((_) {
-          debugPrint('[Overlay] Animation completed.');
-        })
-        .catchError((e) {
-          debugPrint('[Overlay] Animation failed: $e');
-          windowManager.setOpacity(1.0); // Fallback to full visibility
-        });
-
-    debugPrint('[Overlay] Window opened and animation triggered.');
+    _controller.forward();
   }
 
   Future<void> close() async {
     if (!_isVisible) return;
-    debugPrint('[Overlay] Closing window...');
     _isVisible = false;
-    notifyListeners();
+    notifyListeners(); // trigger panel slide-out immediately
     await _controller.reverse();
     await windowManager.hide();
-    debugPrint('[Overlay] Window hidden.');
   }
 
   void toggle() {
@@ -167,11 +150,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<WindowOverlayState>().initAnimation(this);
-
-      // Verification of B2 after UI is ready
-      StorageService().verifyCredentials().catchError((e) {
-        debugPrint('[Storage] B2 auto-verification failed: $e');
-      });
     });
   }
 
@@ -206,20 +184,11 @@ class OverlayPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Clickable backdrop → close
+          // Clickable transparent backdrop → close
           Positioned.fill(
-            child: Consumer<WindowOverlayState>(
-              builder: (context, state, _) {
-                return GestureDetector(
-                  onTap: () => state.close(),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    color: state.isVisible
-                        ? Colors.black.withValues(alpha: 0.15)
-                        : Colors.transparent,
-                  ),
-                );
-              },
+            child: GestureDetector(
+              onTap: () => context.read<WindowOverlayState>().close(),
+              child: Container(color: Colors.transparent),
             ),
           ),
 
