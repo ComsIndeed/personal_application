@@ -31,10 +31,15 @@ class SyncService {
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
 
-    _manager = SyncManager<AppDatabase>(
-      localDatabase: db,
-      supabaseClient: Supabase.instance.client,
-    );
+    try {
+      _manager = SyncManager<AppDatabase>(
+        localDatabase: db,
+        supabaseClient: Supabase.instance.client,
+      );
+    } catch (e) {
+      print('SyncService initialization failed: $e');
+      return;
+    }
 
     // 1. Asset Items
     _manager!.registerSyncable<AssetItem>(

@@ -278,8 +278,15 @@ class StorageService {
   }
 
   /// Test B2 credentials and bucket access.
-  Future<void> verifyCredentials({bool autoRestore = true}) async {
+  Future<void> verifyCredentials({
+    bool autoRestore = true,
+    bool force = false,
+  }) async {
     try {
+      if (force) {
+        _cachedAuth = null;
+        _cachedBucketId = null;
+      }
       final auth = await _authorize();
       await _getBucketId(auth);
       _updateVerified(true);
