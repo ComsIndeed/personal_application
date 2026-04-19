@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/widgets/interface_container.dart';
@@ -19,6 +17,7 @@ import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 import '../core/services/tab_header_manager.dart';
 import '../core/services/sync_service.dart';
+import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import '../core/database/app_database.dart';
 
 class TabIntent extends Intent {

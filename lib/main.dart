@@ -13,8 +13,10 @@ import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
 import 'core/services/storage_service.dart';
 import 'core/services/item_preview_cubit.dart';
+import 'core/services/database_browser_cubit.dart';
 import 'core/widgets/item_preview_widget.dart';
 import 'interfaces/main_interface.dart';
+import 'interfaces/widgets/database_browser_widget.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -65,6 +67,7 @@ void main() async {
         BlocProvider(create: (context) => BrainDumpCubit(database)),
         BlocProvider(create: (context) => NotesCubit(database)),
         BlocProvider(create: (context) => ItemPreviewCubit()),
+        BlocProvider(create: (context) => DatabaseBrowserCubit()),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
@@ -197,6 +200,9 @@ class OverlayPage extends StatelessWidget {
 
           // Root Overlay Preview (Anchored Left of Screen)
           const ItemPreviewWidget(),
+
+          // Database Browser (Anchored Left of Screen)
+          const DatabaseBrowserWidget(),
         ],
       ),
     );

@@ -8,6 +8,7 @@ import '../../core/services/sync_service.dart';
 import '../../core/database/database_utils.dart';
 import '../../core/database/app_database.dart';
 import '../../core/models/message/enums.dart';
+import '../../core/services/database_browser_cubit.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -57,7 +58,7 @@ class _SettingsTabState extends State<SettingsTab> {
         );
       }
       _checkUser();
-      SyncService().start(context.read<AppDatabase>());
+      if (mounted) SyncService().start(context.read<AppDatabase>());
     } catch (e) {
       setState(
         () => _authError = e.toString().replaceAll('AuthException: ', ''),
@@ -174,58 +175,54 @@ class _SettingsTabState extends State<SettingsTab> {
         const SizedBox(height: 20),
         _buildSectionHeader('Data & Storage'),
         _buildSectionContainer(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const Icon(
-                    Icons.table_chart_outlined,
-                    size: 16,
-                    color: Colors.white24,
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Database Browser',
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () => context.read<DatabaseBrowserCubit>().show(),
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.table_chart_outlined,
+                          size: 16,
+                          color: Colors.white24,
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Database Browser',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.2),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Browse all local tables, inspect rows, follow foreign keys, and manage cloud files — all in one place.',
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                        color: Colors.white30,
+                        height: 1.5,
                       ),
                     ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.04),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.white10),
-                    ),
-                    child: const Text(
-                      'COMING SOON',
-                      style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.2,
-                        color: Colors.white24,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Browse all local tables, inspect rows, follow foreign keys, and manage cloud files — all in one place.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.white30,
-                  height: 1.5,
+                  ],
                 ),
               ),
-            ],
+            ),
           ),
         ),
 
@@ -798,10 +795,15 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
   @override
   void initState() {
     super.initState();
-    _isVerified = StorageService().isLastVerified;
-    _sub = StorageService().isVerifiedStream.listen((val) {
-      if (mounted) setState(() => _isVerified = val);
+    _kId.text = AppPrefs().b2KeyId;
+    _aKey.text = AppPrefs().b2AppKey;
+    _end.text = AppPrefs().b2Endpoint;
+    _buck.text = AppPrefs().b2BucketName;
+
+    _sub = StorageService().isVerifiedStream.listen((verified) {
+      if (mounted) setState(() => _isVerified = verified);
     });
+    _isVerified = StorageService().isLastVerified;
   }
 
   @override
@@ -814,209 +816,192 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
     super.dispose();
   }
 
-  Future<void> _verifyOnly() async {
-    setState(() => _isVerifying = true);
-    try {
-      await StorageService().verifyCredentials(force: true);
-      if (mounted) {
-        setState(() => _isVerified = true);
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('B2 Connection Verified')));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isVerified = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Verification Failed: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isVerifying = false);
-    }
-  }
-
   Future<void> _save() async {
     setState(() => _isSaving = true);
-    try {
-      final prefs = AppPrefs();
-      await prefs.saveB2Credentials(
-        keyId: _kId.text.isNotEmpty ? _kId.text : prefs.b2KeyId,
-        appKey: _aKey.text.isNotEmpty ? _aKey.text : prefs.b2AppKey,
-        endpoint: _end.text.isNotEmpty ? _end.text : prefs.b2Endpoint,
-        bucketName: _buck.text.isNotEmpty ? _buck.text : prefs.b2BucketName,
-      );
+    await AppPrefs().saveB2Credentials(
+      keyId: _kId.text,
+      appKey: _aKey.text,
+      endpoint: _end.text,
+      bucketName: _buck.text,
+    );
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (mounted) setState(() => _isSaving = false);
+  }
 
-      // Verify connection
-      await StorageService().verifyCredentials(force: true);
-
-      if (mounted) {
-        setState(() => _isVerified = true);
-        _kId.clear();
-        _aKey.clear();
-        _end.clear();
-        _buck.clear();
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('B2 Verified & Saved')));
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isVerified = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Verification Failed: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isSaving = false);
-    }
+  Future<void> _verify() async {
+    setState(() => _isVerifying = true);
+    await StorageService().verifyCredentials();
+    if (mounted) setState(() => _isVerifying = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    final statusColor = _isVerified ? Colors.greenAccent : Colors.orangeAccent;
-    final statusLabel = _isVerified ? 'VERIFIED' : 'UNVERIFIED';
-
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.02),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
-      ),
+    return _buildSectionContainer(
+      padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const Text(
-                      'Service Config',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const Spacer(),
-                    InkWell(
-                      onTap: _isVerifying ? null : _verifyOnly,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: statusColor.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: statusColor.withValues(alpha: 0.2),
-                          ),
-                        ),
-                        child: _isVerifying
-                            ? const SizedBox(
-                                width: 8,
-                                height: 8,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 1.5,
-                                ),
-                              )
-                            : Text(
-                                statusLabel,
-                                style: TextStyle(
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.w900,
-                                  color: statusColor,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _largeInput(_kId, 'Key ID', Icons.vpn_key_rounded),
-                const SizedBox(height: 10),
-                _largeInput(
+          Row(
+            children: [
+              Expanded(
+                child: _buildSmallField(_kId, 'Key ID', Icons.vpn_key_rounded),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSmallField(
                   _aKey,
                   'App Key',
-                  Icons.security_rounded,
+                  Icons.lock_rounded,
                   obscure: true,
                 ),
-                const SizedBox(height: 10),
-                _largeInput(_end, 'S3 Endpoint', Icons.lan_rounded),
-                const SizedBox(height: 10),
-                _largeInput(_buck, 'Bucket', Icons.storage_rounded),
-              ],
-            ),
-          ),
-          Material(
-            color: Colors.white.withValues(alpha: 0.03),
-            borderRadius: const BorderRadius.vertical(
-              bottom: Radius.circular(24),
-            ),
-            child: InkWell(
-              onTap: _isSaving ? null : _save,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(24),
               ),
-              child: Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20),
-                child: _isSaving
-                    ? const Center(
-                        child: SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : const Text(
-                        'VERIFY & SAVE CONFIG',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                          letterSpacing: 2.0,
-                        ),
-                      ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSmallField(
+                  _end,
+                  'Endpoint (e.g. s3.us-west-004.backblazeb2.com)',
+                  Icons.dns_rounded,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSmallField(_buck, 'Bucket', Icons.folder_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: _buildPrimaryButton(
+                  label: _isSaving ? 'Saving...' : 'Save Config',
+                  onPressed: _isSaving ? null : _save,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildSecondaryButton(
+                  label: _isVerifying ? 'Verifying...' : 'Verify & Connect',
+                  onPressed: _isVerifying ? null : _verify,
+                ),
+              ),
+            ],
+          ),
+          if (_isVerified)
+            const Padding(
+              padding: EdgeInsets.only(top: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.check_circle_rounded,
+                    color: Colors.greenAccent,
+                    size: 14,
+                  ),
+                  SizedBox(width: 6),
+                  Text(
+                    'Connected to B2 Storage',
+                    style: TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
         ],
       ),
     );
   }
 
-  Widget _largeInput(
+  Widget _buildSmallField(
     TextEditingController controller,
     String label,
     IconData icon, {
     bool obscure = false,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.03),
-        borderRadius: BorderRadius.circular(14),
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: TextField(
         controller: controller,
         obscureText: obscure,
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.white24, fontSize: 11),
-          prefixIcon: Icon(icon, size: 16, color: Colors.white24),
+          labelStyle: const TextStyle(color: Colors.white38, fontSize: 11),
+          prefixIcon: Icon(icon, size: 14, color: Colors.white24),
           border: InputBorder.none,
-          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionContainer({
+    required Widget child,
+    EdgeInsetsGeometry? padding,
+  }) {
+    return Container(
+      padding: padding ?? const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.02),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.grey.withValues(alpha: 0.12),
+          width: 1,
+        ),
+      ),
+      child: child,
+    );
+  }
+
+  Widget _buildPrimaryButton({
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return ElevatedButton(
+      onPressed: onPressed,
+      style: ElevatedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 0,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Colors.white,
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+
+  Widget _buildSecondaryButton({
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return OutlinedButton(
+      onPressed: onPressed,
+      style: OutlinedButton.styleFrom(
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: const BorderSide(color: Colors.white10, width: 2),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+          color: Colors.white70,
         ),
       ),
     );
