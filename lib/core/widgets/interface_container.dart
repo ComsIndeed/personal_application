@@ -144,6 +144,9 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
       listenable: _effectiveController,
       builder: (context, _) {
         final isVisible = _effectiveController.isVisible;
+        debugPrint(
+          '[UI] Interface ${widget.outerBuilder != null ? "Outer" : "Inner"} isVisible: $isVisible',
+        );
 
         Widget container = AnimatedContainer(
           duration: 350.ms,
@@ -182,11 +185,10 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
             widget.margin ?? const EdgeInsets.all(16.0);
 
         if (widget.useSafeArea && !kIsWeb && Platform.isWindows) {
-          if (MediaQuery.of(context).padding.bottom == 0) {
-            effectivePadding = effectivePadding.copyWith(
-              bottom: effectivePadding.bottom + 48,
-            );
-          }
+          final bottomPadding = MediaQuery.of(context).padding.bottom;
+          effectivePadding = effectivePadding.copyWith(
+            bottom: bottomPadding > 0 ? bottomPadding : 64.0,
+          );
         }
 
         Widget content = Padding(

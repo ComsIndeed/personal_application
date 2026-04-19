@@ -817,7 +817,7 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
   Future<void> _verifyOnly() async {
     setState(() => _isVerifying = true);
     try {
-      await StorageService().verifyCredentials();
+      await StorageService().verifyCredentials(force: true);
       if (mounted) {
         setState(() => _isVerified = true);
         ScaffoldMessenger.of(
@@ -851,7 +851,7 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
       );
 
       // Verify connection
-      await StorageService().verifyCredentials();
+      await StorageService().verifyCredentials(force: true);
 
       if (mounted) {
         setState(() => _isVerified = true);
