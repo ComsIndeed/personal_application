@@ -12,6 +12,7 @@ class InterfaceController extends ChangeNotifier {
   double _width;
   double? _height;
   Alignment _alignment;
+  BorderSide? _border;
 
   InterfaceController({
     this.overlayState,
@@ -19,10 +20,12 @@ class InterfaceController extends ChangeNotifier {
     double initialWidth = 420,
     double? initialHeight,
     Alignment initialAlignment = Alignment.centerRight,
+    BorderSide? initialBorder,
   }) : _isVisible = initialVisible,
        _width = initialWidth,
        _height = initialHeight,
-       _alignment = initialAlignment {
+       _alignment = initialAlignment,
+       _border = initialBorder {
     overlayState?.addListener(notifyListeners);
   }
 
@@ -30,6 +33,7 @@ class InterfaceController extends ChangeNotifier {
   double get width => _width;
   double? get height => _height;
   Alignment get alignment => _alignment;
+  BorderSide? get border => _border;
 
   void show() {
     if (overlayState != null) {
@@ -59,12 +63,17 @@ class InterfaceController extends ChangeNotifier {
 
   void updateSize({double? width, double? height}) {
     if (width != null) _width = width;
-    if (height != null) _height = height;
+    _height = height; // Allow setting to null for wrap content
     notifyListeners();
   }
 
   void updateAlignment(Alignment alignment) {
     _alignment = alignment;
+    notifyListeners();
+  }
+
+  void updateBorder(BorderSide? border) {
+    _border = border;
     notifyListeners();
   }
 
@@ -87,6 +96,8 @@ class InterfaceContainer extends StatefulWidget {
   final InterfaceController? controller;
   final bool useSafeArea;
   final EdgeInsets? margin;
+  final BorderRadius? borderRadius;
+  final Color? color;
 
   const InterfaceContainer({
     super.key,
@@ -95,6 +106,8 @@ class InterfaceContainer extends StatefulWidget {
     this.controller,
     this.useSafeArea = true,
     this.margin,
+    this.borderRadius,
+    this.color,
   });
 
   @override
@@ -136,12 +149,13 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
           duration: 350.ms,
           curve: Curves.easeOutCubic,
           width: _effectiveController.width,
-          height: _effectiveController.height ?? double.infinity,
+          height: _effectiveController.height,
           decoration: ShapeDecoration(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: widget.borderRadius ?? BorderRadius.circular(16),
+              side: _effectiveController.border ?? BorderSide.none,
             ),
-            color: Theme.of(context).cardColor,
+            color: widget.color ?? Theme.of(context).cardColor,
             shadows: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.3),
@@ -151,7 +165,7 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
             ],
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: widget.borderRadius ?? BorderRadius.circular(16),
             child: widget.builder(context, _effectiveController),
           ),
         );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../core/widgets/interface_container.dart';
 
 class MainNavTabs extends StatelessWidget {
   const MainNavTabs({super.key});
@@ -13,106 +14,103 @@ class MainNavTabs extends StatelessWidget {
     const double spacing = 8;
     const double padding = 8;
 
-    return Container(
+    return InterfaceContainer(
+      borderRadius: BorderRadius.circular(24),
+      color: theme.scaffoldBackgroundColor,
       margin: const EdgeInsets.only(right: 12),
-      decoration: BoxDecoration(
-        color: theme.scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: theme.brightness == Brightness.dark
-              ? Colors.white.withValues(alpha: 0.05)
-              : Colors.black.withValues(alpha: 0.05),
-        ),
-      ),
-      child: ListenableBuilder(
-        listenable: tabController,
-        builder: (context, _) {
-          return Stack(
-            children: [
-              // Sliding Indicator Pill
-              AnimatedPositioned(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                top: padding + (tabController.index * (buttonSize + spacing)),
-                left: padding,
-                right: padding,
-                height: buttonSize,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.15),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
+      builder: (context, controller) {
+        controller.updateSize(width: 60);
+
+        return ListenableBuilder(
+          listenable: tabController,
+          builder: (context, _) {
+            return Stack(
+              children: [
+                // Sliding Indicator Pill
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  top: padding + (tabController.index * (buttonSize + spacing)),
+                  left: padding,
+                  right: padding,
+                  height: buttonSize,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.15),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Button Icons
+                Padding(
+                  padding: const EdgeInsets.all(padding),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _NavButton(
+                        index: 0,
+                        icon: const Icon(Icons.psychology_rounded),
+                        label: 'Brain Dump',
+                        onTap: () => tabController.animateTo(0),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 1,
+                        icon: const Icon(Icons.notes_rounded),
+                        label: 'Notes',
+                        onTap: () => tabController.animateTo(1),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 2,
+                        icon: const Icon(Icons.bolt_rounded),
+                        label: 'Sprints',
+                        onTap: () => tabController.animateTo(2),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 3,
+                        icon: const Icon(Icons.dashboard_rounded),
+                        label: 'Dashboard',
+                        onTap: () => tabController.animateTo(3),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 4,
+                        icon: const Icon(Icons.build_circle_rounded),
+                        label: 'Utilities',
+                        onTap: () => tabController.animateTo(4),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 5,
+                        icon: const Icon(Icons.settings_rounded),
+                        label: 'Settings',
+                        onTap: () => tabController.animateTo(5),
+                      ),
+                      const SizedBox(height: spacing),
+                      _NavButton(
+                        index: 6,
+                        icon: const FaIcon(FontAwesomeIcons.diamond),
+                        label: 'Assistant',
+                        onTap: () => tabController.animateTo(6),
                       ),
                     ],
                   ),
                 ),
-              ),
-
-              // Button Icons
-              Padding(
-                padding: const EdgeInsets.all(padding),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _NavButton(
-                      index: 0,
-                      icon: Icon(Icons.psychology_rounded),
-                      label: 'Brain Dump',
-                      onTap: () => tabController.animateTo(0),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 1,
-                      icon: Icon(Icons.notes_rounded),
-                      label: 'Notes',
-                      onTap: () => tabController.animateTo(1),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 2,
-                      icon: Icon(Icons.bolt_rounded),
-                      label: 'Sprints',
-                      onTap: () => tabController.animateTo(2),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 3,
-                      icon: Icon(Icons.dashboard_rounded),
-                      label: 'Dashboard',
-                      onTap: () => tabController.animateTo(3),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 4,
-                      icon: Icon(Icons.build_circle_rounded),
-                      label: 'Utilities',
-                      onTap: () => tabController.animateTo(4),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 5,
-                      icon: Icon(Icons.settings_rounded),
-                      label: 'Settings',
-                      onTap: () => tabController.animateTo(5),
-                    ),
-                    const SizedBox(height: spacing),
-                    _NavButton(
-                      index: 6,
-                      icon: FaIcon(FontAwesomeIcons.diamond),
-                      label: 'Assistant',
-                      onTap: () => tabController.animateTo(6),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          );
-        },
-      ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 }
