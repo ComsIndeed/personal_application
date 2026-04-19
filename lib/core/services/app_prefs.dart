@@ -88,26 +88,26 @@ class AppPrefs {
   }
 
   String get b2KeyId => _b2KeyId;
-  set b2KeyId(String value) {
-    _b2KeyId = value;
-    _setSecure('b2_key_id', value);
-  }
-
   String get b2AppKey => _b2AppKey;
-  set b2AppKey(String value) {
-    _b2AppKey = value;
-    _setSecure('b2_app_key', value);
-  }
-
   String get b2Endpoint => _b2Endpoint;
-  set b2Endpoint(String value) {
-    _b2Endpoint = value;
-    _setSecure('b2_endpoint', value);
-  }
-
   String get b2BucketName => _b2BucketName;
-  set b2BucketName(String value) {
-    _b2BucketName = value;
-    _setSecure('b2_bucket_name', value);
+
+  Future<void> saveB2Credentials({
+    required String keyId,
+    required String appKey,
+    required String endpoint,
+    required String bucketName,
+  }) async {
+    _b2KeyId = keyId.trim();
+    _b2AppKey = appKey.trim();
+    _b2Endpoint = endpoint.trim();
+    _b2BucketName = bucketName.trim();
+
+    await Future.wait([
+      _setSecure('b2_key_id', _b2KeyId),
+      _setSecure('b2_app_key', _b2AppKey),
+      _setSecure('b2_endpoint', _b2Endpoint),
+      _setSecure('b2_bucket_name', _b2BucketName),
+    ]);
   }
 }

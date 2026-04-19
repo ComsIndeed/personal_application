@@ -278,14 +278,57 @@ class StorageService {
   }
 
   /// Test B2 credentials and bucket access.
-  Future<void> verifyCredentials() async {
+  Future<void> verifyCredentials({bool autoRestore = true}) async {
     try {
       final auth = await _authorize();
       await _getBucketId(auth);
       _updateVerified(true);
     } catch (e) {
       _updateVerified(false);
+
+      // If unauthorized and we have a session, try to restore from Supabase
+      if (autoRestore && e.toString().contains('401')) {
+        final client = Supabase.instance.client;
+        if (client.auth.currentUser != null) {
+          try {
+            // Delay slightly to ensure Supabase is ready
+            await Future.delayed(const Duration(seconds: 1));
+            // We need a way to call loadSecrets without circular dependency
+            // Since StorageService is a singleton, we can just do it here if we import it
+            // but DatabaseUtils already imports StorageService.
+            // We'll use a callback or just do the query here.
+            await _restoreSecretsFromSupabase();
+            return verifyCredentials(autoRestore: false);
+          } catch (_) {
+            // Ignore auto-restore failures
+          }
+        }
+      }
       rethrow;
+    }
+  }
+
+  Future<void> _restoreSecretsFromSupabase() async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+
+    final response = await client
+        .from('secrets')
+        .select()
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+    if (response == null) return;
+
+    final b2 = response['b2'] as Map<String, dynamic>?;
+    if (b2 != null) {
+      await _prefs.saveB2Credentials(
+        keyId: (b2['keyId'] as String?) ?? _prefs.b2KeyId,
+        appKey: (b2['appKey'] as String?) ?? _prefs.b2AppKey,
+        endpoint: (b2['endpoint'] as String?) ?? _prefs.b2Endpoint,
+        bucketName: (b2['bucketName'] as String?) ?? _prefs.b2BucketName,
+      );
     }
   }
 

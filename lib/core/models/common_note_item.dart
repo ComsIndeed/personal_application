@@ -8,7 +8,7 @@ import 'package:personal_application/core/models/message/enums.dart';
 
 part 'common_note_item.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
 class CommonNoteItem extends Equatable implements Syncable {
   const CommonNoteItem({
     required this.id,

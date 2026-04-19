@@ -8,23 +8,23 @@ part of 'message.dart';
 
 Message _$MessageFromJson(Map<String, dynamic> json) => Message(
   id: json['id'] as String,
-  userId: json['userId'] as String?,
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  userId: json['user_id'] as String?,
+  updatedAt: DateTime.parse(json['updated_at'] as String),
   deleted: json['deleted'] as bool,
-  conversationId: json['conversationId'] as String,
+  conversationId: json['conversation_id'] as String,
   role: $enumDecode(_$MessageRoleEnumMap, json['role']),
   parts: Message._partsFromJson(json['parts'] as List),
-  createdAt: DateTime.parse(json['createdAt'] as String),
+  createdAt: DateTime.parse(json['created_at'] as String),
 );
 
 Map<String, dynamic> _$MessageToJson(Message instance) => <String, dynamic>{
   'id': instance.id,
-  'userId': instance.userId,
-  'updatedAt': instance.updatedAt.toIso8601String(),
+  'user_id': instance.userId,
+  'updated_at': instance.updatedAt.toIso8601String(),
   'deleted': instance.deleted,
-  'conversationId': instance.conversationId,
+  'conversation_id': instance.conversationId,
   'role': _$MessageRoleEnumMap[instance.role]!,
-  'createdAt': instance.createdAt.toIso8601String(),
+  'created_at': instance.createdAt.toIso8601String(),
   'parts': Message._partsToJson(instance.parts),
 };
 

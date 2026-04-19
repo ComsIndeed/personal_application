@@ -8,32 +8,32 @@ part of 'asset_item.dart';
 
 AssetItem _$AssetItemFromJson(Map<String, dynamic> json) => AssetItem(
   id: json['id'] as String,
-  userId: json['userId'] as String?,
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  userId: json['user_id'] as String?,
+  updatedAt: DateTime.parse(json['updated_at'] as String),
   deleted: json['deleted'] as bool,
-  b2FileId: json['b2FileId'] as String?,
-  b2FileName: json['b2FileName'] as String?,
-  b2UpdatedAt: json['b2UpdatedAt'] == null
+  b2FileId: json['b2_file_id'] as String?,
+  b2FileName: json['b2_file_name'] as String?,
+  b2UpdatedAt: json['b2_updated_at'] == null
       ? null
-      : DateTime.parse(json['b2UpdatedAt'] as String),
-  displayName: json['displayName'] as String?,
+      : DateTime.parse(json['b2_updated_at'] as String),
+  displayName: json['display_name'] as String?,
   group: json['group'] as String?,
-  mimeType: json['mimeType'] as String,
+  mimeType: json['mime_type'] as String,
   size: (json['size'] as num).toInt(),
-  createdAt: DateTime.parse(json['createdAt'] as String),
+  createdAt: DateTime.parse(json['created_at'] as String),
 );
 
 Map<String, dynamic> _$AssetItemToJson(AssetItem instance) => <String, dynamic>{
   'id': instance.id,
-  'userId': instance.userId,
-  'updatedAt': instance.updatedAt.toIso8601String(),
+  'user_id': instance.userId,
+  'updated_at': instance.updatedAt.toIso8601String(),
   'deleted': instance.deleted,
-  'b2FileId': instance.b2FileId,
-  'b2FileName': instance.b2FileName,
-  'b2UpdatedAt': instance.b2UpdatedAt?.toIso8601String(),
-  'displayName': instance.displayName,
+  'b2_file_id': instance.b2FileId,
+  'b2_file_name': instance.b2FileName,
+  'b2_updated_at': instance.b2UpdatedAt?.toIso8601String(),
+  'display_name': instance.displayName,
   'group': instance.group,
-  'mimeType': instance.mimeType,
+  'mime_type': instance.mimeType,
   'size': instance.size,
-  'createdAt': instance.createdAt.toIso8601String(),
+  'created_at': instance.createdAt.toIso8601String(),
 };

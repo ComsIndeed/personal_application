@@ -8,19 +8,19 @@ part of 'conversation.dart';
 
 Conversation _$ConversationFromJson(Map<String, dynamic> json) => Conversation(
   id: json['id'] as String,
-  userId: json['userId'] as String?,
-  updatedAt: DateTime.parse(json['updatedAt'] as String),
+  userId: json['user_id'] as String?,
+  updatedAt: DateTime.parse(json['updated_at'] as String),
   deleted: json['deleted'] as bool,
-  createdAt: DateTime.parse(json['createdAt'] as String),
+  createdAt: DateTime.parse(json['created_at'] as String),
   title: json['title'] as String?,
 );
 
 Map<String, dynamic> _$ConversationToJson(Conversation instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'userId': instance.userId,
-      'updatedAt': instance.updatedAt.toIso8601String(),
+      'user_id': instance.userId,
+      'updated_at': instance.updatedAt.toIso8601String(),
       'deleted': instance.deleted,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'created_at': instance.createdAt.toIso8601String(),
       'title': instance.title,
     };

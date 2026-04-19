@@ -842,10 +842,13 @@ class _B2CredentialsTileState extends State<_B2CredentialsTile> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
-      if (_kId.text.isNotEmpty) AppPrefs().b2KeyId = _kId.text;
-      if (_aKey.text.isNotEmpty) AppPrefs().b2AppKey = _aKey.text;
-      if (_end.text.isNotEmpty) AppPrefs().b2Endpoint = _end.text;
-      if (_buck.text.isNotEmpty) AppPrefs().b2BucketName = _buck.text;
+      final prefs = AppPrefs();
+      await prefs.saveB2Credentials(
+        keyId: _kId.text.isNotEmpty ? _kId.text : prefs.b2KeyId,
+        appKey: _aKey.text.isNotEmpty ? _aKey.text : prefs.b2AppKey,
+        endpoint: _end.text.isNotEmpty ? _end.text : prefs.b2Endpoint,
+        bucketName: _buck.text.isNotEmpty ? _buck.text : prefs.b2BucketName,
+      );
 
       // Verify connection
       await StorageService().verifyCredentials();

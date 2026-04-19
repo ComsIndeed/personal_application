@@ -9,7 +9,7 @@ import 'package:personal_application/core/models/message/message_part.dart';
 
 part 'message.g.dart';
 
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
 class Message extends Equatable implements Syncable {
   const Message({
     required this.id,

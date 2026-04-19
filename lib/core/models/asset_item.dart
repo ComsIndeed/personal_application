@@ -9,7 +9,7 @@ part 'asset_item.g.dart';
 
 /// Asset record. Synced to Supabase via [syncable] (metadata only).
 /// [cachedBytes] and [cachedAt] are device-local and excluded from JSON.
-@JsonSerializable(explicitToJson: true)
+@JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
 class AssetItem extends Equatable implements Syncable {
   const AssetItem({
     required this.id,

@@ -7,7 +7,7 @@ import 'package:personal_application/core/database/app_database.dart';
 
 part 'conversation.g.dart';
 
-@JsonSerializable()
+@JsonSerializable(fieldRename: FieldRename.snake)
 class Conversation extends Equatable implements Syncable {
   const Conversation({
     required this.id,
