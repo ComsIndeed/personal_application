@@ -185,8 +185,10 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
           ),
         );
 
-        Widget alignedContent = Align(
+        Widget alignedContent = AnimatedAlign(
           alignment: _effectiveController.alignment,
+          duration: 350.ms,
+          curve: Curves.easeOutCubic,
           child: IntrinsicWidth(child: content),
         );
 
