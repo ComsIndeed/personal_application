@@ -6,6 +6,7 @@ import 'package:personal_application/core/widgets/brain_dump_item_widget.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/models/message/enums.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'notes_cubit.dart';
 import 'notes_input.dart';
 
@@ -16,7 +17,10 @@ class NotesTab extends StatefulWidget {
   State<NotesTab> createState() => _NotesTabState();
 }
 
-class _NotesTabState extends State<NotesTab> {
+class _NotesTabState extends State<NotesTab>
+    with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   @override
   void initState() {
     super.initState();
@@ -42,6 +46,7 @@ class _NotesTabState extends State<NotesTab> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -106,15 +111,28 @@ class _NotesTabState extends State<NotesTab> {
                 padding: const EdgeInsets.only(top: 8, bottom: 20),
                 itemCount: allCount,
                 itemBuilder: (context, index) {
+                  final Widget child;
                   if (index < state.pendingItems.length) {
-                    return BrainDumpItemWidget(
+                    child = BrainDumpItemWidget(
                       item: state.pendingItems[index],
                       isPending: true,
                     );
+                  } else {
+                    child = BrainDumpItemWidget(
+                      item: state.items[index - state.pendingItems.length],
+                    );
                   }
-                  return BrainDumpItemWidget(
-                    item: state.items[index - state.pendingItems.length],
-                  );
+
+                  return child
+                      .animate()
+                      .fadeIn(duration: 400.ms, delay: (index * 50).ms)
+                      .slideY(
+                        begin: 0.1,
+                        end: 0,
+                        duration: 400.ms,
+                        delay: (index * 50).ms,
+                        curve: Curves.easeOutCubic,
+                      );
                 },
               );
             },

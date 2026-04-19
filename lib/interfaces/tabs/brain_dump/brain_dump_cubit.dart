@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -10,19 +11,28 @@ import 'package:uuid/uuid.dart';
 class BrainDumpCubit extends Cubit<BrainDumpState> {
   final AppDatabase _db;
   final StorageService _storage = StorageService();
+  StreamSubscription? _subscription;
 
   BrainDumpCubit(this._db) : super(BrainDumpState()) {
     _init();
   }
 
   void _init() {
-    _db.select(_db.commonNoteItems)
-      ..where((t) => t.category.equals(NoteCategory.braindump.name))
-      ..where((t) => t.deleted.equals(false))
-      ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
-      ..watch().listen((items) {
-        emit(state.copyWith(items: items, isLoading: false));
-      });
+    _subscription?.cancel();
+    _subscription =
+        (_db.select(_db.commonNoteItems)
+              ..where((t) => t.category.equals(NoteCategory.braindump.name))
+              ..where((t) => t.deleted.equals(false))
+              ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
+            .watch()
+            .listen((items) {
+              emit(state.copyWith(items: items, isLoading: false));
+            });
+  }
+
+  void refresh() {
+    emit(state.copyWith(isLoading: true));
+    _init();
   }
 
   void updateText(String text) {
@@ -101,6 +111,12 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
   }
 
   void sendProcessed() {}
+
+  @override
+  Future<void> close() {
+    _subscription?.cancel();
+    return super.close();
+  }
 }
 
 class BrainDumpState {

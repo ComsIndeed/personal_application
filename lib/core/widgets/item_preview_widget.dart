@@ -141,10 +141,11 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       // Media Section
-                      Expanded(flex: 3, child: _buildMediaSection(item)),
+                      if (item.assetIds.isNotEmpty)
+                        Expanded(flex: 3, child: _buildMediaSection(item)),
                       // Content Section
                       Expanded(
-                        flex: 2,
+                        flex: item.assetIds.isNotEmpty ? 2 : 1,
                         child: Padding(
                           padding: const EdgeInsets.all(24.0),
                           child: SingleChildScrollView(

@@ -78,6 +78,7 @@ class SyncResult {
 /// - [delete] — remove from Drift + B2
 /// - [sync] — reconcile Drift vs B2 bucket
 /// - [verifyCredentials] — test B2 connection
+/// - [clearMemoryCache] — wipe session byte cache
 class StorageService {
   static final StorageService _instance = StorageService._internal();
   factory StorageService() => _instance;
@@ -96,6 +97,9 @@ class StorageService {
 
   final _uploadingIds = StreamController<Set<String>>.broadcast();
   final _currentlyUploading = <String>{};
+
+  // In-memory byte cache to prevent flickering on tab changes
+  final _memoryCache = <String, Uint8List>{};
 
   final _verifiedController = StreamController<bool>.broadcast();
   bool _isLastVerified = false;
@@ -161,6 +165,9 @@ class StorageService {
           ),
         );
 
+    // Populate memory cache immediately
+    _memoryCache[record.id] = bytes;
+
     // Fire-and-forget upload
     _uploadInBackground(record, bytes);
 
@@ -175,10 +182,17 @@ class StorageService {
     AssetItem record, {
     bool checkFreshness = true,
   }) async {
-    // Use cache if available and either freshness check is off or cache is current
+    // 1. Check in-memory session cache first (fastest)
+    if (_memoryCache.containsKey(record.id)) {
+      return _memoryCache[record.id]!;
+    }
+
+    // 2. Use database cache if available and either freshness check is off or cache is current
     if (record.cachedBytes != null &&
         (!checkFreshness || record.isCacheFresh)) {
-      return record.cachedBytes!;
+      final bytes = record.cachedBytes!;
+      _memoryCache[record.id] = bytes; // Populate memory cache
+      return bytes;
     }
 
     if (!record.isUploaded) {
@@ -191,7 +205,9 @@ class StorageService {
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) {
       if (record.cachedBytes != null) {
-        return record.cachedBytes!;
+        final bytes = record.cachedBytes!;
+        _memoryCache[record.id] = bytes;
+        return bytes;
       }
       throw StateError('Offline and no local cache for asset ${record.id}');
     }
@@ -438,6 +454,7 @@ class StorageService {
       ),
     );
 
+    _memoryCache[record.id] = bytes;
     return bytes;
   }
 
@@ -526,5 +543,10 @@ class StorageService {
     if (resp.statusCode != 200) {
       throw Exception('B2 $op failed (${resp.statusCode}): ${resp.body}');
     }
+  }
+
+  /// Wipe the in-memory session cache.
+  void clearMemoryCache() {
+    _memoryCache.clear();
   }
 }

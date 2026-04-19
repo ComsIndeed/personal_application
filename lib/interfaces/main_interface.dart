@@ -12,7 +12,9 @@ import 'tabs/todo_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
 import 'tabs/notes/notes_tab.dart';
+import 'tabs/notes/notes_cubit.dart';
 import 'tabs/brain_dump/brain_dump_tab.dart';
+import 'tabs/brain_dump/brain_dump_cubit.dart';
 import 'tabs/utilities_tab.dart';
 import 'widgets/main_nav_tabs.dart';
 import '../core/services/tab_header_manager.dart';
@@ -220,6 +222,19 @@ class _MainInterfaceState extends State<MainInterface> {
                                             ? 'Light Mode'
                                             : 'Dark Mode',
                                       ),
+                                    ),
+                                    MenuItemButton(
+                                      leadingIcon: const Icon(
+                                        Icons.refresh_rounded,
+                                        size: 18,
+                                      ),
+                                      onPressed: () {
+                                        context
+                                            .read<BrainDumpCubit>()
+                                            .refresh();
+                                        context.read<NotesCubit>().refresh();
+                                      },
+                                      child: const Text('Reload All Data'),
                                     ),
                                     MenuItemButton(
                                       leadingIcon: const Icon(
