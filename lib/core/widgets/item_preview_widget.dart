@@ -6,7 +6,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/item_preview_cubit.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
-import 'package:personal_application/main.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
 class ItemPreviewWidget extends StatefulWidget {
@@ -21,6 +20,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
   final ScrollController _scrollController = ScrollController();
   late AnimationController _animationController;
   Timer? _scrollTimer;
+  CommonNoteItem? _lastItem;
 
   @override
   void initState() {
@@ -87,14 +87,21 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
       },
       builder: (context, state) {
         final item = state.activeItem;
-        if (item == null) return const SizedBox.shrink();
+        final isVisible = item != null;
 
+        // Cache the last item for exit animations
+        if (item != null) {
+          _lastItem = item;
+        }
+
+        if (_lastItem == null) return const SizedBox.shrink();
+
+        final displayItem = _lastItem!;
         final isSelected = state.selectedItem != null;
-        final windowVisible = context.watch<WindowOverlayState>().isVisible;
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
 
-        // Taskbar aware padding (consistent with InterfaceContainer)
+        // Taskbar aware padding
         EdgeInsets effectivePadding = const EdgeInsets.all(16.0);
         if (!kIsWeb && Platform.isWindows) {
           if (MediaQuery.of(context).padding.bottom == 0) {
@@ -109,96 +116,100 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
           top: 16,
           bottom: effectivePadding.bottom,
           child: AnimatedSlide(
-            offset: windowVisible ? Offset.zero : const Offset(-1, 0),
-            duration: const Duration(milliseconds: 320),
+            offset: isVisible ? Offset.zero : const Offset(-1.2, 0),
+            duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Main Preview Card
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                  width: isSelected ? 600 : 450,
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
-                      color: isDark
-                          ? Colors.white.withAlpha(20)
-                          : Colors.black.withAlpha(20),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withAlpha(isDark ? 80 : 40),
-                        blurRadius: 32,
-                        offset: const Offset(8, 0),
+            child: AnimatedOpacity(
+              opacity: isVisible ? 1.0 : 0.0,
+              duration: const Duration(milliseconds: 300),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Main Preview Card
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    width: isSelected ? 600 : 450,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withAlpha(20)
+                            : Colors.black.withAlpha(20),
                       ),
-                    ],
-                  ),
-                  clipBehavior: Clip.antiAlias,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Media Section
-                      if (item.assetIds.isNotEmpty)
-                        Expanded(flex: 3, child: _buildMediaSection(item)),
-                      // Content Section
-                      Expanded(
-                        flex: item.assetIds.isNotEmpty ? 2 : 1,
-                        child: Padding(
-                          padding: const EdgeInsets.all(24.0),
-                          child: SingleChildScrollView(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                if (item.title != null &&
-                                    item.title!.isNotEmpty) ...[
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(isDark ? 80 : 40),
+                          blurRadius: 32,
+                          offset: const Offset(8, 0),
+                        ),
+                      ],
+                    ),
+                    clipBehavior: Clip.antiAlias,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Media Section
+                        if (displayItem.assetIds.isNotEmpty)
+                          Expanded(
+                            flex: 3,
+                            child: _buildMediaSection(displayItem),
+                          ),
+                        // Content Section
+                        Expanded(
+                          flex: displayItem.assetIds.isNotEmpty ? 2 : 1,
+                          child: Padding(
+                            padding: const EdgeInsets.all(24.0),
+                            child: SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (displayItem.title != null &&
+                                      displayItem.title!.isNotEmpty) ...[
+                                    Text(
+                                      displayItem.title!,
+                                      style: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                  ],
                                   Text(
-                                    item.title!,
-                                    style: theme.textTheme.headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                    displayItem.textContent ?? '',
+                                    style: theme.textTheme.bodyLarge?.copyWith(
+                                      color: isDark
+                                          ? Colors.white70
+                                          : Colors.black87,
+                                      height: 1.5,
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
                                 ],
-                                Text(
-                                  item.textContent ?? '',
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                    height: 1.5,
-                                  ),
-                                ),
-                              ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ).animate().slideX(
-                  begin: -1,
-                  end: 0,
-                  duration: 400.ms,
-                  curve: Curves.easeOutCubic,
-                ),
-
-                // Controls Section
-                AnimatedSlide(
-                  offset: isSelected ? Offset.zero : const Offset(-1, 0),
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutCubic,
-                  child: AnimatedOpacity(
-                    opacity: isSelected ? 1.0 : 0.0,
-                    duration: const Duration(milliseconds: 300),
-                    child: Padding(
-                      padding: const EdgeInsets.only(left: 12),
-                      child: _buildControls(context),
+                      ],
                     ),
                   ),
-                ),
-              ],
+
+                  // Controls Section
+                  AnimatedSlide(
+                    offset: isSelected ? Offset.zero : const Offset(-1, 0),
+                    duration: const Duration(milliseconds: 400),
+                    curve: Curves.easeOutCubic,
+                    child: AnimatedOpacity(
+                      opacity: isSelected ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      child: Padding(
+                        padding: const EdgeInsets.only(left: 12),
+                        child: _buildControls(context),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         );

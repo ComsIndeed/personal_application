@@ -1,12 +1,15 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io' as io;
+import 'package:flutter/foundation.dart';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:fc_native_video_thumbnail/fc_native_video_thumbnail.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -100,6 +103,7 @@ class StorageService {
 
   // In-memory byte cache to prevent flickering on tab changes
   final _memoryCache = <String, Uint8List>{};
+  final _thumbnailCache = <String, Uint8List>{};
 
   final _verifiedController = StreamController<bool>.broadcast();
   bool _isLastVerified = false;
@@ -458,6 +462,43 @@ class StorageService {
     return bytes;
   }
 
+  /// Get a thumbnail for a video asset.
+  Future<Uint8List?> getThumbnail(AssetItem record) async {
+    if (_thumbnailCache.containsKey(record.id)) {
+      return _thumbnailCache[record.id]!;
+    }
+
+    if (!record.mimeType.startsWith('video/')) return null;
+
+    try {
+      final videoBytes = await getBytes(record);
+
+      // Save to temp file for the plugin
+      final tempDir = await getTemporaryDirectory();
+      final tempFile = io.File('${tempDir.path}/temp_thumb_${record.id}.tmp');
+      await tempFile.writeAsBytes(videoBytes);
+
+      final plugin = FcNativeVideoThumbnail();
+      final thumb = await plugin.saveThumbnailToBytes(
+        srcFile: tempFile.path,
+        width: 400,
+        height: 400,
+        quality: 75,
+      );
+
+      // Clean up
+      if (await tempFile.exists()) await tempFile.delete();
+
+      if (thumb != null) {
+        _thumbnailCache[record.id] = thumb;
+      }
+      return thumb;
+    } catch (e) {
+      debugPrint('Thumbnail generation failed: $e');
+      return null;
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Internals
   // -------------------------------------------------------------------------
@@ -548,5 +589,6 @@ class StorageService {
   /// Wipe the in-memory session cache.
   void clearMemoryCache() {
     _memoryCache.clear();
+    _thumbnailCache.clear();
   }
 }
