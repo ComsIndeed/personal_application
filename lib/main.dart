@@ -12,6 +12,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
 import 'core/services/storage_service.dart';
+import 'core/services/item_preview_cubit.dart';
+import 'core/widgets/item_preview_widget.dart';
 import 'interfaces/main_interface.dart';
 import 'theme/app_theme.dart';
 
@@ -62,6 +64,7 @@ void main() async {
         BlocProvider(create: (context) => AssistantChatCubit(db: database)),
         BlocProvider(create: (context) => BrainDumpCubit(database)),
         BlocProvider(create: (context) => NotesCubit(database)),
+        BlocProvider(create: (context) => ItemPreviewCubit()),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
@@ -191,6 +194,9 @@ class OverlayPage extends StatelessWidget {
 
           // Side panel (always in tree, positioning handled by InterfaceContainer)
           const MainInterface(),
+
+          // Root Overlay Preview (Anchored Left of Screen)
+          const ItemPreviewWidget(),
         ],
       ),
     );
