@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/services/tab_header_manager.dart';
 import 'package:personal_application/core/widgets/search_header_widget.dart';
 import 'package:personal_application/core/widgets/brain_dump_item_widget.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:personal_application/core/models/common_note_item.dart';
+import 'package:personal_application/core/models/message/enums.dart';
 import 'notes_cubit.dart';
 import 'notes_input.dart';
 
@@ -49,8 +52,31 @@ class _NotesTabState extends State<NotesTab> {
           child: BlocBuilder<NotesCubit, NotesState>(
             buildWhen: (previous, current) =>
                 previous.items != current.items ||
-                previous.pendingItems != current.pendingItems,
+                previous.pendingItems != current.pendingItems ||
+                previous.isLoading != current.isLoading,
             builder: (context, state) {
+              if (state.isLoading) {
+                return Skeletonizer(
+                  enabled: true,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.only(top: 8, bottom: 20),
+                    itemCount: 5,
+                    itemBuilder: (context, index) => BrainDumpItemWidget(
+                      item: CommonNoteItem(
+                        id: 'skeleton-$index',
+                        category: NoteCategory.notes,
+                        textContent:
+                            'This is a long skeleton text content to simulate a real note item loading state with enough density.',
+                        assetIds: const [],
+                        createdAt: DateTime.now(),
+                        updatedAt: DateTime.now(),
+                        deleted: false,
+                      ),
+                    ),
+                  ),
+                );
+              }
+
               if (state.items.isEmpty && state.pendingItems.isEmpty) {
                 return Center(
                   child: Column(

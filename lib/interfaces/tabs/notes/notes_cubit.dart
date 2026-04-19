@@ -21,7 +21,7 @@ class NotesCubit extends Cubit<NotesState> {
       ..where((t) => t.deleted.equals(false))
       ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
       ..watch().listen((items) {
-        emit(state.copyWith(items: items));
+        emit(state.copyWith(items: items, isLoading: false));
       });
   }
 
@@ -112,11 +112,14 @@ class NotesState {
   final List<CommonNoteItem> items;
   final List<CommonNoteItem> pendingItems;
 
+  final bool isLoading;
+
   NotesState({
     this.text = '',
     this.files = const [],
     this.items = const [],
     this.pendingItems = const [],
+    this.isLoading = true,
   });
 
   NotesState copyWith({
@@ -124,12 +127,14 @@ class NotesState {
     List<PlatformFile>? files,
     List<CommonNoteItem>? items,
     List<CommonNoteItem>? pendingItems,
+    bool? isLoading,
   }) {
     return NotesState(
       text: text ?? this.text,
       files: files ?? this.files,
       items: items ?? this.items,
       pendingItems: pendingItems ?? this.pendingItems,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }

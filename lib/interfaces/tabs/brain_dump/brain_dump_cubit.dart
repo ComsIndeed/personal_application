@@ -21,7 +21,7 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
       ..where((t) => t.deleted.equals(false))
       ..orderBy([(t) => OrderingTerm.desc(t.createdAt)])
       ..watch().listen((items) {
-        emit(state.copyWith(items: items));
+        emit(state.copyWith(items: items, isLoading: false));
       });
   }
 
@@ -112,11 +112,14 @@ class BrainDumpState {
   final List<CommonNoteItem> items;
   final List<CommonNoteItem> pendingItems;
 
+  final bool isLoading;
+
   BrainDumpState({
     this.text = '',
     this.files = const [],
     this.items = const [],
     this.pendingItems = const [],
+    this.isLoading = true,
   });
 
   BrainDumpState copyWith({
@@ -124,12 +127,14 @@ class BrainDumpState {
     List<PlatformFile>? files,
     List<CommonNoteItem>? items,
     List<CommonNoteItem>? pendingItems,
+    bool? isLoading,
   }) {
     return BrainDumpState(
       text: text ?? this.text,
       files: files ?? this.files,
       items: items ?? this.items,
       pendingItems: pendingItems ?? this.pendingItems,
+      isLoading: isLoading ?? this.isLoading,
     );
   }
 }

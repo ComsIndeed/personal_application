@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:personal_application/core/database/app_database.dart';
 import 'package:personal_application/core/models/asset_item.dart';
 import 'package:personal_application/core/services/storage_service.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 
 class AssetPreviewWidget extends StatefulWidget {
   final String assetId;
@@ -62,7 +63,10 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
       future: _assetFuture,
       builder: (context, snapshot) {
         if (!snapshot.hasData || snapshot.data == null) {
-          return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+          return const Skeletonizer(
+            enabled: true,
+            child: Bone.square(size: double.infinity),
+          );
         }
 
         final asset = snapshot.data!;
@@ -70,9 +74,9 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
           future: _getBytes(asset),
           builder: (context, byteSnapshot) {
             if (!byteSnapshot.hasData) {
-              return Container(
-                color: Colors.black12,
-                child: const Icon(Icons.downloading, size: 20),
+              return const Skeletonizer(
+                enabled: true,
+                child: Bone.square(size: double.infinity),
               );
             }
 
