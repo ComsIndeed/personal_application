@@ -90,6 +90,7 @@ class _MainInterfaceState extends State<MainInterface> {
           },
           builder: (context, controller) {
             final tabController = DefaultTabController.of(context);
+            controller.updateAlignment(Alignment.topRight);
 
             return Shortcuts(
               shortcuts: <ShortcutActivator, Intent>{
@@ -184,11 +185,13 @@ class _MainInterfaceState extends State<MainInterface> {
                               onPressed: () {
                                 if (controller.width == 420) {
                                   controller.updateSize(width: 800);
-                                  controller.updateAlignment(Alignment.center);
+                                  controller.updateAlignment(
+                                    Alignment.topCenter,
+                                  );
                                 } else {
                                   controller.updateSize(width: 420);
                                   controller.updateAlignment(
-                                    Alignment.centerRight,
+                                    Alignment.topRight,
                                   );
                                 }
                               },

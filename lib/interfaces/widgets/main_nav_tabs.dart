@@ -20,6 +20,7 @@ class MainNavTabs extends StatelessWidget {
       margin: const EdgeInsets.only(right: 12),
       builder: (context, controller) {
         controller.updateSize(width: 60);
+        controller.updateAlignment(Alignment.topCenter);
 
         return ListenableBuilder(
           listenable: tabController,
