@@ -177,36 +177,6 @@ class _MainInterfaceState extends State<MainInterface> {
                           ),
                           Padding(
                             padding: const EdgeInsets.only(right: 4, top: 12),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.aspect_ratio_rounded,
-                                size: 20,
-                              ),
-                              onPressed: () {
-                                if (controller.width == 420) {
-                                  controller.updateSize(width: 800);
-                                  controller.updateAlignment(
-                                    Alignment.topCenter,
-                                  );
-                                } else {
-                                  controller.updateSize(width: 420);
-                                  controller.updateAlignment(
-                                    Alignment.topRight,
-                                  );
-                                }
-                              },
-                              tooltip: 'Test Layout',
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4, top: 12),
                             child: Consumer<ThemeController>(
                               builder: (context, theme, _) {
                                 return MenuAnchor(
