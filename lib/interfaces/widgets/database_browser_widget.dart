@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/services/database_browser_cubit.dart';
 import 'package:personal_application/core/database/app_database.dart';
+import 'package:personal_application/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -13,9 +14,11 @@ class DatabaseBrowserWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final globalVisible = context.watch<WindowOverlayState>().isVisible;
+
     return BlocBuilder<DatabaseBrowserCubit, DatabaseBrowserState>(
       builder: (context, state) {
-        final isVisible = state.isVisible;
+        final isVisible = globalVisible && state.isVisible;
         final theme = Theme.of(context);
         final isDark = theme.brightness == Brightness.dark;
 
@@ -33,7 +36,7 @@ class DatabaseBrowserWidget extends StatelessWidget {
           top: 16,
           bottom: effectivePadding.bottom,
           child: AnimatedSlide(
-            offset: isVisible ? Offset.zero : const Offset(-1.1, 0),
+            offset: isVisible ? Offset.zero : const Offset(-1.2, 0),
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
             child: AnimatedOpacity(
@@ -65,8 +68,34 @@ class DatabaseBrowserWidget extends StatelessWidget {
                     const Divider(height: 1, color: Colors.white10),
                     if (state.rootTab == DatabaseRootTab.local ||
                         state.rootTab == DatabaseRootTab.cloud)
-                      _DatabaseTableTabSwitcher(state: state),
-                    Expanded(child: _DatabaseBrowserContent(state: state)),
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 300),
+                        layoutBuilder: (child, previousChildren) => Stack(
+                          alignment: Alignment.topLeft,
+                          children: [...previousChildren, ?child],
+                        ),
+                        child: _DatabaseTableTabSwitcher(
+                          key: ValueKey('tables_${state.rootTab}'),
+                          state: state,
+                        ),
+                      ),
+                    Expanded(
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 400),
+                        layoutBuilder: (child, previousChildren) => Stack(
+                          alignment: Alignment.topLeft,
+                          children: [...previousChildren, ?child],
+                        ),
+                        switchInCurve: Curves.easeOut,
+                        switchOutCurve: Curves.easeIn,
+                        child: _DatabaseBrowserContent(
+                          key: ValueKey(
+                            'content_${state.rootTab}_${state.selectedTable}',
+                          ),
+                          state: state,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -81,7 +110,7 @@ class DatabaseBrowserWidget extends StatelessWidget {
 class _DatabaseTableTabSwitcher extends StatelessWidget {
   final DatabaseBrowserState state;
 
-  const _DatabaseTableTabSwitcher({required this.state});
+  const _DatabaseTableTabSwitcher({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +290,7 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
 class _DatabaseBrowserContent extends StatelessWidget {
   final DatabaseBrowserState state;
 
-  const _DatabaseBrowserContent({required this.state});
+  const _DatabaseBrowserContent({super.key, required this.state});
 
   @override
   Widget build(BuildContext context) {
