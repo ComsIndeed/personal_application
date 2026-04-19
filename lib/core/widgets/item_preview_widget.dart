@@ -154,7 +154,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                         if (displayItem.assetIds.isNotEmpty)
                           Expanded(
                             flex: 3,
-                            child: _buildMediaSection(displayItem),
+                            child: _buildMediaSection(displayItem, isSelected),
                           ),
                         // Content Section
                         Expanded(
@@ -217,7 +217,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     );
   }
 
-  Widget _buildMediaSection(CommonNoteItem item) {
+  Widget _buildMediaSection(CommonNoteItem item, bool isSelected) {
     if (item.assetIds.isEmpty) {
       return Container(
         color: Theme.of(context).brightness == Brightness.dark
@@ -237,15 +237,19 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     return ListView.builder(
       controller: _scrollController,
       scrollDirection: Axis.horizontal,
-      physics:
-          const NeverScrollableScrollPhysics(), // Constant speed controlled by timer
+      physics: isSelected
+          ? const BouncingScrollPhysics()
+          : const NeverScrollableScrollPhysics(), // Constant speed controlled by timer
       itemBuilder: (context, index) {
-        // Simple infinite looping by modulo
+        // Infinite looping modulo
         final assetId = item.assetIds[index % item.assetIds.length];
-        return Container(
-          width: 380, // Allow "other images seen kinda"
-          margin: const EdgeInsets.only(right: 8),
-          child: AssetPreviewWidget(assetId: assetId, fit: BoxFit.cover),
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: _HoverableMediaItem(
+            assetId: assetId,
+            isSelected: isSelected,
+            fit: BoxFit.fitHeight,
+          ),
         );
       },
     );
@@ -294,6 +298,102 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
             onPressed: () => context.read<ItemPreviewCubit>().clear(),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HoverableMediaItem extends StatefulWidget {
+  final String assetId;
+  final bool isSelected;
+  final BoxFit fit;
+
+  const _HoverableMediaItem({
+    required this.assetId,
+    required this.isSelected,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  State<_HoverableMediaItem> createState() => _HoverableMediaItemState();
+}
+
+class _HoverableMediaItemState extends State<_HoverableMediaItem> {
+  bool _isHovered = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: Stack(
+        fit: widget.fit == BoxFit.cover ? StackFit.expand : StackFit.loose,
+        children: [
+          AssetPreviewWidget(assetId: widget.assetId, fit: widget.fit),
+          if (_isHovered)
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withAlpha(180),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(color: Colors.white10, width: 1),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _HoverActionIcon(
+                      icon: Icons.fullscreen_rounded,
+                      label: 'Expand',
+                      onPressed: () {},
+                    ),
+                    _HoverActionIcon(
+                      icon: Icons.download_rounded,
+                      label: 'Download',
+                      onPressed: () {},
+                    ),
+                    _HoverActionIcon(
+                      icon: Icons.delete_outline_rounded,
+                      label: 'Remove from Note',
+                      onPressed: () {},
+                      color: Colors.redAccent,
+                    ),
+                  ],
+                ),
+              ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.2, end: 0),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HoverActionIcon extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onPressed;
+  final Color? color;
+
+  const _HoverActionIcon({
+    required this.icon,
+    required this.label,
+    required this.onPressed,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: label,
+      child: IconButton(
+        icon: Icon(icon, color: color ?? Colors.white, size: 20),
+        onPressed: onPressed,
+        visualDensity: VisualDensity.compact,
+        padding: const EdgeInsets.all(8),
+        hoverColor: Colors.white.withAlpha(40),
+        constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
       ),
     );
   }

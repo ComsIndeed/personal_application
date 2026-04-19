@@ -71,7 +71,11 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
         if (!snapshot.hasData || snapshot.data == null) {
           return const Skeletonizer(
             enabled: true,
-            child: Bone.square(size: double.infinity),
+            child: SizedBox(
+              width: 300,
+              height: double.infinity,
+              child: Bone.square(size: double.infinity),
+            ),
           );
         }
 
@@ -82,7 +86,11 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
             if (byteSnapshot.connectionState == ConnectionState.waiting) {
               return const Skeletonizer(
                 enabled: true,
-                child: Bone.square(size: double.infinity),
+                child: SizedBox(
+                  width: 300,
+                  height: double.infinity,
+                  child: Bone.square(size: double.infinity),
+                ),
               );
             }
 
@@ -90,7 +98,9 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
             if (data != null) {
               final isVideo = asset.mimeType.startsWith('video/');
               return Stack(
-                fit: StackFit.expand,
+                fit: widget.fit == BoxFit.cover
+                    ? StackFit.expand
+                    : StackFit.loose,
                 children: [
                   Image.memory(
                     data,
