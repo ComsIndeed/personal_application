@@ -59,20 +59,14 @@ class DatabaseBrowserWidget extends StatelessWidget {
                   ],
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Row(
+                child: Column(
                   children: [
-                    _DatabaseBrowserSidebar(state: state),
-                    Expanded(
-                      child: Column(
-                        children: [
-                          _DatabaseBrowserTitleBar(state: state),
-                          const Divider(height: 1, color: Colors.white10),
-                          Expanded(
-                            child: _DatabaseBrowserContent(state: state),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _DatabaseBrowserTitleBar(state: state),
+                    const Divider(height: 1, color: Colors.white10),
+                    if (state.rootTab == DatabaseRootTab.local ||
+                        state.rootTab == DatabaseRootTab.cloud)
+                      _DatabaseTableTabSwitcher(state: state),
+                    Expanded(child: _DatabaseBrowserContent(state: state)),
                   ],
                 ),
               ),
@@ -84,188 +78,79 @@ class DatabaseBrowserWidget extends StatelessWidget {
   }
 }
 
-class _DatabaseBrowserSidebar extends StatelessWidget {
+class _DatabaseTableTabSwitcher extends StatelessWidget {
   final DatabaseBrowserState state;
 
-  const _DatabaseBrowserSidebar({required this.state});
+  const _DatabaseTableTabSwitcher({required this.state});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 240,
-      color: Colors.white.withAlpha(2),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
-          _buildRootTabs(context),
-          const Divider(
-            height: 32,
-            indent: 20,
-            endIndent: 20,
-            color: Colors.white10,
-          ),
-          Expanded(child: _buildTableList(context)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRootTabs(BuildContext context) {
-    final cubit = context.read<DatabaseBrowserCubit>();
-    return Column(
-      children: [
-        _SidebarItem(
-          icon: Icons.storage_rounded,
-          label: 'Local Database',
-          isSelected: state.rootTab == DatabaseRootTab.local,
-          onTap: () => cubit.setRootTab(DatabaseRootTab.local),
-        ),
-        _SidebarItem(
-          icon: Icons.cloud_queue_rounded,
-          label: 'Cloud Database',
-          isSelected: state.rootTab == DatabaseRootTab.cloud,
-          onTap: () => cubit.setRootTab(DatabaseRootTab.cloud),
-        ),
-        _SidebarItem(
-          icon: Icons.cloud_circle_rounded,
-          label: 'Cloud Storage',
-          isSelected: state.rootTab == DatabaseRootTab.storage,
-          onTap: () => cubit.setRootTab(DatabaseRootTab.storage),
-        ),
-        _SidebarItem(
-          icon: Icons.analytics_outlined,
-          label: 'Analytics',
-          isSelected: state.rootTab == DatabaseRootTab.analytics,
-          onTap: () => cubit.setRootTab(DatabaseRootTab.analytics),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTableList(BuildContext context) {
+    List<String> tables = [];
     if (state.rootTab == DatabaseRootTab.local) {
       final db = context.read<AppDatabase>();
-      final tables = db.allTables.map((t) => t.actualTableName).toList();
-      return ListView.builder(
-        itemCount: tables.length,
-        itemBuilder: (context, index) {
-          final table = tables[index];
-          return _TableListItem(
-            name: table,
-            isSelected: state.selectedTable == table,
-            onTap: () =>
-                context.read<DatabaseBrowserCubit>().setSelectedTable(table),
-          );
-        },
-      );
+      tables = db.allTables.map((t) => t.actualTableName).toList();
     } else if (state.rootTab == DatabaseRootTab.cloud) {
-      // Just hardcode the same tables for now as we know they are synced
-      final tables = [
+      tables = [
         'conversations',
         'messages',
         'asset_items',
         'common_note_items',
       ];
-      return ListView.builder(
-        itemCount: tables.length,
-        itemBuilder: (context, index) {
-          final table = tables[index];
-          return _TableListItem(
-            name: table,
-            isSelected: state.selectedTable == table,
-            onTap: () =>
-                context.read<DatabaseBrowserCubit>().setSelectedTable(table),
-          );
-        },
-      );
     }
-    return const Center(
-      child: Text(
-        'Placeholder',
-        style: TextStyle(color: Colors.white24, fontSize: 12),
-      ),
-    );
-  }
-}
 
-class _SidebarItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
+    if (tables.isEmpty) return const SizedBox.shrink();
 
-  const _SidebarItem({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: ListTile(
-        leading: Icon(
-          icon,
-          size: 20,
-          color: isSelected
-              ? Theme.of(context).colorScheme.primary
-              : Colors.white24,
-        ),
-        title: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected ? Colors.white : Colors.white54,
-          ),
-        ),
-        onTap: onTap,
-        dense: true,
-        visualDensity: VisualDensity.comfortable,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      ),
-    );
-  }
-}
-
-class _TableListItem extends StatelessWidget {
-  final String name;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TableListItem({
-    required this.name,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
-      child: Material(
-        color: isSelected ? Colors.white.withAlpha(15) : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          hoverColor: Colors.white.withAlpha(5),
-          splashColor: Theme.of(context).colorScheme.primary.withAlpha(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(
-              name,
-              style: TextStyle(
-                fontSize: 14,
-                fontFamily: 'monospace',
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                color: isSelected ? Colors.white : Colors.white30,
+    return Container(
+      width: double.infinity,
+      color: Colors.white.withAlpha(2),
+      padding: const EdgeInsets.all(8),
+      child: Wrap(
+        spacing: 6,
+        runSpacing: 6,
+        children: tables.map((table) {
+          final isSelected = state.selectedTable == table;
+          return Material(
+            color: isSelected
+                ? Theme.of(context).colorScheme.primary.withAlpha(40)
+                : Colors.white.withAlpha(10),
+            borderRadius: BorderRadius.circular(8),
+            child: InkWell(
+              onTap: () =>
+                  context.read<DatabaseBrowserCubit>().setSelectedTable(table),
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.table_rows_rounded,
+                      size: 14,
+                      color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.white38,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      table,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                        color: isSelected ? Colors.white : Colors.white38,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        }).toList(),
       ),
     );
   }
@@ -278,26 +163,61 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cubit = context.read<DatabaseBrowserCubit>();
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
+          // Root Tab Buttons
+          Row(
+            children: [
+              _RootTabIcon(
+                icon: Icons.storage_rounded,
+                tooltip: 'Local DB',
+                isSelected: state.rootTab == DatabaseRootTab.local,
+                onTap: () => cubit.setRootTab(DatabaseRootTab.local),
+              ),
+              const SizedBox(width: 8),
+              _RootTabIcon(
+                icon: Icons.cloud_queue_rounded,
+                tooltip: 'Cloud DB',
+                isSelected: state.rootTab == DatabaseRootTab.cloud,
+                onTap: () => cubit.setRootTab(DatabaseRootTab.cloud),
+              ),
+              const SizedBox(width: 8),
+              _RootTabIcon(
+                icon: Icons.cloud_circle_rounded,
+                tooltip: 'Storage',
+                isSelected: state.rootTab == DatabaseRootTab.storage,
+                onTap: () => cubit.setRootTab(DatabaseRootTab.storage),
+              ),
+              const SizedBox(width: 8),
+              _RootTabIcon(
+                icon: Icons.analytics_outlined,
+                tooltip: 'Analytics',
+                isSelected: state.rootTab == DatabaseRootTab.analytics,
+                onTap: () => cubit.setRootTab(DatabaseRootTab.analytics),
+              ),
+            ],
+          ),
+          const SizedBox(width: 24),
+          const VerticalDivider(width: 1, indent: 8, endIndent: 8),
+          const SizedBox(width: 24),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  state.selectedTable ?? 'Select a Table',
+                  state.selectedTable ??
+                      (state.rootTab == DatabaseRootTab.local
+                          ? 'Local'
+                          : 'Cloud'),
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 16,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
-                if (state.selectedTable != null)
-                  Text(
-                    '${state.rootTab == DatabaseRootTab.local ? 'Local' : 'Cloud'} Database System',
-                    style: const TextStyle(fontSize: 12, color: Colors.white24),
-                  ),
               ],
             ),
           ),
@@ -700,6 +620,48 @@ class _DatabaseTableViewState extends State<_DatabaseTableView> {
           style: TextStyle(fontSize: 13, color: textColor),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
+        ),
+      ),
+    );
+  }
+}
+
+class _RootTabIcon extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _RootTabIcon({
+    required this.icon,
+    required this.tooltip,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: isSelected
+            ? Theme.of(context).colorScheme.primary.withAlpha(40)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(10),
+          child: SizedBox(
+            width: 36,
+            height: 36,
+            child: Icon(
+              icon,
+              size: 20,
+              color: isSelected
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.white24,
+            ),
+          ),
         ),
       ),
     );
