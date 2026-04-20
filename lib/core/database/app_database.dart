@@ -39,6 +39,15 @@ class AppDatabase extends _$AppDatabase with SyncableDatabase {
       await m.createAll();
     },
   );
+
+  Future<void> wipeLocalData({List<String> exclude = const []}) async {
+    await transaction(() async {
+      for (final table in allTables) {
+        if (exclude.contains(table.actualTableName)) continue;
+        await delete(table).go();
+      }
+    });
+  }
 }
 
 LazyDatabase _openConnection() {

@@ -8,6 +8,7 @@ import 'package:personal_application/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:personal_application/core/services/storage_service.dart';
 
 class DatabaseBrowserWidget extends StatelessWidget {
   const DatabaseBrowserWidget({super.key});
@@ -276,10 +277,157 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 20),
+          // Hamburger Context Menu
+          PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.menu_rounded,
+              size: 20,
+              color: Colors.white70,
+            ),
+            tooltip: 'Maintenance',
+            offset: const Offset(0, 40),
+            color: const Color(0xFF1E293B),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: const BorderSide(color: Colors.white10),
+            ),
+            onSelected: (value) async {
+              final storage = StorageService();
+              final db = context.read<AppDatabase>();
+
+              if (value == 'wipe_db_both') {
+                await cubit.wipeDatabase(db: db, local: true, cloud: true);
+              } else if (value == 'wipe_db_local') {
+                await cubit.wipeDatabase(db: db, local: true, cloud: false);
+              } else if (value == 'wipe_db_cloud') {
+                await cubit.wipeDatabase(db: db, local: false, cloud: true);
+              } else if (value == 'wipe_assets_both') {
+                await cubit.wipeAssets(storage: storage, db: db, both: true);
+              } else if (value == 'wipe_assets_local') {
+                await cubit.wipeAssets(storage: storage, db: db, both: false);
+              }
+            },
+            itemBuilder: (context) => [
+              // --- Database Wipe ---
+              PopupMenuItem(
+                value: 'wipe_db_both',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.delete_forever_rounded,
+                      size: 18,
+                      color: Colors.redAccent.withAlpha(200),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Wipe Database (No Assets)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                enabled: false,
+                height: 24,
+                child: Text(
+                  'DATABASE OPTIONS',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(40),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'wipe_db_local',
+                child: Padding(
+                  padding: EdgeInsets.only(left: 24),
+                  child: Text(
+                    'Only Local',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'wipe_db_cloud',
+                child: Padding(
+                  padding: EdgeInsets.only(left: 24),
+                  child: Text(
+                    'Only Cloud',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+              ),
+              const PopupMenuDivider(),
+              // --- Assets Wipe ---
+              PopupMenuItem(
+                value: 'wipe_assets_both',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_fix_high_rounded,
+                      size: 18,
+                      color: Colors.blueAccent.withAlpha(200),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Wipe Assets (Full)',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                enabled: false,
+                height: 24,
+                child: Text(
+                  'ASSET OPTIONS',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(40),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'wipe_assets_local',
+                child: Padding(
+                  padding: EdgeInsets.only(left: 24),
+                  child: Text(
+                    'Only Local Cache',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 8),
           IconButton(
-            icon: const Icon(Icons.close_rounded, size: 20),
+            icon: const Icon(
+              Icons.close_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
             onPressed: () => context.read<DatabaseBrowserCubit>().hide(),
-            style: IconButton.styleFrom(hoverColor: Colors.red.withAlpha(20)),
+            style: IconButton.styleFrom(
+              backgroundColor: Colors.redAccent.withAlpha(40),
+              hoverColor: Colors.redAccent.withAlpha(80),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
           ),
         ],
       ),

@@ -1,5 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:syncable/syncable.dart';
+import 'package:personal_application/core/database/app_database.dart';
+import 'package:personal_application/core/services/storage_service.dart';
 
 enum DatabaseRootTab { local, cloud, storage, analytics }
 
@@ -80,5 +84,77 @@ class DatabaseBrowserCubit extends Cubit<DatabaseBrowserState> {
 
   void clear() {
     emit(const DatabaseBrowserState());
+  }
+
+  Future<void> wipeDatabase({
+    required SyncableDatabase db,
+    bool local = true,
+    bool cloud = true,
+  }) async {
+    const exclude = ['asset_items'];
+
+    if (local) {
+      if (db is AppDatabase) {
+        await db.wipeLocalData(exclude: exclude);
+      }
+    }
+    if (cloud) {
+      final client = Supabase.instance.client;
+      final tables = ['conversations', 'messages', 'common_note_items'];
+      for (final table in tables) {
+        final userId = client.auth.currentUser?.id;
+        if (userId != null) {
+          await client.from(table).delete().eq('user_id', userId);
+        } else {
+          await client
+              .from(table)
+              .delete()
+              .neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+    }
+    // Refresh the current view
+    final currentTable = state.selectedTable;
+    emit(state.copyWith(clearTable: true));
+    emit(state.copyWith(selectedTable: currentTable));
+  }
+
+  Future<void> wipeAssets({
+    required StorageService storage,
+    required SyncableDatabase db,
+    bool both = true,
+  }) async {
+    if (both) {
+      // 1. Wipe Cloud Storage (Files)
+      await storage.wipeCloudStorage();
+
+      // 2. Wipe Local Assets Table
+      if (db is AppDatabase) {
+        await (db.delete(db.assetItems)).go();
+      }
+
+      // 3. Wipe Cloud Assets Table
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
+      if (userId != null) {
+        await client.from('asset_items').delete().eq('user_id', userId);
+      } else {
+        await client
+            .from('asset_items')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+
+      // 4. Clear memory cache
+      storage.clearMemoryCache();
+    } else {
+      // "Only Local Cache" -> just clear cached_bytes, records stay
+      await storage.wipeLocalCache();
+    }
+
+    // Refresh the current view
+    final currentTable = state.selectedTable;
+    emit(state.copyWith(clearTable: true));
+    emit(state.copyWith(selectedTable: currentTable));
   }
 }

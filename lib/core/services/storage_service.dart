@@ -591,4 +591,42 @@ class StorageService {
     _memoryCache.clear();
     _thumbnailCache.clear();
   }
+
+  /// Wipe all local cache bytes from the database.
+  Future<void> wipeLocalCache() async {
+    final db = _database;
+    await (db.update(db.assetItems)).write(
+      const AssetItemsCompanion(
+        cachedBytes: Value(null),
+        cachedAt: Value(null),
+      ),
+    );
+    clearMemoryCache();
+  }
+
+  /// Wipe all files from the B2 cloud storage.
+  Future<void> wipeCloudStorage() async {
+    final auth = await _authorize();
+    final bucketId = await _getBucketId(auth);
+
+    // List all files
+    final listResp = await http.post(
+      Uri.parse('${auth.apiUrl}/b2api/v2/b2_list_file_names'),
+      headers: {'Authorization': auth.authorizationToken},
+      body: jsonEncode({'bucketId': bucketId, 'maxFileCount': 10000}),
+    );
+    _assertOk(listResp, 'list B2 files for wiping');
+
+    final files = jsonDecode(listResp.body)['files'] as List;
+    for (final file in files) {
+      final fileName = file['fileName'] as String;
+      final fileId = file['fileId'] as String;
+
+      await http.post(
+        Uri.parse('${auth.apiUrl}/b2api/v2/b2_delete_file_version'),
+        headers: {'Authorization': auth.authorizationToken},
+        body: jsonEncode({'fileName': fileName, 'fileId': fileId}),
+      );
+    }
+  }
 }
