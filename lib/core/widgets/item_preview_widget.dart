@@ -72,6 +72,21 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     }
   }
 
+  void _scrollToItem(int direction, double width) {
+    if (!_scrollController.hasClients) return;
+
+    // Snap to nearest item boundary to keep alignment
+    final currentOffset = _scrollController.offset;
+    final nearestItem = (currentOffset / width).round();
+    final target = (nearestItem + direction) * width;
+
+    _scrollController.animateTo(
+      target.clamp(0, double.infinity),
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ItemPreviewCubit, ItemPreviewState>(
@@ -150,11 +165,24 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        // Media Section
                         if (displayItem.assetIds.isNotEmpty)
                           Expanded(
                             flex: 3,
-                            child: _buildMediaSection(displayItem, isSelected),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                border: Border(
+                                  bottom: BorderSide(
+                                    color: isDark
+                                        ? Colors.white.withAlpha(20)
+                                        : Colors.black.withAlpha(20),
+                                  ),
+                                ),
+                              ),
+                              child: _buildMediaSection(
+                                displayItem,
+                                isSelected,
+                              ),
+                            ),
                           ),
                         // Content Section
                         Expanded(
@@ -233,23 +261,64 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
       );
     }
 
-    // Scrollable horizontal list
-    return ListView.builder(
-      controller: _scrollController,
-      scrollDirection: Axis.horizontal,
-      physics: isSelected
-          ? const BouncingScrollPhysics()
-          : const NeverScrollableScrollPhysics(), // Constant speed controlled by timer
-      itemBuilder: (context, index) {
-        // Infinite looping modulo
-        final assetId = item.assetIds[index % item.assetIds.length];
-        return Padding(
-          padding: const EdgeInsets.only(right: 8),
-          child: _HoverableMediaItem(
-            assetId: assetId,
-            isSelected: isSelected,
-            fit: BoxFit.fitHeight,
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final sectionHeight = constraints.maxHeight;
+        final sectionWidth = constraints.maxWidth;
+        // When selected, items take full width for snapping.
+        // When not selected, items are square (fixed width = fixed height).
+        final itemWidth = isSelected ? sectionWidth : sectionHeight;
+
+        return Stack(
+          children: [
+            ListView.builder(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: isSelected
+                  ? const PageScrollPhysics()
+                  : const NeverScrollableScrollPhysics(), // Constant speed controlled by timer
+              itemBuilder: (context, index) {
+                // Infinite looping modulo
+                final assetId = item.assetIds[index % item.assetIds.length];
+                return Container(
+                  width: itemWidth,
+                  height: sectionHeight,
+                  padding: EdgeInsets.only(right: isSelected ? 0 : 8),
+                  child: _HoverableMediaItem(
+                    assetId: assetId,
+                    isSelected: isSelected,
+                    fit: BoxFit.contain, // Requirement: fit the image inside
+                  ),
+                );
+              },
+            ),
+            if (isSelected && item.assetIds.length > 1) ...[
+              // Previous Arrow
+              Positioned(
+                left: 12,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _CarouselArrow(
+                    icon: Icons.chevron_left_rounded,
+                    onPressed: () => _scrollToItem(-1, itemWidth),
+                  ),
+                ),
+              ),
+              // Next Arrow
+              Positioned(
+                right: 12,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _CarouselArrow(
+                    icon: Icons.chevron_right_rounded,
+                    onPressed: () => _scrollToItem(1, itemWidth),
+                  ),
+                ),
+              ),
+            ],
+          ],
         );
       },
     );
@@ -327,9 +396,22 @@ class _HoverableMediaItemState extends State<_HoverableMediaItem> {
       onEnter: (_) => setState(() => _isHovered = true),
       onExit: (_) => setState(() => _isHovered = false),
       child: Stack(
-        fit: widget.fit == BoxFit.cover ? StackFit.expand : StackFit.loose,
+        fit: StackFit.expand,
         children: [
-          AssetPreviewWidget(assetId: widget.assetId, fit: widget.fit),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withAlpha(widget.isSelected ? 100 : 60),
+              border: Border(
+                bottom: BorderSide(
+                  color: widget.isSelected
+                      ? Colors.white.withAlpha(40)
+                      : Colors.white.withAlpha(15),
+                  width: 2,
+                ),
+              ),
+            ), // Darkened background with bottom shelf border
+            child: AssetPreviewWidget(assetId: widget.assetId, fit: widget.fit),
+          ),
           if (_isHovered)
             Positioned(
               bottom: 12,
@@ -367,6 +449,50 @@ class _HoverableMediaItemState extends State<_HoverableMediaItem> {
         ],
       ),
     );
+  }
+}
+
+class _CarouselArrow extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  const _CarouselArrow({required this.icon, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(30),
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isDark
+                ? Colors.black.withAlpha(160)
+                : Colors.white.withAlpha(160),
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isDark ? Colors.white10 : Colors.black.withAlpha(25),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withAlpha(20),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: isDark ? Colors.white70 : Colors.black.withAlpha(160),
+            size: 28,
+          ),
+        ),
+      ),
+    ).animate().fadeIn(duration: 400.ms).scale(begin: const Offset(0.8, 0.8));
   }
 }
 

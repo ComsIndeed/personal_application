@@ -98,6 +98,7 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
             if (data != null) {
               final isVideo = asset.mimeType.startsWith('video/');
               return Stack(
+                alignment: Alignment.center,
                 fit: widget.fit == BoxFit.cover
                     ? StackFit.expand
                     : StackFit.loose,
