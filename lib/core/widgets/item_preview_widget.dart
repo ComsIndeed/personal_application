@@ -7,6 +7,9 @@ import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/item_preview_cubit.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:personal_application/core/database/app_database.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:provider/provider.dart';
 
 class ItemPreviewWidget extends StatefulWidget {
   const ItemPreviewWidget({super.key});
@@ -19,13 +22,19 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
   late AnimationController _animationController;
   Timer? _scrollTimer;
+  Timer? _saveTimer;
   CommonNoteItem? _lastItem;
+  String? _currentActiveId;
 
   @override
   void initState() {
     super.initState();
+    _titleController = TextEditingController();
+    _contentController = TextEditingController();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -34,10 +43,13 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
 
   @override
   void dispose() {
+    _saveTimer?.cancel();
     _scrollTimer?.cancel();
     _animationController.dispose();
     _scrollController.dispose();
     _mainScrollController.dispose();
+    _titleController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
@@ -92,17 +104,55 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     );
   }
 
+  void _debounceSave(CommonNoteItem item) {
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 1000), () {
+      _saveChanges(item);
+    });
+  }
+
+  Future<void> _saveChanges(CommonNoteItem item) async {
+    final title = _titleController.text.trim();
+    final content = _contentController.text.trim();
+
+    if (title == (item.title ?? '') && content == (item.textContent ?? '')) {
+      return;
+    }
+
+    final db = context.read<AppDatabase>();
+    await (db.update(
+      db.commonNoteItems,
+    )..where((t) => t.id.equals(item.id))).write(
+      CommonNoteItemsCompanion(
+        title: Value(title.isEmpty ? null : title),
+        textContent: Value(content.isEmpty ? null : content),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<ItemPreviewCubit, ItemPreviewState>(
       listener: (context, state) {
-        if (state.selectedItem != null) {
+        final item = state.activeItem;
+        if (item != null && item.id != _currentActiveId) {
+          // If we had a previous item, save it before switching
+          if (_currentActiveId != null && _lastItem != null) {
+            _saveChanges(_lastItem!);
+          }
+
+          _currentActiveId = item.id;
+          _titleController.text = item.title ?? '';
+          _contentController.text = item.textContent ?? '';
           _resetScroll();
-        } else if (state.hoveredItem != null) {
-          // Give it a tiny delay to ensure the ListView is built
-          Future.delayed(const Duration(milliseconds: 100), _startScrolling);
-        } else {
+        } else if (item == null) {
           _stopScrolling();
+          _currentActiveId = null;
+        }
+
+        if (state.hoveredItem != null) {
+          Future.delayed(const Duration(milliseconds: 100), _startScrolling);
         }
       },
       builder: (context, state) {
@@ -179,7 +229,9 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                               isSelected: isSelected,
                               theme: theme,
                               carouselController: _scrollController,
+                              titleController: _titleController,
                               onScrollToItem: _scrollToItem,
+                              onChanged: () => _debounceSave(displayItem),
                             ),
                           ),
                         SliverToBoxAdapter(
@@ -188,26 +240,56 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                if (displayItem.assetIds.isEmpty &&
-                                    displayItem.title != null &&
-                                    displayItem.title!.isNotEmpty) ...[
-                                  Text(
-                                    displayItem.title!,
+                                if (displayItem.assetIds.isEmpty) ...[
+                                  TextField(
+                                    controller: _titleController,
+                                    decoration: InputDecoration(
+                                      hintText: 'Add a title...',
+                                      border: InputBorder.none,
+                                      filled: false,
+                                      fillColor: Colors.transparent,
+                                      hintStyle: theme.textTheme.headlineSmall
+                                          ?.copyWith(
+                                            color: isDark
+                                                ? Colors.white24
+                                                : Colors.black26,
+                                          ),
+                                    ),
                                     style: theme.textTheme.headlineSmall
-                                        ?.copyWith(fontWeight: FontWeight.bold),
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.bold,
+                                          color: isDark
+                                              ? Colors.white
+                                              : Colors.black87,
+                                        ),
+                                    onChanged: (_) =>
+                                        _debounceSave(displayItem),
                                   ),
                                   const SizedBox(height: 12),
                                 ],
-                                Text(
-                                  displayItem.textContent ?? '',
+                                TextField(
+                                  controller: _contentController,
+                                  maxLines: null,
+                                  decoration: InputDecoration(
+                                    hintText: 'Add content...',
+                                    border: InputBorder.none,
+                                    filled: false,
+                                    fillColor: Colors.transparent,
+                                    hintStyle: theme.textTheme.bodyLarge
+                                        ?.copyWith(
+                                          color: isDark
+                                              ? Colors.white24
+                                              : Colors.black26,
+                                        ),
+                                  ),
                                   style: theme.textTheme.bodyLarge?.copyWith(
                                     color: isDark
                                         ? Colors.white70
                                         : Colors.black87,
                                     height: 1.5,
                                   ),
+                                  onChanged: (_) => _debounceSave(displayItem),
                                 ),
-                                // Extra spacing at bottom for better scrolling feel
                                 const SizedBox(height: 100),
                               ],
                             ),
@@ -483,21 +565,25 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
   final bool isSelected;
   final ThemeData theme;
   final ScrollController carouselController;
+  final TextEditingController titleController;
   final Function(int, double) onScrollToItem;
+  final VoidCallback onChanged;
 
   _NotePreviewHeaderDelegate({
     required this.item,
     required this.isSelected,
     required this.theme,
     required this.carouselController,
+    required this.titleController,
     required this.onScrollToItem,
+    required this.onChanged,
   });
 
   @override
-  double get maxExtent => 380.0;
+  double get maxExtent => 420.0;
 
   @override
-  double get minExtent => (item.title?.isNotEmpty ?? false) ? 140.0 : 80.0;
+  double get minExtent => 160.0;
 
   @override
   Widget build(
@@ -520,62 +606,66 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
           ),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: Stack(
         children: [
-          Expanded(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                // Expanded Carousel (Fades out and shrinks slightly)
-                Opacity(
-                  opacity: (1.0 - progress * 2.5).clamp(0.0, 1.0),
-                  child: Transform.scale(
-                    scale: 1.0 - (progress * 0.1),
-                    child: IgnorePointer(
-                      ignoring: isCollapsed,
-                      child: _buildMainCarousel(context),
-                    ),
-                  ),
-                ),
-                // Collapsed Thumbnails (Fades in + Staggered Flying Animation)
-                if (progress > 0.35)
-                  Opacity(
-                    opacity: ((progress - 0.35) * 3.0).clamp(0.0, 1.0),
-                    child: _buildCollapsedMedia(context, progress),
-                  ),
-              ],
+          // Media Section
+          Positioned(
+            top: isCollapsed ? 70 : 0,
+            left: 0,
+            right: 0,
+            height: isCollapsed ? 80 : 320,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: isCollapsed
+                  ? _buildCollapsedMedia(context, progress)
+                  : _buildMainCarousel(context),
             ),
           ),
-          if (item.title != null && item.title!.isNotEmpty)
-            _buildTitle(progress, isCollapsed),
+          // Title Field
+          Positioned(
+            top: isCollapsed ? 12 : 330,
+            left: 0,
+            right: 0,
+            child: _buildTitleField(progress, isCollapsed),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildTitle(double progress, bool isCollapsed) {
+  Widget _buildTitleField(double progress, bool isCollapsed) {
     return Padding(
-      padding: EdgeInsets.lerp(
-        const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 24),
-        const EdgeInsets.only(left: 24, right: 24, top: 4, bottom: 12),
-        progress,
-      )!,
-      child: Text(
-        item.title!,
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: TextField(
+        controller: titleController,
+        onChanged: (_) => onChanged(),
+        decoration: InputDecoration(
+          hintText: 'Add a title...',
+          border: InputBorder.none,
+          isDense: true,
+          filled: false,
+          fillColor: Colors.transparent,
+          hintStyle:
+              (isCollapsed
+                      ? theme.textTheme.titleMedium
+                      : theme.textTheme.headlineSmall)
+                  ?.copyWith(
+                    color: theme.brightness == Brightness.dark
+                        ? Colors.white24
+                        : Colors.black26,
+                  ),
+        ),
         style:
-            TextStyle.lerp(
-              theme.textTheme.headlineSmall,
-              theme.textTheme.titleMedium,
-              progress,
-            )?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: theme.brightness == Brightness.dark
-                  ? Colors.white
-                  : Colors.black87,
-            ),
-        maxLines: isCollapsed ? 1 : 2,
-        overflow: TextOverflow.ellipsis,
+            (isCollapsed
+                    ? theme.textTheme.titleMedium
+                    : theme.textTheme.headlineSmall)
+                ?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.brightness == Brightness.dark
+                      ? Colors.white
+                      : Colors.black87,
+                ),
+        maxLines: 1,
       ),
     );
   }
@@ -649,7 +739,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
 
     return Container(
       height: 60,
-      margin: const EdgeInsets.only(top: 12, left: 12),
+      margin: const EdgeInsets.only(left: 12),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -657,7 +747,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
         itemBuilder: (context, index) {
           final assetId = item.assetIds[index];
           final distance = (index - currentIndex).abs();
-          // Adjust stagger and progress based on scroll position
+          // Staggered animation based on progress and distance
           final startAt = 0.35 + (distance * 0.08);
           final itemProgress = ((progress - startAt) / (1.0 - startAt)).clamp(
             0.0,
@@ -666,8 +756,8 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
 
           return Transform.translate(
             offset: Offset(
-              -30 * (1.0 - itemProgress), // Slide from right
-              20 * (1.0 - itemProgress), // Slide from bottom
+              -30 * (1.0 - itemProgress),
+              20 * (1.0 - itemProgress),
             ),
             child: Transform.scale(
               scale: 0.7 + (0.3 * itemProgress),
