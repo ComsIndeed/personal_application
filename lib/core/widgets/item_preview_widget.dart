@@ -19,12 +19,13 @@ class ItemPreviewWidget extends StatefulWidget {
 }
 
 class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
   late TextEditingController _titleController;
   late TextEditingController _contentController;
   late AnimationController _animationController;
+  late AnimationController _headerAnimationController;
   Timer? _scrollTimer;
   Timer? _saveTimer;
   CommonNoteItem? _lastItem;
@@ -39,6 +40,27 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
       vsync: this,
       duration: const Duration(seconds: 1),
     );
+    _headerAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+    _mainScrollController.addListener(_handleHeaderAnimation);
+  }
+
+  void _handleHeaderAnimation() {
+    if (!_mainScrollController.hasClients) return;
+    const threshold = 100.0;
+    if (_mainScrollController.offset > threshold) {
+      if (_headerAnimationController.status != AnimationStatus.forward &&
+          _headerAnimationController.value < 1.0) {
+        _headerAnimationController.forward();
+      }
+    } else {
+      if (_headerAnimationController.status != AnimationStatus.reverse &&
+          _headerAnimationController.value > 0.0) {
+        _headerAnimationController.reverse();
+      }
+    }
   }
 
   @override
@@ -46,6 +68,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     _saveTimer?.cancel();
     _scrollTimer?.cancel();
     _animationController.dispose();
+    _headerAnimationController.dispose();
     _scrollController.dispose();
     _mainScrollController.dispose();
     _titleController.dispose();
@@ -230,6 +253,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                               theme: theme,
                               carouselController: _scrollController,
                               titleController: _titleController,
+                              animation: _headerAnimationController,
                               onScrollToItem: _scrollToItem,
                               onChanged: () => _debounceSave(displayItem),
                             ),
@@ -566,6 +590,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
   final ThemeData theme;
   final ScrollController carouselController;
   final TextEditingController titleController;
+  final Animation<double> animation;
   final Function(int, double) onScrollToItem;
   final VoidCallback onChanged;
 
@@ -575,6 +600,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
     required this.theme,
     required this.carouselController,
     required this.titleController,
+    required this.animation,
     required this.onScrollToItem,
     required this.onChanged,
   });
@@ -592,44 +618,64 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
     bool overlapsContent,
   ) {
     final isDark = theme.brightness == Brightness.dark;
-    final progress = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
-    final isCollapsed = shrinkOffset > 80.0;
+    final isTriggered = shrinkOffset > 80.0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF0F172A) : Colors.white,
-        border: Border(
-          bottom: BorderSide(
-            color: isDark
-                ? Colors.white.withAlpha(20)
-                : Colors.black.withAlpha(20),
-          ),
-        ),
-      ),
-      child: Stack(
-        children: [
-          // Media Section
-          Positioned(
-            top: isCollapsed ? 70 : 0,
-            left: 0,
-            right: 0,
-            height: isCollapsed ? 80 : 320,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 300),
-              child: isCollapsed
-                  ? _buildCollapsedMedia(context, progress)
-                  : _buildMainCarousel(context),
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final progress = animation.value;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            border: Border(
+              bottom: BorderSide(
+                color: isDark
+                    ? Colors.white.withAlpha(20)
+                    : Colors.black.withAlpha(20),
+              ),
             ),
           ),
-          // Title Field
-          Positioned(
-            top: isCollapsed ? 12 : 330,
-            left: 0,
-            right: 0,
-            child: _buildTitleField(progress, isCollapsed),
+          child: Stack(
+            children: [
+              // Media Section
+              Positioned(
+                top: isTriggered ? (70 * progress) : 0,
+                left: 0,
+                right: 0,
+                height: isTriggered ? (320 - (240 * progress)) : 320,
+                child: progress > 0.8 && isTriggered
+                    ? const SizedBox() // Hide carousel completely when thumbnails are settled
+                    : Opacity(
+                        opacity: (1.0 - (progress * 2)).clamp(0.0, 1.0),
+                        child: _buildMainCarousel(context),
+                      ),
+              ),
+              // Procedural Staggered Thumbnails (appearing during transition)
+              if (isTriggered && progress > 0.0)
+                Positioned(
+                  top: 70,
+                  left: 0,
+                  right: 0,
+                  height: 80,
+                  child: _buildCollapsedMedia(context, progress),
+                ),
+              // Title Field (Rendered last in the sequence: starts at 0.7 progress)
+              Positioned(
+                top: isTriggered ? (330 - (318 * progress)) : 330,
+                left: 0,
+                right: 0,
+                child: Opacity(
+                  opacity: isTriggered
+                      ? ((progress - 0.7) / 0.3).clamp(0.0, 1.0)
+                      : 1.0,
+                  child: _buildTitleField(progress, isTriggered),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -747,22 +793,25 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
         itemBuilder: (context, index) {
           final assetId = item.assetIds[index];
           final distance = (index - currentIndex).abs();
-          // Staggered animation based on progress and distance
-          final startAt = 0.35 + (distance * 0.08);
-          final itemProgress = ((progress - startAt) / (1.0 - startAt)).clamp(
+          // Sequence images first (0.0 to 0.7)
+          final startAt = (distance * 0.05).clamp(0.0, 0.6);
+          final endAt = (startAt + 0.3).clamp(0.0, 0.7);
+          final itemProgress = ((progress - startAt) / (endAt - startAt)).clamp(
             0.0,
             1.0,
           );
 
+          if (itemProgress <= 0) return const SizedBox.shrink();
+
           return Transform.translate(
             offset: Offset(
-              -30 * (1.0 - itemProgress),
-              20 * (1.0 - itemProgress),
+              -40 * (1.0 - itemProgress),
+              30 * (1.0 - itemProgress),
             ),
             child: Transform.scale(
-              scale: 0.7 + (0.3 * itemProgress),
+              scale: 0.6 + (0.4 * itemProgress),
               child: Opacity(
-                opacity: (itemProgress * 1.5).clamp(0.0, 1.0),
+                opacity: itemProgress,
                 child: Container(
                   width: 80,
                   height: 60,
@@ -779,9 +828,9 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
                     boxShadow: [
                       if (itemProgress > 0.8)
                         BoxShadow(
-                          color: Colors.black.withAlpha(30),
-                          blurRadius: 6,
-                          offset: const Offset(0, 3),
+                          color: Colors.black.withAlpha(40),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                     ],
                   ),
@@ -802,6 +851,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
   bool shouldRebuild(covariant _NotePreviewHeaderDelegate oldDelegate) {
     return oldDelegate.item != item ||
         oldDelegate.isSelected != isSelected ||
-        oldDelegate.theme != theme;
+        oldDelegate.theme != theme ||
+        oldDelegate.animation != animation;
   }
 }
