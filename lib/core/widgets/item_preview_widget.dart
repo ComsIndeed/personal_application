@@ -18,6 +18,7 @@ class ItemPreviewWidget extends StatefulWidget {
 class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     with SingleTickerProviderStateMixin {
   final ScrollController _scrollController = ScrollController();
+  final ScrollController _mainScrollController = ScrollController();
   late AnimationController _animationController;
   Timer? _scrollTimer;
   CommonNoteItem? _lastItem;
@@ -36,6 +37,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     _scrollTimer?.cancel();
     _animationController.dispose();
     _scrollController.dispose();
+    _mainScrollController.dispose();
     super.dispose();
   }
 
@@ -69,6 +71,9 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
         duration: const Duration(milliseconds: 600),
         curve: Curves.easeOutCubic,
       );
+    }
+    if (_mainScrollController.hasClients && _mainScrollController.offset != 0) {
+      _mainScrollController.jumpTo(0);
     }
   }
 
@@ -162,59 +167,49 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
+                    child: CustomScrollView(
+                      controller: _mainScrollController,
+                      physics: const BouncingScrollPhysics(),
+                      slivers: [
                         if (displayItem.assetIds.isNotEmpty)
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: Border(
-                                  bottom: BorderSide(
-                                    color: isDark
-                                        ? Colors.white.withAlpha(20)
-                                        : Colors.black.withAlpha(20),
-                                  ),
-                                ),
-                              ),
-                              child: _buildMediaSection(
-                                displayItem,
-                                isSelected,
-                              ),
+                          SliverPersistentHeader(
+                            pinned: true,
+                            delegate: _NotePreviewHeaderDelegate(
+                              item: displayItem,
+                              isSelected: isSelected,
+                              theme: theme,
+                              carouselController: _scrollController,
+                              onScrollToItem: _scrollToItem,
                             ),
                           ),
-                        // Content Section
-                        Expanded(
-                          flex: displayItem.assetIds.isNotEmpty ? 2 : 1,
+                        SliverToBoxAdapter(
                           child: Padding(
                             padding: const EdgeInsets.all(24.0),
-                            child: SingleChildScrollView(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (displayItem.title != null &&
-                                      displayItem.title!.isNotEmpty) ...[
-                                    Text(
-                                      displayItem.title!,
-                                      style: theme.textTheme.headlineSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                                    const SizedBox(height: 12),
-                                  ],
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (displayItem.assetIds.isEmpty &&
+                                    displayItem.title != null &&
+                                    displayItem.title!.isNotEmpty) ...[
                                   Text(
-                                    displayItem.textContent ?? '',
-                                    style: theme.textTheme.bodyLarge?.copyWith(
-                                      color: isDark
-                                          ? Colors.white70
-                                          : Colors.black87,
-                                      height: 1.5,
-                                    ),
+                                    displayItem.title!,
+                                    style: theme.textTheme.headlineSmall
+                                        ?.copyWith(fontWeight: FontWeight.bold),
                                   ),
+                                  const SizedBox(height: 12),
                                 ],
-                              ),
+                                Text(
+                                  displayItem.textContent ?? '',
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: isDark
+                                        ? Colors.white70
+                                        : Colors.black87,
+                                    height: 1.5,
+                                  ),
+                                ),
+                                // Extra spacing at bottom for better scrolling feel
+                                const SizedBox(height: 100),
+                              ],
                             ),
                           ),
                         ),
@@ -240,85 +235,6 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
               ),
             ),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildMediaSection(CommonNoteItem item, bool isSelected) {
-    if (item.assetIds.isEmpty) {
-      return Container(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? Colors.white.withAlpha(5)
-            : Colors.black.withAlpha(5),
-        child: const Center(
-          child: Icon(
-            Icons.description_outlined,
-            size: 64,
-            color: Colors.white10,
-          ),
-        ),
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final sectionHeight = constraints.maxHeight;
-        final sectionWidth = constraints.maxWidth;
-        // When selected, items take full width for snapping.
-        // When not selected, items are square (fixed width = fixed height).
-        final itemWidth = isSelected ? sectionWidth : sectionHeight;
-
-        return Stack(
-          children: [
-            ListView.builder(
-              controller: _scrollController,
-              scrollDirection: Axis.horizontal,
-              physics: isSelected
-                  ? const PageScrollPhysics()
-                  : const NeverScrollableScrollPhysics(), // Constant speed controlled by timer
-              itemBuilder: (context, index) {
-                // Infinite looping modulo
-                final assetId = item.assetIds[index % item.assetIds.length];
-                return Container(
-                  width: itemWidth,
-                  height: sectionHeight,
-                  padding: EdgeInsets.only(right: isSelected ? 0 : 8),
-                  child: _HoverableMediaItem(
-                    assetId: assetId,
-                    isSelected: isSelected,
-                    fit: BoxFit.contain, // Requirement: fit the image inside
-                  ),
-                );
-              },
-            ),
-            if (isSelected && item.assetIds.length > 1) ...[
-              // Previous Arrow
-              Positioned(
-                left: 12,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: _CarouselArrow(
-                    icon: Icons.chevron_left_rounded,
-                    onPressed: () => _scrollToItem(-1, itemWidth),
-                  ),
-                ),
-              ),
-              // Next Arrow
-              Positioned(
-                right: 12,
-                top: 0,
-                bottom: 0,
-                child: Center(
-                  child: _CarouselArrow(
-                    icon: Icons.chevron_right_rounded,
-                    onPressed: () => _scrollToItem(1, itemWidth),
-                  ),
-                ),
-              ),
-            ],
-          ],
         );
       },
     );
@@ -559,5 +475,243 @@ class _ControlButton extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final CommonNoteItem item;
+  final bool isSelected;
+  final ThemeData theme;
+  final ScrollController carouselController;
+  final Function(int, double) onScrollToItem;
+
+  _NotePreviewHeaderDelegate({
+    required this.item,
+    required this.isSelected,
+    required this.theme,
+    required this.carouselController,
+    required this.onScrollToItem,
+  });
+
+  @override
+  double get maxExtent => 380.0;
+
+  @override
+  double get minExtent => (item.title?.isNotEmpty ?? false) ? 140.0 : 80.0;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    final isDark = theme.brightness == Brightness.dark;
+    final progress = (shrinkOffset / (maxExtent - minExtent)).clamp(0.0, 1.0);
+    final isCollapsed = shrinkOffset > 80.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0F172A) : Colors.white,
+        border: Border(
+          bottom: BorderSide(
+            color: isDark
+                ? Colors.white.withAlpha(20)
+                : Colors.black.withAlpha(20),
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                // Expanded Carousel (Fades out and shrinks slightly)
+                Opacity(
+                  opacity: (1.0 - progress * 2.5).clamp(0.0, 1.0),
+                  child: Transform.scale(
+                    scale: 1.0 - (progress * 0.1),
+                    child: IgnorePointer(
+                      ignoring: isCollapsed,
+                      child: _buildMainCarousel(context),
+                    ),
+                  ),
+                ),
+                // Collapsed Thumbnails (Fades in + Staggered Flying Animation)
+                if (progress > 0.35)
+                  Opacity(
+                    opacity: ((progress - 0.35) * 3.0).clamp(0.0, 1.0),
+                    child: _buildCollapsedMedia(context, progress),
+                  ),
+              ],
+            ),
+          ),
+          if (item.title != null && item.title!.isNotEmpty)
+            _buildTitle(progress, isCollapsed),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTitle(double progress, bool isCollapsed) {
+    return Padding(
+      padding: EdgeInsets.lerp(
+        const EdgeInsets.only(left: 24, right: 24, top: 16, bottom: 24),
+        const EdgeInsets.only(left: 24, right: 24, top: 4, bottom: 12),
+        progress,
+      )!,
+      child: Text(
+        item.title!,
+        style:
+            TextStyle.lerp(
+              theme.textTheme.headlineSmall,
+              theme.textTheme.titleMedium,
+              progress,
+            )?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: theme.brightness == Brightness.dark
+                  ? Colors.white
+                  : Colors.black87,
+            ),
+        maxLines: isCollapsed ? 1 : 2,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+  }
+
+  Widget _buildMainCarousel(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final height = constraints.maxHeight;
+        final width = constraints.maxWidth;
+        final itemWidth = isSelected ? width : height;
+
+        return Stack(
+          children: [
+            ListView.builder(
+              controller: carouselController,
+              scrollDirection: Axis.horizontal,
+              physics: isSelected
+                  ? const PageScrollPhysics()
+                  : const NeverScrollableScrollPhysics(),
+              itemBuilder: (context, index) {
+                final assetId = item.assetIds[index % item.assetIds.length];
+                return Container(
+                  width: itemWidth,
+                  height: height,
+                  padding: EdgeInsets.only(right: isSelected ? 0 : 8),
+                  child: _HoverableMediaItem(
+                    assetId: assetId,
+                    isSelected: isSelected,
+                    fit: isSelected ? BoxFit.contain : BoxFit.cover,
+                  ),
+                );
+              },
+            ),
+            if (isSelected && item.assetIds.length > 1) ...[
+              Positioned(
+                left: 12,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _CarouselArrow(
+                    icon: Icons.chevron_left_rounded,
+                    onPressed: () => onScrollToItem(-1, itemWidth),
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 12,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: _CarouselArrow(
+                    icon: Icons.chevron_right_rounded,
+                    onPressed: () => onScrollToItem(1, itemWidth),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildCollapsedMedia(BuildContext context, double progress) {
+    double currentOffset = carouselController.hasClients
+        ? carouselController.offset
+        : 0.0;
+    double expandedItemWidth = isSelected ? 600 : 450;
+    final int currentIndex =
+        (currentOffset / expandedItemWidth).round() % item.assetIds.length;
+
+    return Container(
+      height: 60,
+      margin: const EdgeInsets.only(top: 12, left: 12),
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: item.assetIds.length,
+        itemBuilder: (context, index) {
+          final assetId = item.assetIds[index];
+          final distance = (index - currentIndex).abs();
+          // Adjust stagger and progress based on scroll position
+          final startAt = 0.35 + (distance * 0.08);
+          final itemProgress = ((progress - startAt) / (1.0 - startAt)).clamp(
+            0.0,
+            1.0,
+          );
+
+          return Transform.translate(
+            offset: Offset(
+              -30 * (1.0 - itemProgress), // Slide from right
+              20 * (1.0 - itemProgress), // Slide from bottom
+            ),
+            child: Transform.scale(
+              scale: 0.7 + (0.3 * itemProgress),
+              child: Opacity(
+                opacity: (itemProgress * 1.5).clamp(0.0, 1.0),
+                child: Container(
+                  width: 80,
+                  height: 60,
+                  margin: const EdgeInsets.only(right: 12),
+                  clipBehavior: Clip.antiAlias,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white.withAlpha(30)
+                          : Colors.black.withAlpha(30),
+                      width: 1,
+                    ),
+                    boxShadow: [
+                      if (itemProgress > 0.8)
+                        BoxShadow(
+                          color: Colors.black.withAlpha(30),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                    ],
+                  ),
+                  child: AssetPreviewWidget(
+                    assetId: assetId,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant _NotePreviewHeaderDelegate oldDelegate) {
+    return oldDelegate.item != item ||
+        oldDelegate.isSelected != isSelected ||
+        oldDelegate.theme != theme;
   }
 }
