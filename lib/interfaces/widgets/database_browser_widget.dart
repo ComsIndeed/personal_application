@@ -198,6 +198,19 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
+          if (state.maintenanceResults != null) ...[
+            IconButton(
+              onPressed: () => cubit.clearResults(),
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 16),
+              tooltip: 'Back to Browser',
+              visualDensity: VisualDensity.compact,
+              style: IconButton.styleFrom(
+                foregroundColor: Colors.blueAccent,
+                backgroundColor: Colors.blueAccent.withAlpha(20),
+              ),
+            ),
+            const SizedBox(width: 12),
+          ],
           // Root Tab Buttons
           Row(
             children: [
@@ -234,9 +247,7 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
           const VerticalDivider(width: 1, indent: 8, endIndent: 8),
           const SizedBox(width: 24),
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+            child: Row(
               children: [
                 Text(
                   state.selectedTable ??
@@ -248,6 +259,27 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                   ),
                 ),
+                if (state.maintenanceResults != null) ...[
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.blueAccent.withAlpha(40),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Text(
+                      'RESULTS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blueAccent,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -292,6 +324,54 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               side: const BorderSide(color: Colors.white10),
             ),
             onSelected: (value) async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: const Color(0xFF0F172A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: const BorderSide(color: Colors.white10),
+                  ),
+                  title: Row(
+                    children: [
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.orangeAccent,
+                      ),
+                      const SizedBox(width: 12),
+                      const Text(
+                        'Confirm Wipe',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                    ],
+                  ),
+                  content: Text(
+                    value.contains('assets')
+                        ? 'This will delete asset records and files. Are you sure?'
+                        : 'This will delete database entries (conversations, messages, etc). Are you sure?',
+                    style: const TextStyle(color: Colors.white70),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text(
+                        'Cancel',
+                        style: TextStyle(color: Colors.white24),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.redAccent,
+                      ),
+                      child: const Text('Proceed'),
+                    ),
+                  ],
+                ),
+              );
+
+              if (confirmed != true) return;
+
               final storage = StorageService();
               final db = context.read<AppDatabase>();
 
@@ -442,6 +522,14 @@ class _DatabaseBrowserContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (state.isWiping) {
+      return _DatabaseWipingProgress(state: state);
+    }
+
+    if (state.maintenanceResults != null) {
+      return _DatabaseMaintenanceResults(state: state);
+    }
+
     if (state.rootTab == DatabaseRootTab.storage ||
         state.rootTab == DatabaseRootTab.analytics) {
       return Center(
@@ -840,6 +928,297 @@ class _RootTabIcon extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _DatabaseWipingProgress extends StatelessWidget {
+  final DatabaseBrowserState state;
+  const _DatabaseWipingProgress({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 48,
+            height: 48,
+            child: CircularProgressIndicator(
+              strokeWidth: 3,
+              color: Colors.blueAccent,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Text(
+            state.wipeProgressMessage ?? 'Executing maintenance...',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+            ),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Please do not close the application',
+            style: TextStyle(fontSize: 12, color: Colors.white24),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DatabaseMaintenanceResults extends StatelessWidget {
+  final DatabaseBrowserState state;
+  const _DatabaseMaintenanceResults({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final results = state.maintenanceResults!;
+    final type = results['type'] as String;
+    final data = results['data'];
+
+    return Column(
+      children: [
+        Expanded(
+          child: type == 'assets'
+              ? _AssetMaintenanceTable(
+                  data: List<Map<String, dynamic>>.from(data),
+                )
+              : _DatabaseMaintenanceTable(
+                  data: Map<String, List<Map<String, dynamic>>>.from(data),
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AssetMaintenanceTable extends StatelessWidget {
+  final List<Map<String, dynamic>> data;
+  const _AssetMaintenanceTable({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    if (data.isEmpty) {
+      return const Center(
+        child: Text(
+          'No assets were affected',
+          style: TextStyle(color: Colors.white24),
+        ),
+      );
+    }
+
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Table(
+        columnWidths: const {
+          0: FlexColumnWidth(2),
+          1: FixedColumnWidth(80),
+          2: FixedColumnWidth(80),
+          3: FixedColumnWidth(100),
+        },
+        border: TableBorder.all(
+          color: Colors.white10,
+          width: 1,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(color: Colors.white.withAlpha(5)),
+            children: ['ASSET', 'RECORD', 'CACHE', 'CLOUD']
+                .map(
+                  (h) => Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      h,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white38,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          ...data.map((item) {
+            final allDeleted =
+                item['recordDeleted'] == true &&
+                item['cloudFileDeleted'] == true;
+            final cacheCleared = item['cacheCleared'] == true;
+
+            return TableRow(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    item['displayName'],
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: allDeleted ? Colors.redAccent : Colors.white70,
+                    ),
+                  ),
+                ),
+                _ResultIcon(isDeleted: item['recordDeleted']),
+                _ResultIcon(isDeleted: cacheCleared, label: 'CLEARED'),
+                _ResultIcon(isDeleted: item['cloudFileDeleted']),
+              ],
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+class _DatabaseMaintenanceTable extends StatelessWidget {
+  final Map<String, List<Map<String, dynamic>>> data;
+  const _DatabaseMaintenanceTable({required this.data});
+
+  @override
+  Widget build(BuildContext context) {
+    final tables = data.keys.toList();
+    if (tables.isEmpty) {
+      return const Center(
+        child: Text(
+          'No data was affected',
+          style: TextStyle(color: Colors.white24),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(16),
+      itemCount: tables.length,
+      itemBuilder: (context, index) {
+        final tableName = tables[index];
+        final rows = data[tableName]!;
+        if (rows.isEmpty) return const SizedBox.shrink();
+
+        return ExpansionTile(
+          shape: const RoundedRectangleBorder(side: BorderSide.none),
+          title: Row(
+            children: [
+              Text(
+                tableName.replaceAll('_', ' ').toUpperCase(),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withAlpha(40),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  '${rows.length} DELETED',
+                  style: const TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(8),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withAlpha(5),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: DataTable(
+                  headingRowHeight: 32,
+                  dataRowMinHeight: 24,
+                  dataRowMaxHeight: 32,
+                  columns: rows.first.keys
+                      .map(
+                        (k) => DataColumn(
+                          label: Text(
+                            k,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.white24,
+                            ),
+                          ),
+                        ),
+                      )
+                      .toList(),
+                  rows: rows
+                      .map(
+                        (r) => DataRow(
+                          cells: r.values
+                              .map(
+                                (v) => DataCell(
+                                  Text(
+                                    v.toString(),
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.redAccent,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ResultIcon extends StatelessWidget {
+  final bool isDeleted;
+  final String label;
+  const _ResultIcon({required this.isDeleted, this.label = 'DELETED'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Center(
+        child: isDeleted
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.redAccent.withAlpha(40),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 8,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.redAccent,
+                  ),
+                ),
+              )
+            : const Icon(
+                Icons.check_circle_outline_rounded,
+                size: 14,
+                color: Colors.white10,
+              ),
       ),
     );
   }

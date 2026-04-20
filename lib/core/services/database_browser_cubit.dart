@@ -14,6 +14,9 @@ class DatabaseBrowserState extends Equatable {
   final String searchQuery;
   final String? sortColumn;
   final bool isAscending;
+  final bool isWiping;
+  final String? wipeProgressMessage;
+  final Map<String, dynamic>? maintenanceResults;
 
   const DatabaseBrowserState({
     this.isVisible = false,
@@ -22,6 +25,9 @@ class DatabaseBrowserState extends Equatable {
     this.searchQuery = '',
     this.sortColumn,
     this.isAscending = true,
+    this.isWiping = false,
+    this.wipeProgressMessage,
+    this.maintenanceResults,
   });
 
   DatabaseBrowserState copyWith({
@@ -33,6 +39,10 @@ class DatabaseBrowserState extends Equatable {
     String? sortColumn,
     bool? isAscending,
     bool clearSort = false,
+    bool? isWiping,
+    String? wipeProgressMessage,
+    Map<String, dynamic>? maintenanceResults,
+    bool clearResults = false,
   }) {
     return DatabaseBrowserState(
       isVisible: isVisible ?? this.isVisible,
@@ -41,6 +51,11 @@ class DatabaseBrowserState extends Equatable {
       searchQuery: searchQuery ?? this.searchQuery,
       sortColumn: clearSort ? null : (sortColumn ?? this.sortColumn),
       isAscending: isAscending ?? this.isAscending,
+      isWiping: isWiping ?? this.isWiping,
+      wipeProgressMessage: wipeProgressMessage ?? this.wipeProgressMessage,
+      maintenanceResults: clearResults
+          ? null
+          : (maintenanceResults ?? this.maintenanceResults),
     );
   }
 
@@ -52,6 +67,9 @@ class DatabaseBrowserState extends Equatable {
     searchQuery,
     sortColumn,
     isAscending,
+    isWiping,
+    wipeProgressMessage,
+    maintenanceResults,
   ];
 }
 
@@ -86,37 +104,95 @@ class DatabaseBrowserCubit extends Cubit<DatabaseBrowserState> {
     emit(const DatabaseBrowserState());
   }
 
+  void clearResults() {
+    emit(state.copyWith(clearResults: true));
+  }
+
   Future<void> wipeDatabase({
     required SyncableDatabase db,
     bool local = true,
     bool cloud = true,
   }) async {
-    const exclude = ['asset_items'];
+    emit(
+      state.copyWith(
+        isWiping: true,
+        wipeProgressMessage: 'Preparing database wipe...',
+        clearResults: true,
+      ),
+    );
 
-    if (local) {
-      if (db is AppDatabase) {
-        await db.wipeLocalData(exclude: exclude);
+    final Map<String, List<Map<String, dynamic>>> results = {};
+    const tables = ['conversations', 'messages', 'common_note_items'];
+
+    try {
+      if (local && db is AppDatabase) {
+        emit(state.copyWith(wipeProgressMessage: 'Fetching local rows...'));
+        for (final tableName in tables) {
+          final table = db.allTables.firstWhere(
+            (t) => t.actualTableName == tableName,
+          );
+          final rows = await (db.select(table)).get();
+          results['local_$tableName'] = rows
+              .map((r) => (r as dynamic).toJson() as Map<String, dynamic>)
+              .toList();
+        }
+
+        emit(state.copyWith(wipeProgressMessage: 'Deleting local rows...'));
+        await db.wipeLocalData(exclude: const ['asset_items']);
       }
-    }
-    if (cloud) {
-      final client = Supabase.instance.client;
-      final tables = ['conversations', 'messages', 'common_note_items'];
-      for (final table in tables) {
+
+      if (cloud) {
+        final client = Supabase.instance.client;
         final userId = client.auth.currentUser?.id;
-        if (userId != null) {
-          await client.from(table).delete().eq('user_id', userId);
-        } else {
-          await client
-              .from(table)
-              .delete()
-              .neq('id', '00000000-0000-0000-0000-000000000000');
+
+        for (final tableName in tables) {
+          emit(
+            state.copyWith(
+              wipeProgressMessage: 'Fetching cloud rows from $tableName...',
+            ),
+          );
+          dynamic query = client.from(tableName).select();
+          if (userId != null) query = query.eq('user_id', userId);
+          final response = await query;
+          results['cloud_$tableName'] = List<Map<String, dynamic>>.from(
+            response,
+          );
+
+          emit(
+            state.copyWith(
+              wipeProgressMessage: 'Deleting cloud rows from $tableName...',
+            ),
+          );
+          if (userId != null) {
+            await client.from(tableName).delete().eq('user_id', userId);
+          } else {
+            await client
+                .from(tableName)
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000');
+          }
         }
       }
+
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Wipe complete',
+          maintenanceResults: {
+            'type': 'database',
+            'data': results,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Error: ${e.toString()}',
+        ),
+      );
     }
-    // Refresh the current view
-    final currentTable = state.selectedTable;
-    emit(state.copyWith(clearTable: true));
-    emit(state.copyWith(selectedTable: currentTable));
   }
 
   Future<void> wipeAssets({
@@ -124,37 +200,79 @@ class DatabaseBrowserCubit extends Cubit<DatabaseBrowserState> {
     required SyncableDatabase db,
     bool both = true,
   }) async {
-    if (both) {
-      // 1. Wipe Cloud Storage (Files)
-      await storage.wipeCloudStorage();
+    emit(
+      state.copyWith(
+        isWiping: true,
+        wipeProgressMessage: 'Preparing asset wipe...',
+        clearResults: true,
+      ),
+    );
 
-      // 2. Wipe Local Assets Table
+    try {
+      final List<Map<String, dynamic>> assetResults = [];
+
+      // Fetch current assets to track what was there
       if (db is AppDatabase) {
-        await (db.delete(db.assetItems)).go();
+        final currentAssets = await db.select(db.assetItems).get();
+        for (var asset in currentAssets) {
+          assetResults.add({
+            'id': asset.id,
+            'displayName': asset.displayName ?? asset.id.substring(0, 8),
+            'mimeType': asset.mimeType,
+            'recordDeleted': both,
+            'cacheCleared': true, // either cleared or record deleted
+            'cloudFileDeleted': both && asset.isUploaded,
+          });
+        }
       }
 
-      // 3. Wipe Cloud Assets Table
-      final client = Supabase.instance.client;
-      final userId = client.auth.currentUser?.id;
-      if (userId != null) {
-        await client.from('asset_items').delete().eq('user_id', userId);
+      if (both) {
+        emit(
+          state.copyWith(
+            wipeProgressMessage: 'Deleting cloud files from B2...',
+          ),
+        );
+        await storage.wipeCloudStorage();
+
+        emit(state.copyWith(wipeProgressMessage: 'Deleting asset records...'));
+        if (db is AppDatabase) {
+          await (db.delete(db.assetItems)).go();
+        }
+
+        final client = Supabase.instance.client;
+        final userId = client.auth.currentUser?.id;
+        if (userId != null) {
+          await client.from('asset_items').delete().eq('user_id', userId);
+        } else {
+          await client
+              .from('asset_items')
+              .delete()
+              .neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+        storage.clearMemoryCache();
       } else {
-        await client
-            .from('asset_items')
-            .delete()
-            .neq('id', '00000000-0000-0000-0000-000000000000');
+        emit(state.copyWith(wipeProgressMessage: 'Clearing local cache...'));
+        await storage.wipeLocalCache();
       }
 
-      // 4. Clear memory cache
-      storage.clearMemoryCache();
-    } else {
-      // "Only Local Cache" -> just clear cached_bytes, records stay
-      await storage.wipeLocalCache();
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Asset wipe complete',
+          maintenanceResults: {
+            'type': 'assets',
+            'data': assetResults,
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Error: ${e.toString()}',
+        ),
+      );
     }
-
-    // Refresh the current view
-    final currentTable = state.selectedTable;
-    emit(state.copyWith(clearTable: true));
-    emit(state.copyWith(selectedTable: currentTable));
   }
 }
