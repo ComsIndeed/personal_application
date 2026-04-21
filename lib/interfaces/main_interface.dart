@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
 import 'tabs/assistant_chat/chat_tab.dart';
-import 'tabs/todo_tab.dart';
+import 'tabs/sprints/sprints_tab.dart';
 import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
 import 'tabs/notes/notes_tab.dart';
@@ -145,16 +145,27 @@ class _MainInterfaceState extends State<MainInterface> {
                                         'Settings',
                                         'Assistant',
                                       ];
-                                      return Text(
-                                        header.title ??
-                                            defaultTitles[tabController.index],
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                        maxLines: 1,
+                                      return Row(
+                                        children: [
+                                          if (header.leading != null) ...[
+                                            header.leading!,
+                                            const SizedBox(width: 12),
+                                          ],
+                                          Expanded(
+                                            child: Text(
+                                              header.title ??
+                                                  defaultTitles[tabController
+                                                      .index],
+                                              style: const TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                letterSpacing: 0.5,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ],
                                       );
                                     },
                                   );
@@ -285,7 +296,7 @@ class _MainInterfaceState extends State<MainInterface> {
                           children: [
                             BrainDumpTab(),
                             NotesTab(),
-                            TodoTab(),
+                            SprintsTab(),
                             DashboardTab(),
                             UtilitiesTab(),
                             SettingsTab(),
