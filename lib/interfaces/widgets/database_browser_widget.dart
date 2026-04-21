@@ -614,9 +614,13 @@ class _DatabaseTableViewState extends State<_DatabaseTableView> {
 
         final query = db.select(table);
         final result = await query.get();
-        final rawRows = result
-            .map((r) => (r as dynamic).toJson() as Map<String, dynamic>)
-            .toList();
+        final rawRows = result.map((r) {
+          final map = (r as dynamic).toJson() as Map<String, dynamic>;
+          if (r is AssetItem) {
+            map['_raw_item'] = r;
+          }
+          return map;
+        }).toList();
 
         // Manual sorting
         if (widget.state.sortColumn != null) {
@@ -964,19 +968,17 @@ class _DatabaseTableViewState extends State<_DatabaseTableView> {
           ),
         ),
         // Data Rows
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: _rows.length,
-          separatorBuilder: (context, index) =>
-              const Divider(height: 1, color: Colors.white10),
-          itemBuilder: (context, index) {
-            final row = _rows[index];
-            final asset = AssetItem.fromJson(row);
+        ..._rows.map((row) {
+          final asset =
+              row['_raw_item'] as AssetItem? ?? AssetItem.fromJson(row);
 
-            return _AssetRowWidget(asset: asset);
-          },
-        ),
+          return Column(
+            children: [
+              _AssetRowWidget(asset: asset),
+              const Divider(height: 1, color: Colors.white10),
+            ],
+          );
+        }),
       ],
     );
   }

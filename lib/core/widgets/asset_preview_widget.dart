@@ -84,13 +84,10 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
           future: _getData(asset),
           builder: (context, byteSnapshot) {
             if (byteSnapshot.connectionState == ConnectionState.waiting) {
-              return const Skeletonizer(
-                enabled: true,
-                child: SizedBox(
-                  width: 300,
-                  height: double.infinity,
-                  child: Bone.square(size: double.infinity),
-                ),
+              return Container(
+                width: 300,
+                height: double.infinity,
+                color: Colors.white.withAlpha(5),
               );
             }
 
@@ -107,6 +104,12 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
                     data,
                     fit: widget.fit,
                     cacheWidth: widget.cacheWidth?.toInt(),
+                    errorBuilder: (context, error, stackTrace) {
+                      debugPrint(
+                        'Image.memory failed for ${widget.assetId}: $error, bytes: ${data.length}',
+                      );
+                      return _buildErrorPlaceholder(asset, 'Invalid Data');
+                    },
                   ),
                   if (isVideo)
                     Center(
@@ -127,29 +130,39 @@ class _AssetPreviewWidgetState extends State<AssetPreviewWidget> {
               );
             }
 
-            return Container(
-              color: Colors.black26,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    asset.mimeType.startsWith('video/')
-                        ? Icons.videocam_rounded
-                        : Icons.insert_drive_file_rounded,
-                    size: 32,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    asset.displayName ?? 'No Preview',
-                    style: const TextStyle(fontSize: 10),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            );
+            return _buildErrorPlaceholder(asset, 'No Preview');
           },
         );
       },
+    );
+  }
+
+  Widget _buildErrorPlaceholder(AssetItem asset, String message) {
+    return Container(
+      color: Colors.black26,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            asset.mimeType.startsWith('video/')
+                ? Icons.videocam_rounded
+                : Icons.insert_drive_file_rounded,
+            size: 32,
+            color: Colors.white24,
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: Text(
+              asset.displayName ?? message,
+              style: const TextStyle(fontSize: 10, color: Colors.white24),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

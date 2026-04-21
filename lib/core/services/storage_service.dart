@@ -193,6 +193,7 @@ class StorageService {
 
     // 2. Use database cache if available and either freshness check is off or cache is current
     if (record.cachedBytes != null &&
+        record.cachedBytes!.isNotEmpty &&
         (!checkFreshness || record.isCacheFresh)) {
       final bytes = record.cachedBytes!;
       _memoryCache[record.id] = bytes; // Populate memory cache
@@ -208,12 +209,14 @@ class StorageService {
 
     final connectivity = await Connectivity().checkConnectivity();
     if (connectivity.contains(ConnectivityResult.none)) {
-      if (record.cachedBytes != null) {
+      if (record.cachedBytes != null && record.cachedBytes!.isNotEmpty) {
         final bytes = record.cachedBytes!;
         _memoryCache[record.id] = bytes;
         return bytes;
       }
-      throw StateError('Offline and no local cache for asset ${record.id}');
+      throw StateError(
+        'Offline and no valid local cache for asset ${record.id}',
+      );
     }
 
     return _fetchAndCache(record);
@@ -448,6 +451,28 @@ class StorageService {
     _assertOk(resp, 'download');
 
     final bytes = resp.bodyBytes;
+
+    // Check for ISP Block Pages (Globe/etc) or other HTML errors
+    final firstChars = utf8
+        .decode(
+          bytes.sublist(0, (bytes.length > 100 ? 100 : bytes.length)),
+          allowMalformed: true,
+        )
+        .toLowerCase();
+    if (firstChars.contains('<!doctype html') ||
+        firstChars.contains('<html') ||
+        firstChars.contains('website blocked')) {
+      throw Exception(
+        'ISP/Network blocked access to B2 (returned HTML instead of image).',
+      );
+    }
+
+    if (bytes.length == 2600) {
+      debugPrint(
+        'Suspicious 2600-byte response from B2 (blocked?): $firstChars',
+      );
+    }
+
     final db = _database;
     await (db.update(
       db.assetItems,
