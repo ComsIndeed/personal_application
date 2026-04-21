@@ -25,6 +25,14 @@ class TabIntent extends Intent {
   const TabIntent(this.index);
 }
 
+class NextTabIntent extends Intent {
+  const NextTabIntent();
+}
+
+class PrevTabIntent extends Intent {
+  const PrevTabIntent();
+}
+
 class HideIntent extends Intent {
   const HideIntent();
 }
@@ -95,27 +103,82 @@ class _MainInterfaceState extends State<MainInterface> {
             controller.updateAlignment(Alignment.topRight);
 
             return Shortcuts(
-              shortcuts: <ShortcutActivator, Intent>{
-                const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
-                    const TabIntent(0),
-                const SingleActivator(LogicalKeyboardKey.digit2, alt: true):
-                    const TabIntent(1),
-                const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
-                    const TabIntent(2),
-                const SingleActivator(LogicalKeyboardKey.digit4, alt: true):
-                    const TabIntent(3),
-                const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
-                    const TabIntent(4),
-                const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
-                    const TabIntent(5),
-                const SingleActivator(LogicalKeyboardKey.backquote, alt: true):
-                    const TabIntent(6),
-              },
+              shortcuts: controller.isVisible
+                  ? <ShortcutActivator, Intent>{
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit1,
+                        alt: true,
+                      ): const TabIntent(
+                        0,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit2,
+                        alt: true,
+                      ): const TabIntent(
+                        1,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit3,
+                        alt: true,
+                      ): const TabIntent(
+                        2,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit4,
+                        alt: true,
+                      ): const TabIntent(
+                        3,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit5,
+                        alt: true,
+                      ): const TabIntent(
+                        4,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.digit6,
+                        alt: true,
+                      ): const TabIntent(
+                        5,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.backquote,
+                        alt: true,
+                      ): const TabIntent(
+                        6,
+                      ),
+                      const SingleActivator(
+                        LogicalKeyboardKey.arrowUp,
+                        alt: true,
+                      ): const PrevTabIntent(),
+                      const SingleActivator(
+                        LogicalKeyboardKey.arrowDown,
+                        alt: true,
+                      ): const NextTabIntent(),
+                    }
+                  : <ShortcutActivator, Intent>{},
               child: Actions(
                 actions: <Type, Action<Intent>>{
                   TabIntent: CallbackAction<TabIntent>(
                     onInvoke: (intent) {
                       tabController.animateTo(intent.index);
+                      return null;
+                    },
+                  ),
+                  NextTabIntent: CallbackAction<NextTabIntent>(
+                    onInvoke: (intent) {
+                      final nextIndex =
+                          (tabController.index + 1) % tabController.length;
+                      tabController.animateTo(nextIndex);
+                      return null;
+                    },
+                  ),
+                  PrevTabIntent: CallbackAction<PrevTabIntent>(
+                    onInvoke: (intent) {
+                      final prevIndex =
+                          (tabController.index - 1 + tabController.length) %
+                          tabController.length;
+                      tabController.animateTo(prevIndex);
                       return null;
                     },
                   ),
