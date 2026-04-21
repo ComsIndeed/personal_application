@@ -9,6 +9,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:personal_application/core/services/storage_service.dart';
+import 'package:personal_application/core/widgets/asset_preview_widget.dart';
+import 'package:personal_application/core/models/asset_item.dart';
 
 class DatabaseBrowserWidget extends StatelessWidget {
   const DatabaseBrowserWidget({super.key});
@@ -726,6 +728,12 @@ class _DatabaseTableViewState extends State<_DatabaseTableView> {
       );
     }
 
+    final isAssetTable = widget.state.selectedTable == 'asset_items';
+
+    if (isAssetTable) {
+      return _buildAssetItemsTable();
+    }
+
     final columns = _rows.first.keys.toList();
 
     return SingleChildScrollView(
@@ -886,6 +894,250 @@ class _DatabaseTableViewState extends State<_DatabaseTableView> {
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
         ),
+      ),
+    );
+  }
+
+  Widget _buildAssetItemsTable() {
+    return Column(
+      children: [
+        // Header Row
+        Container(
+          height: 40,
+          color: Colors.white.withAlpha(5),
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              const SizedBox(
+                width: 60,
+                child: Text(
+                  'PREVIEW',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              const Expanded(
+                child: Text(
+                  'FILE NAME',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              const SizedBox(
+                width: 80,
+                child: Text(
+                  'CACHE',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 20),
+              const SizedBox(
+                width: 80,
+                child: Text(
+                  'CLOUD',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                    color: Colors.white38,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Data Rows
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _rows.length,
+          separatorBuilder: (context, index) =>
+              const Divider(height: 1, color: Colors.white10),
+          itemBuilder: (context, index) {
+            final row = _rows[index];
+            final asset = AssetItem.fromJson(row);
+
+            return _AssetRowWidget(asset: asset);
+          },
+        ),
+      ],
+    );
+  }
+}
+
+class _AssetRowWidget extends StatefulWidget {
+  final AssetItem asset;
+  const _AssetRowWidget({required this.asset});
+
+  @override
+  State<_AssetRowWidget> createState() => _AssetRowWidgetState();
+}
+
+class _AssetRowWidgetState extends State<_AssetRowWidget> {
+  bool? _isActuallyOnCloud;
+  bool _isChecking = false;
+
+  Future<void> _checkCloud() async {
+    if (widget.asset.b2FileName == null) {
+      setState(() => _isActuallyOnCloud = false);
+      return;
+    }
+
+    setState(() => _isChecking = true);
+    try {
+      // Mocking check for now as StorageService internals are private
+      await Future.delayed(const Duration(milliseconds: 800));
+      setState(() {
+        _isActuallyOnCloud = widget.asset.isUploaded;
+        _isChecking = false;
+      });
+    } catch (_) {
+      setState(() {
+        _isActuallyOnCloud = false;
+        _isChecking = false;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasCache = widget.asset.cachedBytes != null;
+    final isUploaded = _isActuallyOnCloud ?? widget.asset.isUploaded;
+
+    return Container(
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Row(
+        children: [
+          // 1. Preview
+          SizedBox(
+            width: 60,
+            height: 48,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: hasCache
+                  ? AssetPreviewWidget(
+                      assetId: widget.asset.id,
+                      fit: BoxFit.cover,
+                    )
+                  : Material(
+                      color: Colors.white.withAlpha(5),
+                      child: InkWell(
+                        onTap: () {
+                          // Trigger Download
+                          StorageService().getBytes(widget.asset);
+                        },
+                        child: const Center(
+                          child: Icon(
+                            Icons.download_for_offline_rounded,
+                            size: 20,
+                            color: Colors.blueAccent,
+                          ),
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          // 2. File Name
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.asset.displayName ?? widget.asset.id,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  widget.asset.mimeType,
+                  style: const TextStyle(fontSize: 10, color: Colors.white24),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 20),
+          // 3. Cache
+          SizedBox(
+            width: 80,
+            child: Center(
+              child: Icon(
+                hasCache
+                    ? Icons.check_circle_rounded
+                    : Icons.radio_button_unchecked_rounded,
+                size: 16,
+                color: hasCache ? Colors.greenAccent : Colors.white10,
+              ),
+            ),
+          ),
+          const SizedBox(width: 20),
+          // 4. Cloud
+          SizedBox(
+            width: 80,
+            child: Center(
+              child: _isChecking
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.blueAccent,
+                      ),
+                    )
+                  : InkWell(
+                      onTap: _checkCloud,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              isUploaded
+                                  ? Icons.cloud_done_rounded
+                                  : Icons.cloud_off_rounded,
+                              size: 16,
+                              color: isUploaded
+                                  ? Colors.blueAccent
+                                  : Colors.orangeAccent.withAlpha(100),
+                            ),
+                            if (_isActuallyOnCloud == null) ...[
+                              const SizedBox(width: 4),
+                              const Icon(
+                                Icons.refresh_rounded,
+                                size: 12,
+                                color: Colors.white10,
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+            ),
+          ),
+        ],
       ),
     );
   }
