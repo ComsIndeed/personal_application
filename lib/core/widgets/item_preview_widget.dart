@@ -436,15 +436,10 @@ class _HoverableMediaItemState extends State<_HoverableMediaItem> {
                 ),
               ),
             ),
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 400),
-              switchInCurve: Curves.easeOutCubic,
-              switchOutCurve: Curves.easeOutCubic,
-              child: AssetPreviewWidget(
-                key: ValueKey('${widget.assetId}_${widget.isSelected}'),
-                assetId: widget.assetId,
-                fit: widget.fit,
-              ),
+            child: AssetPreviewWidget(
+              key: ValueKey(widget.assetId),
+              assetId: widget.assetId,
+              fit: widget.isSelected ? BoxFit.contain : BoxFit.cover,
             ),
           ),
           if (_isHovered)
