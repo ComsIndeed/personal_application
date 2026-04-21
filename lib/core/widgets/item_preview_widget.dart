@@ -174,8 +174,10 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
           _currentActiveId = null;
         }
 
-        if (state.hoveredItem != null) {
+        if (state.hoveredItem != null && state.selectedItem == null) {
           Future.delayed(const Duration(milliseconds: 100), _startScrolling);
+        } else {
+          _stopScrolling();
         }
       },
       builder: (context, state) {
@@ -420,7 +422,9 @@ class _HoverableMediaItemState extends State<_HoverableMediaItem> {
       child: Stack(
         fit: StackFit.expand,
         children: [
-          Container(
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeOutCubic,
             decoration: BoxDecoration(
               color: Colors.black.withAlpha(widget.isSelected ? 100 : 60),
               border: Border(
@@ -431,8 +435,17 @@ class _HoverableMediaItemState extends State<_HoverableMediaItem> {
                   width: 2,
                 ),
               ),
-            ), // Darkened background with bottom shelf border
-            child: AssetPreviewWidget(assetId: widget.assetId, fit: widget.fit),
+            ),
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 400),
+              switchInCurve: Curves.easeOutCubic,
+              switchOutCurve: Curves.easeOutCubic,
+              child: AssetPreviewWidget(
+                key: ValueKey('${widget.assetId}_${widget.isSelected}'),
+                assetId: widget.assetId,
+                fit: widget.fit,
+              ),
+            ),
           ),
           if (_isHovered)
             Positioned(
@@ -733,15 +746,32 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
                   : const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 final assetId = item.assetIds[index % item.assetIds.length];
-                return Container(
-                  width: itemWidth,
-                  height: height,
-                  padding: EdgeInsets.only(right: isSelected ? 0 : 8),
-                  child: _HoverableMediaItem(
-                    assetId: assetId,
-                    isSelected: isSelected,
-                    fit: isSelected ? BoxFit.contain : BoxFit.cover,
-                  ),
+                final targetWidth = isSelected ? width : height;
+                final targetPadding = isSelected ? 0.0 : 8.0;
+
+                return TweenAnimationBuilder<double>(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeOutCubic,
+                  tween: Tween<double>(end: targetWidth),
+                  builder: (context, animWidth, child) {
+                    return TweenAnimationBuilder<double>(
+                      duration: const Duration(milliseconds: 400),
+                      curve: Curves.easeOutCubic,
+                      tween: Tween<double>(end: targetPadding),
+                      builder: (context, animPadding, child) {
+                        return Container(
+                          width: animWidth,
+                          height: height,
+                          padding: EdgeInsets.only(right: animPadding),
+                          child: _HoverableMediaItem(
+                            assetId: assetId,
+                            isSelected: isSelected,
+                            fit: isSelected ? BoxFit.contain : BoxFit.cover,
+                          ),
+                        );
+                      },
+                    );
+                  },
                 );
               },
             ),
