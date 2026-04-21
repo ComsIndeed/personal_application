@@ -30,7 +30,7 @@ class _SprintsTabState extends State<SprintsTab>
       name: 'Urgent',
       category: SprintCategory.urgent,
       aiDescription:
-          'Critical infrastructure patch for the cloud storage sync. High priority as connection leaks are impacting 5% of active users. Rundown: Verify Supabase pool settings, implement periodic heartbeats, and re-enable failed request retry logic.',
+          'Cloud sync broken. Leak hit 5% users. Fix: pool settings, heartbeat, retry logic.',
       tasks: [
         SprintTask(
           id: 'u1',
@@ -60,7 +60,7 @@ class _SprintsTabState extends State<SprintsTab>
       name: 'Approaching',
       category: SprintCategory.approaching,
       aiDescription:
-          'The dashboard v2 release is due in 48h. Rundown: Finalize the responsive grid layout, sync charts with live analytics data, and polish the hover transitions on the navigation sidebar.',
+          'Dashboard v2 soon. 48h left. Task: grid layout, live data, hover polish.',
       tasks: [
         SprintTask(
           id: 'a1',
@@ -90,7 +90,7 @@ class _SprintsTabState extends State<SprintsTab>
       name: 'Maintenance',
       category: SprintCategory.maintenance,
       aiDescription:
-          'Routine platform upkeep across Admin and Support. Rundown: Clearing the daily support queue, archiving legacy deployment logs, and verifying the weekly billing reconciliation for the team.',
+          'Platform upkeep. Clear support. Archive logs. Verify billing.',
       tasks: [
         SprintTask(
           id: 'm1',
@@ -135,7 +135,7 @@ class _SprintsTabState extends State<SprintsTab>
       name: 'Fun',
       category: SprintCategory.fun,
       aiDescription:
-          'Creative exploration of the new animation engine. Rundown: Experimenting with fluid UI transitions, building a prototype for the voice-interaction layer, and sketching new themes.',
+          'Anim exploration. Fluid UI. Voice layer prototype. New themes.',
       tasks: [
         SprintTask(
           id: 'f1',
@@ -178,6 +178,7 @@ class _SprintsTabState extends State<SprintsTab>
             ? IconButton(
                 icon: const Icon(Icons.arrow_back_rounded, size: 20),
                 onPressed: () {
+                  if (_isWorking) _stopWorking();
                   setState(() {
                     _selectedFolder = null;
                   });
@@ -260,7 +261,7 @@ class _SprintsTabState extends State<SprintsTab>
       color: theme.scaffoldBackgroundColor,
       child: AnimatedSwitcher(
         duration: const Duration(milliseconds: 400),
-        child: _isWorking
+        child: _isWorking && _selectedFolder != null
             ? _buildTimerView()
             : _selectedFolder == null
             ? _buildFolderGrid()
@@ -270,20 +271,22 @@ class _SprintsTabState extends State<SprintsTab>
   }
 
   Widget _buildFolderGrid() {
-    return ListView.separated(
+    return ListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
       itemCount: _folders.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 20),
       itemBuilder: (context, index) {
         final folder = _folders[index];
-        return _SprintFolderTile(
-          folder: folder,
-          onTap: () {
-            setState(() {
-              _selectedFolder = folder;
-            });
-            _updateHeader();
-          },
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _SprintFolderTile(
+            folder: folder,
+            onTap: () {
+              setState(() {
+                _selectedFolder = folder;
+              });
+              _updateHeader();
+            },
+          ),
         );
       },
     );
@@ -555,157 +558,146 @@ class _SprintFolderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = _getCategoryColor(folder.category);
-
-    // Collect all media URLs from tasks
     final mediaUrls = folder.tasks.expand((t) => t.mediaUrls).toList();
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(20),
         child: Ink(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: color.withValues(alpha: 0.1), width: 1),
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withValues(alpha: 0.08), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _getCategoryIcon(folder.category),
-                        size: 20,
-                        color: color,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        folder.name.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          color: color,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          letterSpacing: 1.0,
-                        ),
-                      ),
-                    ],
+                  Icon(
+                    _getCategoryIcon(folder.category),
+                    size: 18,
+                    color: color,
                   ),
-                  Text(
-                    '${folder.taskCount} TASKS',
-                    style: const TextStyle(
-                      color: Colors.white24,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Text(
-                folder.aiDescription,
-                style: const TextStyle(
-                  fontSize: 15,
-                  color: Colors.white70,
-                  height: 1.4,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Icon(Icons.timer_outlined, size: 16, color: color),
-                  const SizedBox(width: 6),
-                  Text(
-                    _formatDurationShort(folder.totalEstimatedDuration),
-                    style: TextStyle(
-                      color: color.withValues(alpha: 0.8),
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  // Media stack in bottom right
-                  if (mediaUrls.isNotEmpty)
-                    SizedBox(
-                      height: 28,
-                      width: 28 + (mediaUrls.length.clamp(0, 4) - 1) * 16.0,
-                      child: Stack(
-                        children: mediaUrls
-                            .take(4)
-                            .toList()
-                            .asMap()
-                            .entries
-                            .map((e) {
-                              return Positioned(
-                                left: e.key * 16.0,
-                                child: Container(
-                                  width: 28,
-                                  height: 28,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: color.withValues(alpha: 0.3),
-                                      width: 2,
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(
-                                          alpha: 0.2,
-                                        ),
-                                        blurRadius: 4,
-                                      ),
-                                    ],
-                                  ),
-                                  child: ClipOval(
-                                    child: Image.network(
-                                      e.value,
-                                      fit: BoxFit.contain,
-                                      errorBuilder:
-                                          (context, error, stackTrace) =>
-                                              Container(
-                                                color: Colors.white10,
-                                                child: const Icon(
-                                                  Icons.image_outlined,
-                                                  size: 12,
-                                                  color: Colors.white24,
-                                                ),
-                                              ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            })
-                            .toList(),
-                      ),
-                    ),
-                  if (mediaUrls.isEmpty)
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
-                          Icons.link_rounded,
-                          size: 16,
-                          color: Colors.white.withValues(alpha: 0.2),
+                        Text(
+                          folder.name.toUpperCase(),
+                          style: GoogleFonts.inter(
+                            color: color,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            letterSpacing: 0.8,
+                          ),
                         ),
-                        const SizedBox(width: 10),
-                        Icon(
-                          Icons.image_outlined,
-                          size: 16,
-                          color: Colors.white.withValues(alpha: 0.2),
+                        // Compact Timer Row below Title
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 12,
+                              color: color.withValues(alpha: 0.6),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              _formatDurationShort(
+                                folder.totalEstimatedDuration,
+                              ),
+                              style: TextStyle(
+                                color: color.withValues(alpha: 0.6),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Task Count to the left of Media
+                  Text(
+                    '${folder.taskCount} tasks',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Media Stack at Top-Right
+                  if (mediaUrls.isNotEmpty) _buildMediaStack(mediaUrls, color),
                 ],
+              ),
+              const SizedBox(height: 10),
+              // AI Description (Caveman style Rundown)
+              Text(
+                folder.aiDescription,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.white70,
+                  height: 1.3,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMediaStack(List<String> mediaUrls, Color color) {
+    final count = mediaUrls.length.clamp(0, 3);
+    return SizedBox(
+      height: 24,
+      width: 24 + (count - 1) * 14.0,
+      child: Stack(
+        children: mediaUrls.take(3).toList().asMap().entries.map((e) {
+          return Positioned(
+            left: e.key * 14.0,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: color.withValues(alpha: 0.4),
+                  width: 1.5,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipOval(
+                child: Image.network(
+                  e.value,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    color: Colors.white10,
+                    child: const Icon(
+                      Icons.image_outlined,
+                      size: 10,
+                      color: Colors.white24,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }

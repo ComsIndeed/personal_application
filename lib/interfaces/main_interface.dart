@@ -128,7 +128,6 @@ class _MainInterfaceState extends State<MainInterface> {
                       Row(
                         children: [
                           Expanded(
-                            flex: 2,
                             child: Padding(
                               padding: const EdgeInsets.fromLTRB(20, 20, 8, 10),
                               child: Consumer<TabHeaderManager>(
@@ -177,9 +176,15 @@ class _MainInterfaceState extends State<MainInterface> {
                             builder: (context, header, _) {
                               if (header.actions != null &&
                                   header.actions!.isNotEmpty) {
-                                return Expanded(
-                                  flex: 3,
+                                return Padding(
+                                  padding: const EdgeInsets.fromLTRB(
+                                    8,
+                                    20,
+                                    20,
+                                    10,
+                                  ),
                                   child: Row(
+                                    mainAxisSize: MainAxisSize.min,
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: header.actions!,
                                   ),
