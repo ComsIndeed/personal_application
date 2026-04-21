@@ -188,167 +188,181 @@ class _MainInterfaceState extends State<MainInterface> {
                   includeSemantics: false,
                   child: Column(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(20, 20, 8, 10),
-                              child: Consumer<TabHeaderManager>(
-                                builder: (context, header, _) {
-                                  return ListenableBuilder(
-                                    listenable: tabController,
-                                    builder: (context, _) {
-                                      final defaultTitles = [
-                                        'Brain Dump',
-                                        'Notes',
-                                        'Sprints',
-                                        'Dashboard',
-                                        'Utilities',
-                                        'Settings',
-                                        'Assistant',
-                                      ];
-                                      return Row(
-                                        children: [
-                                          if (header.leading != null) ...[
-                                            header.leading!,
-                                            const SizedBox(width: 12),
-                                          ],
-                                          Expanded(
-                                            child: Text(
-                                              header.title ??
-                                                  defaultTitles[tabController
-                                                      .index],
-                                              style: const TextStyle(
-                                                fontSize: 18,
-                                                fontWeight: FontWeight.bold,
-                                                letterSpacing: 0.5,
-                                                overflow: TextOverflow.ellipsis,
+                      Material(
+                        color: Colors.transparent,
+                        child: Row(
+                          children: [
+                            // Title Column
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  20,
+                                  20,
+                                  8,
+                                  10,
+                                ),
+                                child: Consumer<TabHeaderManager>(
+                                  builder: (context, header, _) {
+                                    return ListenableBuilder(
+                                      listenable: tabController,
+                                      builder: (context, _) {
+                                        final defaultTitles = [
+                                          'Brain Dump',
+                                          'Notes',
+                                          'Sprints',
+                                          'Dashboard',
+                                          'Utilities',
+                                          'Settings',
+                                          'Assistant',
+                                        ];
+                                        return Row(
+                                          children: [
+                                            if (header.leading != null) ...[
+                                              header.leading!,
+                                              const SizedBox(width: 12),
+                                            ],
+                                            Expanded(
+                                              child: Text(
+                                                header.title ??
+                                                    defaultTitles[tabController
+                                                        .index],
+                                                style: const TextStyle(
+                                                  fontSize: 18,
+                                                  fontWeight: FontWeight.bold,
+                                                  letterSpacing: 0.5,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                ),
+                                                maxLines: 1,
                                               ),
-                                              maxLines: 1,
                                             ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  );
-                                },
-                              ),
-                            ),
-                          ),
-                          Consumer<TabHeaderManager>(
-                            builder: (context, header, _) {
-                              if (header.actions != null &&
-                                  header.actions!.isNotEmpty) {
-                                return Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    8,
-                                    20,
-                                    20,
-                                    10,
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: header.actions!,
-                                  ),
-                                );
-                              }
-                              return const Spacer();
-                            },
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 4, top: 12),
-                            child: Consumer<ThemeController>(
-                              builder: (context, theme, _) {
-                                return MenuAnchor(
-                                  builder: (context, controller, child) {
-                                    return IconButton(
-                                      icon: const Icon(
-                                        Icons.menu_rounded,
-                                        size: 20,
-                                      ),
-                                      onPressed: () {
-                                        if (controller.isOpen) {
-                                          controller.close();
-                                        } else {
-                                          controller.open();
-                                        }
+                                          ],
+                                        );
                                       },
-                                      tooltip: 'Options',
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: theme.isDarkMode
-                                            ? Colors.white.withValues(
-                                                alpha: 0.05,
-                                              )
-                                            : Colors.black.withValues(
-                                                alpha: 0.05,
-                                              ),
-                                      ),
                                     );
                                   },
-                                  menuChildren: [
-                                    MenuItemButton(
-                                      leadingIcon: Icon(
-                                        theme.isDarkMode
-                                            ? Icons.light_mode_rounded
-                                            : Icons.dark_mode_rounded,
-                                        size: 18,
+                                ),
+                              ),
+                            ),
+                            // Actions and Options
+                            Consumer<TabHeaderManager>(
+                              builder: (context, header, _) {
+                                return Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (header.actions != null)
+                                      ...header.actions!.map(
+                                        (a) => Padding(
+                                          padding: const EdgeInsets.only(
+                                            top: 12,
+                                            right: 4,
+                                          ),
+                                          child: a,
+                                        ),
                                       ),
-                                      onPressed: theme.toggleTheme,
-                                      child: Text(
-                                        theme.isDarkMode
-                                            ? 'Light Mode'
-                                            : 'Dark Mode',
-                                      ),
-                                    ),
-                                    MenuItemButton(
-                                      leadingIcon: const Icon(
-                                        Icons.refresh_rounded,
-                                        size: 18,
-                                      ),
-                                      onPressed: () {
-                                        context
-                                            .read<BrainDumpCubit>()
-                                            .refresh();
-                                        context.read<NotesCubit>().refresh();
-                                      },
-                                      child: const Text('Reload All Data'),
-                                    ),
-                                    MenuItemButton(
-                                      leadingIcon: const Icon(
-                                        Icons.settings_rounded,
-                                        size: 18,
-                                      ),
-                                      onPressed: () {
-                                        tabController.animateTo(5); // Settings
-                                      },
-                                      child: const Text('Settings'),
-                                    ),
                                   ],
                                 );
                               },
                             ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 12, top: 12),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                size: 20,
-                                color: Colors.redAccent,
-                              ),
-                              onPressed: controller.close,
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05),
-                                hoverColor: Colors.red.withValues(alpha: 0.1),
+                            Padding(
+                              padding: const EdgeInsets.only(right: 4, top: 12),
+                              child: Consumer<ThemeController>(
+                                builder: (context, theme, _) {
+                                  return MenuAnchor(
+                                    builder: (context, controller, child) {
+                                      return IconButton(
+                                        icon: const Icon(
+                                          Icons.menu_rounded,
+                                          size: 20,
+                                        ),
+                                        onPressed: () {
+                                          if (controller.isOpen) {
+                                            controller.close();
+                                          } else {
+                                            controller.open();
+                                          }
+                                        },
+                                        tooltip: 'Options',
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: theme.isDarkMode
+                                              ? Colors.white.withValues(
+                                                  alpha: 0.05,
+                                                )
+                                              : Colors.black.withValues(
+                                                  alpha: 0.05,
+                                                ),
+                                        ),
+                                      );
+                                    },
+                                    menuChildren: [
+                                      MenuItemButton(
+                                        leadingIcon: Icon(
+                                          theme.isDarkMode
+                                              ? Icons.light_mode_rounded
+                                              : Icons.dark_mode_rounded,
+                                          size: 18,
+                                        ),
+                                        onPressed: theme.toggleTheme,
+                                        child: Text(
+                                          theme.isDarkMode
+                                              ? 'Light Mode'
+                                              : 'Dark Mode',
+                                        ),
+                                      ),
+                                      MenuItemButton(
+                                        leadingIcon: const Icon(
+                                          Icons.refresh_rounded,
+                                          size: 18,
+                                        ),
+                                        onPressed: () {
+                                          context
+                                              .read<BrainDumpCubit>()
+                                              .refresh();
+                                          context.read<NotesCubit>().refresh();
+                                        },
+                                        child: const Text('Reload All Data'),
+                                      ),
+                                      MenuItemButton(
+                                        leadingIcon: const Icon(
+                                          Icons.settings_rounded,
+                                          size: 18,
+                                        ),
+                                        onPressed: () {
+                                          tabController.animateTo(
+                                            5,
+                                          ); // Settings
+                                        },
+                                        child: const Text('Settings'),
+                                      ),
+                                    ],
+                                  );
+                                },
                               ),
                             ),
-                          ),
-                        ],
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                right: 12,
+                                top: 12,
+                              ),
+                              child: IconButton(
+                                icon: const Icon(
+                                  Icons.close_rounded,
+                                  size: 20,
+                                  color: Colors.redAccent,
+                                ),
+                                onPressed: controller.close,
+                                style: IconButton.styleFrom(
+                                  backgroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                  hoverColor: Colors.red.withValues(alpha: 0.1),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
 
                       const Divider(
