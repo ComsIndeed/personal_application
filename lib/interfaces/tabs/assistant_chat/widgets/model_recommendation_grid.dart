@@ -99,9 +99,6 @@ class ModelRecommendationGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(vertical: 40),
       child: Center(
@@ -112,32 +109,6 @@ class ModelRecommendationGrid extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [
-                    Color(0xFF60A5FA),
-                    Color(0xFFA78BFA),
-                    Color(0xFFF472B6),
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  'How can I help you today?',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Select a specialized model to start a conversation',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: isDark ? Colors.white54 : Colors.black54,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 48),
               GridView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
