@@ -51,14 +51,14 @@ Map<String, dynamic> _$CommonNoteItemToJson(CommonNoteItem instance) =>
     };
 
 const _$NoteCategoryEnumMap = {
-  NoteCategory.braindump: 'braindump',
-  NoteCategory.notes: 'notes',
-  NoteCategory.tasks: 'tasks',
+  TabCategory.braindump: 'braindump',
+  TabCategory.notes: 'notes',
+  TabCategory.tasks: 'tasks',
 };
 
 const _$NotePriorityEnumMap = {
-  NotePriority.urgent: 'urgent',
-  NotePriority.approaching: 'approaching',
-  NotePriority.admin: 'admin',
-  NotePriority.fun: 'fun',
+  TaskType.urgent: 'urgent',
+  TaskType.approaching: 'approaching',
+  TaskType.admin: 'admin',
+  TaskType.fun: 'fun',
 };

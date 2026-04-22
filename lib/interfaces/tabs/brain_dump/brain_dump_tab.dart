@@ -69,7 +69,7 @@ class _BrainDumpTabState extends State<BrainDumpTab>
                     itemBuilder: (context, index) => BrainDumpItemWidget(
                       item: CommonNoteItem(
                         id: 'skeleton-$index',
-                        category: NoteCategory.braindump,
+                        category: TabCategory.braindump,
                         textContent:
                             'This is a long skeleton text content to simulate a real brain dump item loading state with enough density.',
                         assetIds: const [],

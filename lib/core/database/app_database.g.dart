@@ -1241,14 +1241,14 @@ class $CommonNoteItemsTable extends CommonNoteItems
     defaultValue: const Constant(false),
   );
   @override
-  late final GeneratedColumnWithTypeConverter<NoteCategory, String> category =
+  late final GeneratedColumnWithTypeConverter<TabCategory, String> category =
       GeneratedColumn<String>(
         'category',
         aliasedName,
         false,
         type: DriftSqlType.string,
         requiredDuringInsert: true,
-      ).withConverter<NoteCategory>($CommonNoteItemsTable.$convertercategory);
+      ).withConverter<TabCategory>($CommonNoteItemsTable.$convertercategory);
   static const VerificationMeta _titleMeta = const VerificationMeta('title');
   @override
   late final GeneratedColumn<String> title = GeneratedColumn<String>(
@@ -1317,14 +1317,14 @@ class $CommonNoteItemsTable extends CommonNoteItems
     defaultValue: const Constant(false),
   );
   @override
-  late final GeneratedColumnWithTypeConverter<NotePriority?, String> priority =
+  late final GeneratedColumnWithTypeConverter<TaskType?, String> priority =
       GeneratedColumn<String>(
         'priority',
         aliasedName,
         true,
         type: DriftSqlType.string,
         requiredDuringInsert: false,
-      ).withConverter<NotePriority?>($CommonNoteItemsTable.$converterpriorityn);
+      ).withConverter<TaskType?>($CommonNoteItemsTable.$converterpriorityn);
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
     'dueDate',
   );
@@ -1514,16 +1514,16 @@ class $CommonNoteItemsTable extends CommonNoteItems
     return $CommonNoteItemsTable(attachedDatabase, alias);
   }
 
-  static JsonTypeConverter2<NoteCategory, String, String> $convertercategory =
-      const EnumNameConverter<NoteCategory>(NoteCategory.values);
+  static JsonTypeConverter2<TabCategory, String, String> $convertercategory =
+      const EnumNameConverter<TabCategory>(TabCategory.values);
   static TypeConverter<List<String>, String> $converterassetIds =
       const ListConverter();
   static TypeConverter<List<String>, String> $convertertags =
       const ListConverter();
-  static JsonTypeConverter2<NotePriority, String, String> $converterpriority =
-      const EnumNameConverter<NotePriority>(NotePriority.values);
-  static JsonTypeConverter2<NotePriority?, String?, String?>
-  $converterpriorityn = JsonTypeConverter2.asNullable($converterpriority);
+  static JsonTypeConverter2<TaskType, String, String> $converterpriority =
+      const EnumNameConverter<TaskType>(TaskType.values);
+  static JsonTypeConverter2<TaskType?, String?, String?> $converterpriorityn =
+      JsonTypeConverter2.asNullable($converterpriority);
   static TypeConverter<Map<String, dynamic>, String> $convertermetadata =
       const MapConverter();
   static TypeConverter<Map<String, dynamic>?, String?> $convertermetadatan =
@@ -1535,14 +1535,14 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
   final Value<String?> userId;
   final Value<DateTime> updatedAt;
   final Value<bool> deleted;
-  final Value<NoteCategory> category;
+  final Value<TabCategory> category;
   final Value<String?> title;
   final Value<String?> textContent;
   final Value<List<String>> assetIds;
   final Value<List<String>> tags;
   final Value<DateTime> createdAt;
   final Value<bool> isPinned;
-  final Value<NotePriority?> priority;
+  final Value<TaskType?> priority;
   final Value<DateTime?> dueDate;
   final Value<Map<String, dynamic>?> metadata;
   final Value<int> rowid;
@@ -1568,7 +1568,7 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     this.userId = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.deleted = const Value.absent(),
-    required NoteCategory category,
+    required TabCategory category,
     this.title = const Value.absent(),
     this.textContent = const Value.absent(),
     this.assetIds = const Value.absent(),
@@ -1621,14 +1621,14 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Value<String?>? userId,
     Value<DateTime>? updatedAt,
     Value<bool>? deleted,
-    Value<NoteCategory>? category,
+    Value<TabCategory>? category,
     Value<String?>? title,
     Value<String?>? textContent,
     Value<List<String>>? assetIds,
     Value<List<String>>? tags,
     Value<DateTime>? createdAt,
     Value<bool>? isPinned,
-    Value<NotePriority?>? priority,
+    Value<TaskType?>? priority,
     Value<DateTime?>? dueDate,
     Value<Map<String, dynamic>?>? metadata,
     Value<int>? rowid,
@@ -2847,14 +2847,14 @@ typedef $$CommonNoteItemsTableCreateCompanionBuilder =
       Value<String?> userId,
       Value<DateTime> updatedAt,
       Value<bool> deleted,
-      required NoteCategory category,
+      required TabCategory category,
       Value<String?> title,
       Value<String?> textContent,
       Value<List<String>> assetIds,
       Value<List<String>> tags,
       Value<DateTime> createdAt,
       Value<bool> isPinned,
-      Value<NotePriority?> priority,
+      Value<TaskType?> priority,
       Value<DateTime?> dueDate,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
@@ -2865,14 +2865,14 @@ typedef $$CommonNoteItemsTableUpdateCompanionBuilder =
       Value<String?> userId,
       Value<DateTime> updatedAt,
       Value<bool> deleted,
-      Value<NoteCategory> category,
+      Value<TabCategory> category,
       Value<String?> title,
       Value<String?> textContent,
       Value<List<String>> assetIds,
       Value<List<String>> tags,
       Value<DateTime> createdAt,
       Value<bool> isPinned,
-      Value<NotePriority?> priority,
+      Value<TaskType?> priority,
       Value<DateTime?> dueDate,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
@@ -2907,7 +2907,7 @@ class $$CommonNoteItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<NoteCategory, NoteCategory, String>
+  ColumnWithTypeConverterFilters<TabCategory, TabCategory, String>
   get category => $composableBuilder(
     column: $table.category,
     builder: (column) => ColumnWithTypeConverterFilters(column),
@@ -2945,11 +2945,11 @@ class $$CommonNoteItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnWithTypeConverterFilters<NotePriority?, NotePriority, String>
-  get priority => $composableBuilder(
-    column: $table.priority,
-    builder: (column) => ColumnWithTypeConverterFilters(column),
-  );
+  ColumnWithTypeConverterFilters<TaskType?, TaskType, String> get priority =>
+      $composableBuilder(
+        column: $table.priority,
+        builder: (column) => ColumnWithTypeConverterFilters(column),
+      );
 
   ColumnFilters<DateTime> get dueDate => $composableBuilder(
     column: $table.dueDate,
@@ -3068,7 +3068,7 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumn<bool> get deleted =>
       $composableBuilder(column: $table.deleted, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<NoteCategory, String> get category =>
+  GeneratedColumnWithTypeConverter<TabCategory, String> get category =>
       $composableBuilder(column: $table.category, builder: (column) => column);
 
   GeneratedColumn<String> get title =>
@@ -3091,7 +3091,7 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumn<bool> get isPinned =>
       $composableBuilder(column: $table.isPinned, builder: (column) => column);
 
-  GeneratedColumnWithTypeConverter<NotePriority?, String> get priority =>
+  GeneratedColumnWithTypeConverter<TaskType?, String> get priority =>
       $composableBuilder(column: $table.priority, builder: (column) => column);
 
   GeneratedColumn<DateTime> get dueDate =>
@@ -3143,14 +3143,14 @@ class $$CommonNoteItemsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
-                Value<NoteCategory> category = const Value.absent(),
+                Value<TabCategory> category = const Value.absent(),
                 Value<String?> title = const Value.absent(),
                 Value<String?> textContent = const Value.absent(),
                 Value<List<String>> assetIds = const Value.absent(),
                 Value<List<String>> tags = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
-                Value<NotePriority?> priority = const Value.absent(),
+                Value<TaskType?> priority = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3177,14 +3177,14 @@ class $$CommonNoteItemsTableTableManager
                 Value<String?> userId = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<bool> deleted = const Value.absent(),
-                required NoteCategory category,
+                required TabCategory category,
                 Value<String?> title = const Value.absent(),
                 Value<String?> textContent = const Value.absent(),
                 Value<List<String>> assetIds = const Value.absent(),
                 Value<List<String>> tags = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
-                Value<NotePriority?> priority = const Value.absent(),
+                Value<TaskType?> priority = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),

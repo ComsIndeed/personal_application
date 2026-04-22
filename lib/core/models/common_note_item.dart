@@ -41,7 +41,7 @@ class CommonNoteItem extends Equatable implements Syncable {
   final bool deleted;
 
   // --- Core fields ---
-  final NoteCategory category;
+  final TabCategory category;
   final String? title;
   final String? textContent;
 
@@ -52,7 +52,7 @@ class CommonNoteItem extends Equatable implements Syncable {
   // --- Additional helpful data ---
   final DateTime createdAt;
   final bool isPinned;
-  final NotePriority? priority;
+  final TaskType? priority;
   final DateTime? dueDate;
   final Map<String, dynamic>? metadata;
 
@@ -84,14 +84,14 @@ class CommonNoteItem extends Equatable implements Syncable {
     String? userId,
     DateTime? updatedAt,
     bool? deleted,
-    NoteCategory? category,
+    TabCategory? category,
     String? title,
     String? textContent,
     List<String>? assetIds,
     List<String>? tags,
     DateTime? createdAt,
     bool? isPinned,
-    NotePriority? priority,
+    TaskType? priority,
     DateTime? dueDate,
     Map<String, dynamic>? metadata,
   }) {

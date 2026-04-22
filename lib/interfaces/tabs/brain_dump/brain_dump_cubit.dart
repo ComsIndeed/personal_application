@@ -21,7 +21,7 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
     _subscription?.cancel();
     _subscription =
         (_db.select(_db.commonNoteItems)
-              ..where((t) => t.category.equals(NoteCategory.braindump.name))
+              ..where((t) => t.category.equals(TabCategory.braindump.name))
               ..where((t) => t.deleted.equals(false))
               ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
             .watch()
@@ -52,7 +52,7 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
     // 1. Create a "ghost" item for optimistic UI
     final ghost = CommonNoteItem(
       id: const Uuid().v4(),
-      category: NoteCategory.braindump,
+      category: TabCategory.braindump,
       textContent: text.isEmpty ? null : text,
       assetIds: const [], // Will be updated when real record saved
       createdAt: DateTime.now(),
@@ -91,7 +91,7 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
           .into(_db.commonNoteItems)
           .insert(
             CommonNoteItemsCompanion.insert(
-              category: NoteCategory.braindump,
+              category: TabCategory.braindump,
               textContent: Value(text.isEmpty ? null : text),
               assetIds: Value(assetIds),
               createdAt: Value(DateTime.now()),

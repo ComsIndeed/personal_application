@@ -21,7 +21,7 @@ class NotesCubit extends Cubit<NotesState> {
     _subscription?.cancel();
     _subscription =
         (_db.select(_db.commonNoteItems)
-              ..where((t) => t.category.equals(NoteCategory.notes.name))
+              ..where((t) => t.category.equals(TabCategory.notes.name))
               ..where((t) => t.deleted.equals(false))
               ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
             .watch()
@@ -52,7 +52,7 @@ class NotesCubit extends Cubit<NotesState> {
     // 1. Create a "ghost" item for optimistic UI
     final ghost = CommonNoteItem(
       id: const Uuid().v4(),
-      category: NoteCategory.notes,
+      category: TabCategory.notes,
       textContent: text.isEmpty ? null : text,
       assetIds: const [], // Will be updated when real record saved
       createdAt: DateTime.now(),
@@ -91,7 +91,7 @@ class NotesCubit extends Cubit<NotesState> {
           .into(_db.commonNoteItems)
           .insert(
             CommonNoteItemsCompanion.insert(
-              category: NoteCategory.notes,
+              category: TabCategory.notes,
               textContent: Value(text.isEmpty ? null : text),
               assetIds: Value(assetIds),
               createdAt: Value(DateTime.now()),
