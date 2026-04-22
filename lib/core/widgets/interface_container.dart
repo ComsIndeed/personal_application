@@ -87,12 +87,17 @@ class InterfaceController extends ChangeNotifier {
 class InterfaceContainer extends StatefulWidget {
   final Widget Function(BuildContext context, InterfaceController controller)
   builder;
+
+  /// An optional builder to wrap the main decorated container with other widgets
+  /// (like sidebars, navigation strips, or external overlays).
+  /// This builder is called outside the decorative container but inside the animation/lifecycle.
   final Widget Function(
     BuildContext context,
     InterfaceController controller,
-    Widget container,
+    Widget panel,
   )?
-  outerBuilder;
+  layoutBuilder;
+
   final InterfaceController? controller;
   final bool useSafeArea;
   final EdgeInsets? margin;
@@ -102,7 +107,7 @@ class InterfaceContainer extends StatefulWidget {
   const InterfaceContainer({
     super.key,
     required this.builder,
-    this.outerBuilder,
+    this.layoutBuilder,
     this.controller,
     this.useSafeArea = true,
     this.margin,
@@ -145,7 +150,7 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
       builder: (context, _) {
         final isVisible = _effectiveController.isVisible;
 
-        Widget container = AnimatedContainer(
+        Widget panel = AnimatedContainer(
           duration: 350.ms,
           curve: Curves.easeOutCubic,
           width: _effectiveController.width,
@@ -170,12 +175,8 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
           ),
         );
 
-        if (widget.outerBuilder != null) {
-          container = widget.outerBuilder!(
-            context,
-            _effectiveController,
-            container,
-          );
+        if (widget.layoutBuilder != null) {
+          panel = widget.layoutBuilder!(context, _effectiveController, panel);
         }
 
         EdgeInsets effectivePadding =
@@ -195,7 +196,7 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
             offset: isVisible ? Offset.zero : const Offset(1, 0),
             duration: 320.ms,
             curve: Curves.easeOutCubic,
-            child: container,
+            child: panel,
           ),
         );
 

@@ -118,6 +118,17 @@ class _MainInterfaceState extends State<MainInterface> {
     return ChangeNotifierProvider(
       create: (_) => ComposerHeightNotifier(),
       child: InterfaceContainer(
+        layoutBuilder: (context, controller, container) {
+          return Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const MainNavTabs(),
+              const SizedBox(width: 12),
+              container,
+            ],
+          );
+        },
         builder: (context, controller) {
           controller.updateAlignment(Alignment.topRight);
 
@@ -184,107 +195,89 @@ class _MainInterfaceState extends State<MainInterface> {
               child: Focus(
                 autofocus: true,
                 includeSemantics: false,
-                child: Row(
-                  children: [
-                    const MainNavTabs(),
-                    Expanded(
-                      child: AppTab<AppTabId>(
-                        controller: tabController,
-                        pages: tabController.pages,
-                        trailingHeaderWidget: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Consumer<ThemeController>(
-                              builder: (context, theme, _) {
-                                return MenuAnchor(
-                                  builder: (context, menuController, child) {
-                                    return IconButton(
-                                      icon: const Icon(
-                                        Icons.menu_rounded,
-                                        size: 20,
-                                      ),
-                                      onPressed: () {
-                                        if (menuController.isOpen) {
-                                          menuController.close();
-                                        } else {
-                                          menuController.open();
-                                        }
-                                      },
-                                      tooltip: 'Options',
-                                      style: IconButton.styleFrom(
-                                        backgroundColor: theme.isDarkMode
-                                            ? Colors.white.withValues(
-                                                alpha: 0.05,
-                                              )
-                                            : Colors.black.withValues(
-                                                alpha: 0.05,
-                                              ),
-                                      ),
-                                    );
-                                  },
-                                  menuChildren: [
-                                    MenuItemButton(
-                                      leadingIcon: Icon(
-                                        theme.isDarkMode
-                                            ? Icons.light_mode_rounded
-                                            : Icons.dark_mode_rounded,
-                                        size: 18,
-                                      ),
-                                      onPressed: theme.toggleTheme,
-                                      child: Text(
-                                        theme.isDarkMode
-                                            ? 'Light Mode'
-                                            : 'Dark Mode',
-                                      ),
-                                    ),
-                                    MenuItemButton(
-                                      leadingIcon: const Icon(
-                                        Icons.refresh_rounded,
-                                        size: 18,
-                                      ),
-                                      onPressed: () {
-                                        context
-                                            .read<BrainDumpCubit>()
-                                            .refresh();
-                                        context.read<NotesCubit>().refresh();
-                                      },
-                                      child: const Text('Reload All Data'),
-                                    ),
-                                    MenuItemButton(
-                                      leadingIcon: const Icon(
-                                        Icons.settings_rounded,
-                                        size: 18,
-                                      ),
-                                      onPressed: () => tabController
-                                          .animateToId(AppTabId.settings),
-                                      child: const Text('Settings'),
-                                    ),
-                                  ],
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              icon: const Icon(
-                                Icons.close_rounded,
-                                size: 20,
-                                color: Colors.redAccent,
+                child: AppTab<AppTabId>(
+                  controller: tabController,
+                  pages: tabController.pages,
+                  trailingHeaderWidget: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Consumer<ThemeController>(
+                        builder: (context, theme, _) {
+                          return MenuAnchor(
+                            builder: (context, menuController, child) {
+                              return IconButton(
+                                icon: const Icon(Icons.menu_rounded, size: 20),
+                                onPressed: () {
+                                  if (menuController.isOpen) {
+                                    menuController.close();
+                                  } else {
+                                    menuController.open();
+                                  }
+                                },
+                                tooltip: 'Options',
+                                style: IconButton.styleFrom(
+                                  backgroundColor: theme.isDarkMode
+                                      ? Colors.white.withValues(alpha: 0.05)
+                                      : Colors.black.withValues(alpha: 0.05),
+                                ),
+                              );
+                            },
+                            menuChildren: [
+                              MenuItemButton(
+                                leadingIcon: Icon(
+                                  theme.isDarkMode
+                                      ? Icons.light_mode_rounded
+                                      : Icons.dark_mode_rounded,
+                                  size: 18,
+                                ),
+                                onPressed: theme.toggleTheme,
+                                child: Text(
+                                  theme.isDarkMode ? 'Light Mode' : 'Dark Mode',
+                                ),
                               ),
-                              onPressed: controller.close,
-                              style: IconButton.styleFrom(
-                                backgroundColor:
-                                    Theme.of(context).brightness ==
-                                        Brightness.dark
-                                    ? Colors.white.withValues(alpha: 0.05)
-                                    : Colors.black.withValues(alpha: 0.05),
-                                hoverColor: Colors.red.withValues(alpha: 0.1),
+                              MenuItemButton(
+                                leadingIcon: const Icon(
+                                  Icons.refresh_rounded,
+                                  size: 18,
+                                ),
+                                onPressed: () {
+                                  context.read<BrainDumpCubit>().refresh();
+                                  context.read<NotesCubit>().refresh();
+                                },
+                                child: const Text('Reload All Data'),
                               ),
-                            ),
-                          ],
+                              MenuItemButton(
+                                leadingIcon: const Icon(
+                                  Icons.settings_rounded,
+                                  size: 18,
+                                ),
+                                onPressed: () => tabController.animateToId(
+                                  AppTabId.settings,
+                                ),
+                                child: const Text('Settings'),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: const Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: Colors.redAccent,
+                        ),
+                        onPressed: controller.close,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.05),
+                          hoverColor: Colors.red.withValues(alpha: 0.1),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
