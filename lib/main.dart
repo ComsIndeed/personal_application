@@ -20,6 +20,8 @@ import 'core/services/database_browser_cubit.dart';
 import 'core/widgets/item_preview_widget.dart';
 import 'interfaces/main_interface.dart';
 import 'interfaces/widgets/database_browser_widget.dart';
+import 'core/constants/app_tab_id.dart';
+import 'core/widgets/app_tab.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -74,6 +76,9 @@ void main() async {
         BlocProvider(create: (context) => SprintsCubit()),
         BlocProvider(create: (context) => ItemPreviewCubit()),
         BlocProvider(create: (context) => DatabaseBrowserCubit()),
+        ChangeNotifierProvider(
+          create: (_) => AppTabController<AppTabId>(pages: MainInterface.pages),
+        ),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),
         ChangeNotifierProvider(create: (_) => ThemeController()),
       ],
@@ -201,7 +206,7 @@ class OverlayPage extends StatelessWidget {
             ),
           ),
 
-          // Side panel (always in tree, positioning handled by InterfaceContainer)
+          // Consolidated Main Interface (includes Nav Tabs and AppTab)
           const MainInterface(),
 
           // Root Overlay Preview (Anchored Left of Screen)

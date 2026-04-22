@@ -4,8 +4,10 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/common_note_item.dart';
 import '../../../core/models/message/enums.dart';
-import '../../../core/services/tab_header_manager.dart';
+import '../../../core/constants/app_tab_id.dart';
+import '../../../core/widgets/app_tab.dart';
 import 'sprints_cubit.dart';
+import 'package:provider/provider.dart';
 
 class SprintsTab extends StatefulWidget {
   const SprintsTab({super.key});
@@ -35,7 +37,7 @@ class _SprintsTabState extends State<SprintsTab>
           ? _selectedFolderType!.name.toUpperCase()
           : 'Sprints';
 
-      context.read<TabHeaderManager>().update(
+      context.read<AppTabController<AppTabId>>().updateHeader(
         title: title,
         onBack: _selectedFolderType != null
             ? () {
@@ -45,7 +47,6 @@ class _SprintsTabState extends State<SprintsTab>
                 _updateHeader();
               }
             : null,
-        tabIndex: 2, // Sprints is index 2
         actions: [
           IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
           IconButton(

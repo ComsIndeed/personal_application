@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:personal_application/core/services/tab_header_manager.dart';
+import 'package:provider/provider.dart';
+import 'package:personal_application/core/constants/app_tab_id.dart';
+import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/core/widgets/search_header_widget.dart';
 import 'package:personal_application/core/widgets/brain_dump_item_widget.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -25,10 +27,11 @@ class _BrainDumpTabState extends State<BrainDumpTab>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<TabHeaderManager>().update(
-        tabIndex: 0,
+      context.read<AppTabController<AppTabId>>().updateHeader(
         actions: [
-          SearchHeaderWidget(hintText: 'Search dump...', onTap: () {}),
+          Expanded(
+            child: SearchHeaderWidget(hintText: 'Search dump...', onTap: () {}),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 4, top: 12),
             child: IconButton(

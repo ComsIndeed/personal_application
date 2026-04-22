@@ -12,8 +12,10 @@ import 'package:personal_application/theme/app_theme.dart';
 import 'package:personal_application/interfaces/widgets/chat_composer.dart';
 import 'package:personal_application/core/models/conversation.dart';
 import 'package:personal_application/core/services/llm_service.dart';
-import 'package:personal_application/core/services/tab_header_manager.dart';
+import 'package:personal_application/core/constants/app_tab_id.dart';
+import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/interfaces/tabs/assistant_chat/widgets/model_recommendation_grid.dart';
+import 'package:provider/provider.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});
@@ -48,7 +50,7 @@ class _ChatTabState extends State<ChatTab> {
     if (!mounted) return;
     final cubit = context.read<AssistantChatCubit>();
     final state = cubit.state;
-    final header = context.read<TabHeaderManager>();
+    final controller = context.read<AppTabController<AppTabId>>();
 
     final currentConvo = _conversations.firstWhere(
       (c) => c.id == state.currentConversationId,
@@ -60,7 +62,7 @@ class _ChatTabState extends State<ChatTab> {
       ),
     );
 
-    header.update(
+    controller.updateHeader(
       title: currentConvo.title ?? 'New Conversation',
       actions: [
         _HeaderActionButton(
