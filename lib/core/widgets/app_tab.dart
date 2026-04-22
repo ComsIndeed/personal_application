@@ -22,32 +22,32 @@ class AppTabPage<T> {
 }
 
 /// The state of the header for the current tab.
-class AppTabHeaderState {
+class AppTabHeader {
   final String title;
   final Widget? leading;
-  final List<Widget> actions;
   final VoidCallback? onBack;
+  final List<Widget> actions;
 
-  const AppTabHeaderState({
+  AppTabHeader({
     required this.title,
     this.leading,
-    this.actions = const [],
     this.onBack,
+    this.actions = const [],
   });
 
-  AppTabHeaderState copyWith({
+  AppTabHeader copyWith({
     String? title,
     Widget? leading,
-    List<Widget>? actions,
-    VoidCallback? onBack,
     bool clearLeading = false,
+    VoidCallback? onBack,
     bool clearOnBack = false,
+    List<Widget>? actions,
   }) {
-    return AppTabHeaderState(
+    return AppTabHeader(
       title: title ?? this.title,
       leading: clearLeading ? null : (leading ?? this.leading),
-      actions: actions ?? this.actions,
       onBack: clearOnBack ? null : (onBack ?? this.onBack),
+      actions: actions ?? this.actions,
     );
   }
 }
@@ -56,7 +56,7 @@ class AppTabHeaderState {
 class AppTabController<T> extends ChangeNotifier {
   final List<AppTabPage<T>> pages;
   late int _currentIndex;
-  late AppTabHeaderState _headerState;
+  late AppTabHeader _headerState;
 
   // Internal page controller for the vertical transitions
   final PageController pageController;
@@ -69,10 +69,10 @@ class AppTabController<T> extends ChangeNotifier {
 
   int get currentIndex => _currentIndex;
   T get currentId => pages[_currentIndex].id;
-  AppTabHeaderState get headerState => _headerState;
+  AppTabHeader get headerState => _headerState;
 
   void _updateHeaderFromPage(AppTabPage<T> page) {
-    _headerState = AppTabHeaderState(
+    _headerState = AppTabHeader(
       title: page.initialTitle,
       leading: page.leading,
       actions: page.actions,
@@ -119,8 +119,8 @@ class AppTabController<T> extends ChangeNotifier {
         leading: leading,
         actions: actions,
         onBack: onBack,
-        clearLeading: clearLeading,
-        clearOnBack: clearOnBack,
+        clearLeading: leading == null ? true : clearLeading,
+        clearOnBack: onBack == null ? true : clearOnBack,
       );
       notifyListeners();
     });
@@ -192,34 +192,81 @@ class _AppTabState<T> extends State<AppTab<T>> {
             // Unified Header
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 12, 10),
-              child: Row(
-                children: [
-                  if (header.leading != null || header.onBack != null) ...[
-                    header.leading ??
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                          onPressed: header.onBack,
+              child: AnimatedSize(
+                duration: const Duration(milliseconds: 150),
+                curve: Curves.easeOutCubic,
+                child: Row(
+                  children: [
+                    // Leading/Back Section
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SizeTransition(
+                          sizeFactor: animation,
+                          axis: Axis.horizontal,
+                          axisAlignment: -1,
+                          child: child,
                         ),
-                    const SizedBox(width: 12),
-                  ],
-                  Flexible(
-                    child: Text(
-                      header.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
+                      child: (header.leading != null || header.onBack != null)
+                          ? Padding(
+                              key: const ValueKey('header_leading'),
+                              padding: const EdgeInsets.only(right: 12),
+                              child:
+                                  header.leading ??
+                                  IconButton(
+                                    icon: const Icon(
+                                      Icons.arrow_back_rounded,
+                                      size: 20,
+                                    ),
+                                    onPressed: header.onBack,
+                                  ),
+                            )
+                          : const SizedBox.shrink(),
                     ),
-                  ),
-                  ...header.actions,
-                  if (widget.trailingHeaderWidget != null) ...[
+
+                    // Title Section
+                    Expanded(
+                      child: Text(
+                        header.title,
+                        key: ValueKey(header.title),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        maxLines: 1,
+                      ),
+                    ),
+
+                    // Actions Section
                     const SizedBox(width: 8),
-                    widget.trailingHeaderWidget!,
+                    ...header.actions,
+
+                    // Trailing Section
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 150),
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SizeTransition(
+                          sizeFactor: animation,
+                          axis: Axis.horizontal,
+                          axisAlignment: 1,
+                          child: child,
+                        ),
+                      ),
+                      child: (widget.trailingHeaderWidget != null)
+                          ? Padding(
+                              key: const ValueKey('header_trailing'),
+                              padding: const EdgeInsets.only(left: 8),
+                              child: widget.trailingHeaderWidget!,
+                            )
+                          : const SizedBox.shrink(),
+                    ),
                   ],
-                ],
+                ),
               ),
             ),
 
