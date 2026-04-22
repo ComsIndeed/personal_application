@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
   connectivity_plus
+  desktop_screenshot
   fc_native_video_thumbnail
   flutter_acrylic
   flutter_secure_storage_windows

@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -150,29 +151,13 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
       builder: (context, _) {
         final isVisible = _effectiveController.isVisible;
 
-        Widget panel = AnimatedContainer(
-          duration: 350.ms,
-          curve: Curves.easeOutCubic,
+        Widget panel = GlassContainer(
           width: _effectiveController.width,
           height: _effectiveController.height,
-          decoration: ShapeDecoration(
-            shape: RoundedRectangleBorder(
-              borderRadius: widget.borderRadius ?? BorderRadius.circular(16),
-              side: _effectiveController.border ?? BorderSide.none,
-            ),
-            color: widget.color ?? Theme.of(context).cardColor,
-            shadows: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 24,
-                offset: const Offset(-8, 0),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: widget.borderRadius ?? BorderRadius.circular(16),
-            child: widget.builder(context, _effectiveController),
-          ),
+          borderRadius: widget.borderRadius ?? BorderRadius.circular(16),
+          border: _effectiveController.border,
+          color: widget.color,
+          child: widget.builder(context, _effectiveController),
         );
 
         if (widget.layoutBuilder != null) {
@@ -213,6 +198,86 @@ class _InterfaceContainerState extends State<InterfaceContainer> {
 
         return alignedContent;
       },
+    );
+  }
+}
+
+class GlassContainer extends StatelessWidget {
+  final double? width;
+  final double? height;
+  final BorderRadius? borderRadius;
+  final BorderSide? border;
+  final Color? color;
+  final Widget child;
+  final bool showShadow;
+
+  const GlassContainer({
+    super.key,
+    this.width,
+    this.height,
+    this.borderRadius,
+    this.border,
+    this.color,
+    required this.child,
+    this.showShadow = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 350),
+      curve: Curves.easeOutCubic,
+      width: width,
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: borderRadius ?? BorderRadius.circular(16),
+        boxShadow: showShadow
+            ? [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.25),
+                  blurRadius: 32,
+                  offset: const Offset(0, 8),
+                ),
+              ]
+            : null,
+      ),
+      child: ClipRRect(
+        borderRadius: borderRadius ?? BorderRadius.circular(16),
+        child: Stack(
+          children: [
+            // Background Blur Layer
+            Positioned.fill(
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color:
+                        color ??
+                        (isDark
+                            ? Colors.black.withValues(alpha: 0.4)
+                            : Colors.white.withValues(alpha: 0.4)),
+                    border: Border.fromBorderSide(
+                      border ??
+                          BorderSide(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.12)
+                                : Colors.black.withValues(alpha: 0.12),
+                            width: 0.5,
+                          ),
+                    ),
+                    borderRadius: borderRadius ?? BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+            // Content Layer
+            child,
+          ],
+        ),
+      ),
     );
   }
 }

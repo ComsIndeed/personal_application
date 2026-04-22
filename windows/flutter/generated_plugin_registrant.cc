@@ -8,6 +8,7 @@
 
 #include <app_links/app_links_plugin_c_api.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
+#include <desktop_screenshot/desktop_screenshot_plugin_c_api.h>
 #include <fc_native_video_thumbnail/fc_native_video_thumbnail_plugin_c_api.h>
 #include <flutter_acrylic/flutter_acrylic_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
@@ -22,6 +23,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("AppLinksPluginCApi"));
   ConnectivityPlusWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
+  DesktopScreenshotPluginCApiRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("DesktopScreenshotPluginCApi"));
   FcNativeVideoThumbnailPluginCApiRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FcNativeVideoThumbnailPluginCApi"));
   FlutterAcrylicPluginRegisterWithRegistrar(

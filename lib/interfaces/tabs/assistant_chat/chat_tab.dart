@@ -15,7 +15,6 @@ import 'package:personal_application/core/services/llm_service.dart';
 import 'package:personal_application/core/constants/app_tab_id.dart';
 import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/interfaces/tabs/assistant_chat/widgets/model_recommendation_grid.dart';
-import 'package:provider/provider.dart';
 
 class ChatTab extends StatefulWidget {
   const ChatTab({super.key});

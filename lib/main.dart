@@ -1,27 +1,33 @@
 import 'dart:io';
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_acrylic/flutter_acrylic.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:desktop_screenshot/desktop_screenshot.dart';
 import 'package:hotkey_manager/hotkey_manager.dart';
+import 'package:provider/provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:window_manager/window_manager.dart';
+
 import 'package:personal_application/interfaces/tabs/assistant_chat/assistant_chat_cubit.dart';
 import 'package:personal_application/interfaces/tabs/brain_dump/brain_dump_cubit.dart';
 import 'package:personal_application/interfaces/tabs/notes/notes_cubit.dart';
 import 'package:personal_application/interfaces/tabs/sprints/sprints_cubit.dart';
-import 'package:provider/provider.dart';
-import 'package:window_manager/window_manager.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'core/constants/app_tab_id.dart';
 import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
-import 'core/services/storage_service.dart';
-import 'core/services/sprints_service.dart';
-import 'core/services/item_preview_cubit.dart';
 import 'core/services/database_browser_cubit.dart';
+import 'core/services/item_preview_cubit.dart';
+import 'core/services/sprints_service.dart';
+import 'core/services/storage_service.dart';
+import 'core/widgets/app_tab.dart';
+import 'core/widgets/blurred_background.dart';
 import 'core/widgets/item_preview_widget.dart';
 import 'interfaces/main_interface.dart';
 import 'interfaces/widgets/database_browser_widget.dart';
-import 'core/constants/app_tab_id.dart';
-import 'core/widgets/app_tab.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
@@ -110,8 +116,45 @@ class WindowOverlayState extends ChangeNotifier {
     _registerHotKey();
   }
 
+  ui.Image? _bgImage;
+  ui.Image? get bgImage => _bgImage;
+
+  Offset _windowOffset = Offset.zero;
+  Offset get windowOffset => _windowOffset;
+
+  void toggle() async {
+    if (_isVisible) {
+      await close();
+    } else {
+      await open();
+    }
+  }
+
+  Future<void> _captureScreen() async {
+    try {
+      // Use desktop_screenshot for ultra-snappy and silent capture
+      final bytes = await DesktopScreenshot().getScreenshot();
+
+      if (bytes != null && bytes.isNotEmpty) {
+        // decodeImageFromList is hardware-accelerated and returns ui.Image
+        _bgImage = await decodeImageFromList(bytes);
+      } else {
+        _bgImage = null;
+      }
+
+      _windowOffset = await windowManager.getPosition();
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Screen capture failed: $e');
+    }
+  }
+
   Future<void> open() async {
     if (_isVisible) return;
+
+    // Capture the screen while the app is still transparent/hidden
+    await _captureScreen();
+
     _isVisible = true;
     notifyListeners(); // trigger panel slide-in immediately
     await windowManager.show();
@@ -125,14 +168,11 @@ class WindowOverlayState extends ChangeNotifier {
     notifyListeners(); // trigger panel slide-out immediately
     await _controller.reverse();
     await windowManager.hide();
-  }
 
-  void toggle() {
-    if (_isVisible) {
-      close();
-    } else {
-      open();
-    }
+    // Clear background to avoid "ghost" frames on next open
+    _bgImage?.dispose(); // Proper clean up of image memory
+    _bgImage = null;
+    notifyListeners();
   }
 
   void _registerHotKey() async {
@@ -194,14 +234,23 @@ class OverlayPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final overlayState = context.watch<WindowOverlayState>();
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
+          // Blurred dynamic background
+          BlurredBackground(
+            image: overlayState.bgImage,
+            windowOffset: overlayState.windowOffset,
+            isVisible: overlayState.isVisible,
+          ),
+
           // Clickable transparent backdrop → close
           Positioned.fill(
             child: GestureDetector(
-              onTap: () => context.read<WindowOverlayState>().close(),
+              onTap: () => overlayState.close(),
               child: Container(color: Colors.transparent),
             ),
           ),

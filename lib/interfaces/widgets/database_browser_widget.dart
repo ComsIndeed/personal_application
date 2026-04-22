@@ -11,6 +11,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:personal_application/core/services/storage_service.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
 import 'package:personal_application/core/models/asset_item.dart';
+import 'package:personal_application/core/widgets/interface_container.dart';
 
 class DatabaseBrowserWidget extends StatelessWidget {
   const DatabaseBrowserWidget({super.key});
@@ -22,8 +23,6 @@ class DatabaseBrowserWidget extends StatelessWidget {
     return BlocBuilder<DatabaseBrowserCubit, DatabaseBrowserState>(
       builder: (context, state) {
         final isVisible = globalVisible && state.isVisible;
-        final theme = Theme.of(context);
-        final isDark = theme.brightness == Brightness.dark;
 
         EdgeInsets effectivePadding = const EdgeInsets.all(16.0);
         if (!kIsWeb && Platform.isWindows) {
@@ -45,26 +44,9 @@ class DatabaseBrowserWidget extends StatelessWidget {
             child: AnimatedOpacity(
               opacity: isVisible ? 1.0 : 0.0,
               duration: const Duration(milliseconds: 300),
-              child: Container(
+              child: GlassContainer(
                 width: MediaQuery.of(context).size.width * 0.48,
-                constraints: const BoxConstraints(minWidth: 550, maxWidth: 850),
-                decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: isDark
-                        ? Colors.white.withAlpha(20)
-                        : Colors.black.withAlpha(20),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withAlpha(isDark ? 80 : 40),
-                      blurRadius: 32,
-                      offset: const Offset(8, 0),
-                    ),
-                  ],
-                ),
-                clipBehavior: Clip.antiAlias,
+                borderRadius: BorderRadius.circular(24),
                 child: Column(
                   children: [
                     _DatabaseBrowserTitleBar(state: state),
@@ -326,6 +308,9 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               side: const BorderSide(color: Colors.white10),
             ),
             onSelected: (value) async {
+              final storage = StorageService();
+              final db = context.read<AppDatabase>();
+
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (context) => AlertDialog(
@@ -375,9 +360,6 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               );
 
               if (confirmed != true) return;
-
-              final storage = StorageService();
-              final db = context.read<AppDatabase>();
 
               if (value == 'wipe_all') {
                 await cubit.wipeAll(storage: storage, db: db);

@@ -11,7 +11,7 @@ import 'package:personal_application/core/database/app_database.dart';
 import 'package:personal_application/core/services/sprints_service.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:drift/drift.dart' show Value;
-import 'package:provider/provider.dart';
+import 'package:personal_application/core/widgets/interface_container.dart';
 
 class ItemPreviewWidget extends StatefulWidget {
   const ItemPreviewWidget({super.key});
@@ -223,27 +223,9 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   // Main Preview Card
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 400),
-                    curve: Curves.easeOutCubic,
+                  GlassContainer(
                     width: isSelected ? 600 : 450,
-                    decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF0F172A) : Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark
-                            ? Colors.white.withAlpha(20)
-                            : Colors.black.withAlpha(20),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withAlpha(isDark ? 80 : 40),
-                          blurRadius: 32,
-                          offset: const Offset(8, 0),
-                        ),
-                      ],
-                    ),
-                    clipBehavior: Clip.antiAlias,
+                    borderRadius: BorderRadius.circular(24),
                     child: CustomScrollView(
                       controller: _mainScrollController,
                       physics: const BouncingScrollPhysics(),
@@ -351,55 +333,49 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
   }
 
   Widget _buildControls(BuildContext context, CommonNoteItem item) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E293B) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withAlpha(20), blurRadius: 10),
-        ],
-      ),
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ControlButton(
-            icon: Icons.edit_rounded,
-            label: 'Edit',
-            onPressed: () {},
-          ),
-          if (item.category != TabCategory.tasks)
+    return GlassContainer(
+      borderRadius: BorderRadius.circular(16),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             _ControlButton(
-              icon: Icons.rocket_launch_rounded,
-              label: 'Promote to Task',
-              color: Colors.blueAccent,
-              onPressed: () => _showPromotionDialog(context, item),
+              icon: Icons.edit_rounded,
+              label: 'Edit',
+              onPressed: () {},
             ),
-          _ControlButton(
-            icon: Icons.delete_rounded,
-            label: 'Delete',
-            color: Colors.redAccent,
-            onPressed: () {},
-          ),
-          _ControlButton(
-            icon: Icons.copy_all_rounded,
-            label: 'Duplicate',
-            onPressed: () {},
-          ),
-          _ControlButton(
-            icon: Icons.share_rounded,
-            label: 'Share',
-            onPressed: () {},
-          ),
-          const Divider(height: 16),
-          _ControlButton(
-            icon: Icons.close_rounded,
-            label: 'Close',
-            onPressed: () => context.read<ItemPreviewCubit>().clear(),
-          ),
-        ],
+            if (item.category != TabCategory.tasks)
+              _ControlButton(
+                icon: Icons.rocket_launch_rounded,
+                label: 'Promote to Task',
+                color: Colors.blueAccent,
+                onPressed: () => _showPromotionDialog(context, item),
+              ),
+            _ControlButton(
+              icon: Icons.delete_rounded,
+              label: 'Delete',
+              color: Colors.redAccent,
+              onPressed: () {},
+            ),
+            _ControlButton(
+              icon: Icons.copy_all_rounded,
+              label: 'Duplicate',
+              onPressed: () {},
+            ),
+            _ControlButton(
+              icon: Icons.share_rounded,
+              label: 'Share',
+              onPressed: () {},
+            ),
+            const Divider(height: 16),
+            _ControlButton(
+              icon: Icons.close_rounded,
+              label: 'Close',
+              onPressed: () => context.read<ItemPreviewCubit>().clear(),
+            ),
+          ],
+        ),
       ),
     );
   }

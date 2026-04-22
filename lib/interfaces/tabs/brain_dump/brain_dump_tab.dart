@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:provider/provider.dart';
 import 'package:personal_application/core/constants/app_tab_id.dart';
 import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/core/widgets/search_header_widget.dart';

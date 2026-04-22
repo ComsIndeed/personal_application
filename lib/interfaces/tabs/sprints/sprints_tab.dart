@@ -6,8 +6,7 @@ import '../../../core/models/common_note_item.dart';
 import '../../../core/models/message/enums.dart';
 import '../../../core/constants/app_tab_id.dart';
 import '../../../core/widgets/app_tab.dart';
-import 'sprints_cubit.dart';
-import 'package:provider/provider.dart';
+import 'package:personal_application/interfaces/tabs/sprints/sprints_cubit.dart';
 
 class SprintsTab extends StatefulWidget {
   const SprintsTab({super.key});
