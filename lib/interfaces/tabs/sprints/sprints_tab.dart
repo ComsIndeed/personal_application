@@ -173,6 +173,7 @@ class _SprintsTabState extends State<SprintsTab>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       context.read<TabHeaderManager>().update(
+        tabIndex: 2,
         title: _selectedFolder != null ? _selectedFolder!.name : 'Sprints',
         leading: _selectedFolder != null
             ? IconButton(

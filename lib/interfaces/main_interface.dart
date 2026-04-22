@@ -206,7 +206,16 @@ class _MainInterfaceState extends State<MainInterface> {
                                     return ListenableBuilder(
                                       listenable: tabController,
                                       builder: (context, _) {
-                                        final defaultTitles = [
+                                        final currentIndex =
+                                            tabController.index;
+                                        final isCustomHeader =
+                                            header.sourceTabIndex ==
+                                            currentIndex;
+                                        final displayLeading = isCustomHeader
+                                            ? header.leading
+                                            : null;
+
+                                        const defaultTitles = [
                                           'Brain Dump',
                                           'Notes',
                                           'Sprints',
@@ -217,15 +226,16 @@ class _MainInterfaceState extends State<MainInterface> {
                                         ];
                                         return Row(
                                           children: [
-                                            if (header.leading != null) ...[
-                                              header.leading!,
+                                            if (displayLeading != null) ...[
+                                              displayLeading,
                                               const SizedBox(width: 12),
                                             ],
                                             Expanded(
                                               child: Text(
-                                                header.title ??
-                                                    defaultTitles[tabController
-                                                        .index],
+                                                (isCustomHeader
+                                                        ? header.title
+                                                        : null) ??
+                                                    defaultTitles[currentIndex],
                                                 style: const TextStyle(
                                                   fontSize: 18,
                                                   fontWeight: FontWeight.bold,
@@ -247,20 +257,32 @@ class _MainInterfaceState extends State<MainInterface> {
                             // Actions and Options
                             Consumer<TabHeaderManager>(
                               builder: (context, header, _) {
-                                return Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    if (header.actions != null)
-                                      ...header.actions!.map(
-                                        (a) => Padding(
-                                          padding: const EdgeInsets.only(
-                                            top: 12,
-                                            right: 4,
+                                return ListenableBuilder(
+                                  listenable: tabController,
+                                  builder: (context, _) {
+                                    final currentIndex = tabController.index;
+                                    final isCustomHeader =
+                                        header.sourceTabIndex == currentIndex;
+                                    final actions = isCustomHeader
+                                        ? header.actions
+                                        : null;
+
+                                    return Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (actions != null)
+                                          ...actions.map(
+                                            (a) => Padding(
+                                              padding: const EdgeInsets.only(
+                                                top: 12,
+                                                right: 4,
+                                              ),
+                                              child: a,
+                                            ),
                                           ),
-                                          child: a,
-                                        ),
-                                      ),
-                                  ],
+                                      ],
+                                    );
+                                  },
                                 );
                               },
                             ),
