@@ -710,7 +710,7 @@ class _NotePreviewHeaderDelegate extends SliverPersistentHeaderDelegate {
 
         return Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0F172A) : Colors.white,
+            color: Colors.transparent, // Allow glass to show through
             border: Border(
               bottom: BorderSide(
                 color: isDark
