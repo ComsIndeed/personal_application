@@ -1,11 +1,11 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:provider/provider.dart';
-import 'package:personal_application/core/models/sprint_models.dart';
-import 'package:personal_application/core/services/tab_header_manager.dart';
-import 'package:personal_application/theme/app_theme.dart';
-import 'package:intl/intl.dart';
+
+import '../../../core/models/common_note_item.dart';
+import '../../../core/models/message/enums.dart';
+import '../../../core/services/tab_header_manager.dart';
+import 'sprints_cubit.dart';
 
 class SprintsTab extends StatefulWidget {
   const SprintsTab({super.key});
@@ -16,152 +16,10 @@ class SprintsTab extends StatefulWidget {
 
 class _SprintsTabState extends State<SprintsTab>
     with AutomaticKeepAliveClientMixin {
-  SprintFolder? _selectedFolder;
-  bool _isWorking = false;
-  DateTime? _workStartTime;
-  Timer? _stopwatchTimer;
-  Duration _elapsedTime = Duration.zero;
-  bool _isInterrupted = false;
-  Duration _interruptedTime = Duration.zero;
-  final List<Map<String, dynamic>> _workLogs = [];
-
-  final List<SprintFolder> _folders = [
-    SprintFolder(
-      name: 'Urgent',
-      category: SprintCategory.urgent,
-      aiDescription:
-          'Cloud sync broken. Leak hit 5% users. Fix: pool settings, heartbeat, retry logic.',
-      tasks: [
-        SprintTask(
-          id: 'u1',
-          title: 'Fix critical database leak',
-          description:
-              'Investigate and patch the connection pool exhaustion issue.',
-          estimatedDuration: const Duration(hours: 2),
-          category: SprintCategory.urgent,
-          dueDate: DateTime.now().add(const Duration(hours: 5)),
-          mediaUrls: [
-            'https://picsum.photos/seed/db1/200',
-            'https://picsum.photos/seed/db2/200',
-          ],
-        ),
-        SprintTask(
-          id: 'u2',
-          title: 'Deploy security patches',
-          description: 'Update all dependencies to latest stable versions.',
-          estimatedDuration: const Duration(hours: 2, minutes: 30),
-          category: SprintCategory.urgent,
-          dueDate: DateTime.now().add(const Duration(hours: 12)),
-          mediaUrls: ['https://picsum.photos/seed/sec1/200'],
-        ),
-      ],
-    ),
-    SprintFolder(
-      name: 'Approaching',
-      category: SprintCategory.approaching,
-      aiDescription:
-          'Dashboard v2 soon. 48h left. Task: grid layout, live data, hover polish.',
-      tasks: [
-        SprintTask(
-          id: 'a1',
-          title: 'Finish UI Mockups',
-          description: 'Complete the high-fidelity designs for the dashboard.',
-          estimatedDuration: const Duration(hours: 3),
-          category: SprintCategory.approaching,
-          dueDate: DateTime.now().add(const Duration(days: 1, hours: 4)),
-          mediaUrls: [
-            'https://picsum.photos/seed/ui1/200',
-            'https://picsum.photos/seed/ui2/200',
-            'https://picsum.photos/seed/ui3/200',
-          ],
-        ),
-        SprintTask(
-          id: 'a2',
-          title: 'API Integration',
-          description:
-              'Connect the frontend widgets to the new Supabase endpoints.',
-          estimatedDuration: const Duration(hours: 5),
-          category: SprintCategory.approaching,
-          dueDate: DateTime.now().add(const Duration(days: 2)),
-        ),
-      ],
-    ),
-    SprintFolder(
-      name: 'Maintenance',
-      category: SprintCategory.maintenance,
-      aiDescription:
-          'Platform upkeep. Clear support. Archive logs. Verify billing.',
-      tasks: [
-        SprintTask(
-          id: 'm1',
-          title: 'Reply to support emails',
-          description: 'Clear the inbox of pending technical support queries.',
-          estimatedDuration: const Duration(minutes: 45),
-          category: SprintCategory.maintenance,
-          platform: 'Email',
-          mediaUrls: ['https://logo.clearbit.com/gmail.com'],
-        ),
-        SprintTask(
-          id: 'm2',
-          title: 'Archive old logs',
-          description: 'Run scripts to move 2025 logs to cold storage.',
-          estimatedDuration: const Duration(minutes: 20),
-          category: SprintCategory.maintenance,
-          platform: 'Server',
-          mediaUrls: ['https://logo.clearbit.com/aws.amazon.com'],
-        ),
-        SprintTask(
-          id: 'm3',
-          title: 'Update billing info',
-          description:
-              'Refresh the AWS payment method for the new fiscal year.',
-          estimatedDuration: const Duration(minutes: 15),
-          category: SprintCategory.maintenance,
-          platform: 'Admin',
-          mediaUrls: ['https://logo.clearbit.com/stripe.com'],
-        ),
-        SprintTask(
-          id: 'm4',
-          title: 'Draft weekly newsletter',
-          description: 'Prepare the content for Friday\'s release.',
-          estimatedDuration: const Duration(hours: 1, minutes: 30),
-          category: SprintCategory.maintenance,
-          platform: 'Email',
-          mediaUrls: ['https://logo.clearbit.com/mailchimp.com'],
-        ),
-      ],
-    ),
-    SprintFolder(
-      name: 'Fun',
-      category: SprintCategory.fun,
-      aiDescription:
-          'Anim exploration. Fluid UI. Voice layer prototype. New themes.',
-      tasks: [
-        SprintTask(
-          id: 'f1',
-          title: 'Experiment with Canvas API',
-          description: 'Create some generative art patterns.',
-          estimatedDuration: const Duration(hours: 2),
-          category: SprintCategory.fun,
-          mediaUrls: [
-            'https://picsum.photos/seed/art1/200',
-            'https://picsum.photos/seed/art2/200',
-          ],
-        ),
-        SprintTask(
-          id: 'f2',
-          title: 'Read "Atomic Habits"',
-          description: 'Finish the last 3 chapters.',
-          estimatedDuration: const Duration(hours: 1),
-          mediaUrls: ['https://picsum.photos/seed/book1/200'],
-          category: SprintCategory.fun,
-        ),
-      ],
-    ),
-  ];
-
   @override
   bool get wantKeepAlive => true;
+
+  TaskType? _selectedFolderType;
 
   @override
   void initState() {
@@ -172,21 +30,22 @@ class _SprintsTabState extends State<SprintsTab>
   void _updateHeader() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+
+      final title = _selectedFolderType != null
+          ? _selectedFolderType!.name.toUpperCase()
+          : 'Sprints';
+
       context.read<TabHeaderManager>().update(
-        tabIndex: 2,
-        title: _selectedFolder != null ? _selectedFolder!.name : 'Sprints',
-        leading: _selectedFolder != null
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, size: 20),
-                onPressed: () {
-                  if (_isWorking) _stopWorking();
-                  setState(() {
-                    _selectedFolder = null;
-                  });
-                  _updateHeader();
-                },
-              )
+        title: title,
+        onBack: _selectedFolderType != null
+            ? () {
+                setState(() {
+                  _selectedFolderType = null;
+                });
+                _updateHeader();
+              }
             : null,
+        tabIndex: 2, // Sprints is index 2
         actions: [
           IconButton(icon: const Icon(Icons.search_rounded), onPressed: () {}),
           IconButton(
@@ -198,122 +57,105 @@ class _SprintsTabState extends State<SprintsTab>
     });
   }
 
-  void _startWorking() {
-    setState(() {
-      _isWorking = true;
-      _workStartTime = DateTime.now();
-      _elapsedTime = Duration.zero;
-      _interruptedTime = Duration.zero;
-      _isInterrupted = false;
-      _workLogs.clear();
-      _workLogs.add({
-        'task': 'Session Started',
-        'time': _workStartTime!,
-        'duration': Duration.zero,
-      });
-    });
-
-    _stopwatchTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      setState(() {
-        if (!_isInterrupted) {
-          _elapsedTime += const Duration(seconds: 1);
-        } else {
-          _interruptedTime += const Duration(seconds: 1);
-        }
-      });
-    });
-  }
-
-  void _stopWorking() {
-    _stopwatchTimer?.cancel();
-    setState(() {
-      _isWorking = false;
-    });
-  }
-
-  void _toggleInterrupted() {
-    setState(() {
-      _isInterrupted = !_isInterrupted;
-    });
-  }
-
-  void _logTaskDone(SprintTask task) {
-    setState(() {
-      task.isCompleted = true;
-      task.completedAt = DateTime.now();
-      _workLogs.add({
-        'task': task.title,
-        'time': DateTime.now(),
-        'duration': _elapsedTime,
-      });
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
 
-    return Container(
-      color: theme.scaffoldBackgroundColor,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 400),
-        child: _isWorking && _selectedFolder != null
-            ? _buildTimerView()
-            : _selectedFolder == null
-            ? _buildFolderGrid()
-            : _buildFolderContents(),
-      ),
-    );
-  }
+    return BlocBuilder<SprintsCubit, SprintsState>(
+      builder: (context, state) {
+        if (state.isLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-  Widget _buildFolderGrid() {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      itemCount: _folders.length,
-      itemBuilder: (context, index) {
-        final folder = _folders[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _SprintFolderTile(
-            folder: folder,
-            onTap: () {
-              setState(() {
-                _selectedFolder = folder;
-              });
-              _updateHeader();
-            },
+        // Map tasks to folders
+        final folders = <TaskType, List<CommonNoteItem>>{};
+        for (var type in TaskType.values) {
+          folders[type] = state.tasks.where((t) => t.priority == type).toList();
+        }
+
+        return Container(
+          color: theme.scaffoldBackgroundColor,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: state.activeTaskId != null
+                ? _buildTimerView(context, state, isDark)
+                : _selectedFolderType == null
+                ? _buildFolderGrid(context, folders, isDark)
+                : _buildFolderContents(
+                    context,
+                    state,
+                    _selectedFolderType!,
+                    folders[_selectedFolderType!] ?? [],
+                    isDark,
+                  ),
           ),
         );
       },
     );
   }
 
-  Widget _buildFolderContents() {
-    final folder = _selectedFolder!;
+  Widget _buildFolderGrid(
+    BuildContext context,
+    Map<TaskType, List<CommonNoteItem>> folders,
+    bool isDark,
+  ) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+      children: TaskType.values.map((type) {
+        final tasks = folders[type] ?? [];
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: _SprintFolderTile(
+            type: type,
+            tasks: tasks,
+            isDark: isDark,
+            onTap: () {
+              setState(() {
+                _selectedFolderType = type;
+              });
+              _updateHeader();
+            },
+          ),
+        );
+      }).toList(),
+    );
+  }
 
+  Widget _buildFolderContents(
+    BuildContext context,
+    SprintsState state,
+    TaskType type,
+    List<CommonNoteItem> tasks,
+    bool isDark,
+  ) {
     return Column(
       children: [
-        if (folder.category != SprintCategory.fun)
+        if (type != TaskType.fun && tasks.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
             child: Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: _startWorking,
+                onTap: () {
+                  // Start the first incomplete task, or just start the working session logic
+                  final firstIncomplete = tasks
+                      .where((t) => !(t.completionStatus ?? false))
+                      .firstOrNull;
+                  if (firstIncomplete != null) {
+                    context.read<SprintsCubit>().startTask(firstIncomplete.id);
+                  }
+                },
                 borderRadius: BorderRadius.circular(16),
                 child: Ink(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: AppTheme.primary,
+                    color: _getCategoryColor(type),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.primary.withValues(alpha: 0.3),
+                        color: _getCategoryColor(type).withAlpha(80),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -339,37 +181,42 @@ class _SprintsTabState extends State<SprintsTab>
             ),
           ),
         Expanded(
-          child: folder.category == SprintCategory.maintenance
-              ? _buildMaintenanceList()
-              : _buildNormalList(),
+          child: type == TaskType.admin || type == TaskType.uncategorized
+              ? _buildMaintenanceList(context, tasks, isDark)
+              : _buildNormalList(context, tasks, isDark),
         ),
       ],
     );
   }
 
-  Widget _buildNormalList() {
-    final folder = _selectedFolder!;
+  Widget _buildNormalList(
+    BuildContext context,
+    List<CommonNoteItem> tasks,
+    bool isDark,
+  ) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: folder.tasks.length,
+      itemCount: tasks.length,
       itemBuilder: (context, index) {
-        final task = folder.tasks[index];
+        final task = tasks[index];
         return _SprintTaskTile(
           task: task,
-          isUrgent: folder.category == SprintCategory.urgent,
-          isApproaching: folder.category == SprintCategory.approaching,
+          isDark: isDark,
+          onStart: () => context.read<SprintsCubit>().startTask(task.id),
         );
       },
     );
   }
 
-  Widget _buildMaintenanceList() {
-    final folder = _selectedFolder!;
-    // Group tasks by platform
-    final grouped = <String, List<SprintTask>>{};
-    for (var task in folder.tasks) {
-      final p = task.platform ?? 'Other';
-      grouped.putIfAbsent(p, () => []).add(task);
+  Widget _buildMaintenanceList(
+    BuildContext context,
+    List<CommonNoteItem> tasks,
+    bool isDark,
+  ) {
+    final grouped = <String, List<CommonNoteItem>>{};
+    for (var task in tasks) {
+      final g = task.group ?? 'Other';
+      grouped.putIfAbsent(g, () => []).add(task);
     }
 
     return ListView(
@@ -383,24 +230,30 @@ class _SprintsTabState extends State<SprintsTab>
               child: Row(
                 children: [
                   Icon(
-                    _getPlatformIcon(entry.key),
+                    _getGroupIconStatic(entry.key),
                     size: 16,
-                    color: Colors.white38,
+                    color: isDark ? Colors.white38 : Colors.black38,
                   ),
                   const SizedBox(width: 8),
                   Text(
                     entry.key.toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 1.2,
-                      color: Colors.white38,
+                      color: isDark ? Colors.white38 : Colors.black38,
                     ),
                   ),
                 ],
               ),
             ),
-            ...entry.value.map((task) => _SprintTaskTile(task: task)),
+            ...entry.value.map(
+              (task) => _SprintTaskTile(
+                task: task,
+                isDark: isDark,
+                onStart: () => context.read<SprintsCubit>().startTask(task.id),
+              ),
+            ),
             const SizedBox(height: 10),
           ],
         );
@@ -408,21 +261,38 @@ class _SprintsTabState extends State<SprintsTab>
     );
   }
 
-  IconData _getPlatformIcon(String platform) {
-    switch (platform.toLowerCase()) {
+  IconData _getGroupIconStatic(String group) {
+    switch (group.toLowerCase()) {
+      case 'messenger':
+        return Icons.messenger_outline_rounded;
       case 'email':
+      case 'gmail':
         return Icons.email_outlined;
-      case 'server':
-        return Icons.dns_outlined;
-      case 'admin':
-        return Icons.admin_panel_settings_outlined;
+      case 'facebook':
+        return Icons.facebook_outlined;
+      case 'school':
+        return Icons.book_outlined;
+      case 'google docs':
+        return Icons.description_outlined;
+      case 'canva':
+        return Icons.palette_outlined;
       default:
         return Icons.category_outlined;
     }
   }
 
-  Widget _buildTimerView() {
-    final folder = _selectedFolder!;
+  Widget _buildTimerView(
+    BuildContext context,
+    SprintsState state,
+    bool isDark,
+  ) {
+    final activeTask = state.tasks.firstWhere(
+      (t) => t.id == state.activeTaskId,
+    );
+    final minutes = state.timerSeconds ~/ 60;
+    final seconds = state.timerSeconds % 60;
+    final timeStr =
+        "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -433,35 +303,42 @@ class _SprintsTabState extends State<SprintsTab>
             child: Column(
               children: [
                 Text(
-                  _formatDuration(_elapsedTime),
+                  timeStr,
                   style: GoogleFonts.ebGaramond(
                     fontSize: 72,
                     fontWeight: FontWeight.bold,
-                    color: _isInterrupted ? Colors.white24 : Colors.white,
+                    color: state.isInterrupted
+                        ? (isDark ? Colors.white24 : Colors.black26)
+                        : (isDark ? Colors.white : Colors.black),
                   ),
                 ),
-                if (_isInterrupted)
-                  Text(
-                    'Interrupted: ${_formatDuration(_interruptedTime)}',
-                    style: const TextStyle(color: Colors.orangeAccent),
+                if (state.isInterrupted)
+                  const Text(
+                    'SESSION INTERRUPTED',
+                    style: TextStyle(
+                      color: Colors.orangeAccent,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.2,
+                    ),
                   ),
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     _TimerControlButton(
-                      onPressed: _toggleInterrupted,
-                      icon: _isInterrupted
+                      onPressed: () =>
+                          context.read<SprintsCubit>().toggleInterrupt(),
+                      icon: state.isInterrupted
                           ? Icons.play_arrow_rounded
                           : Icons.pause_rounded,
-                      label: _isInterrupted ? 'Resume' : 'Interrupt',
-                      color: _isInterrupted
+                      label: state.isInterrupted ? 'Resume' : 'Interrupt',
+                      color: state.isInterrupted
                           ? Colors.greenAccent
                           : Colors.orangeAccent,
                     ),
                     const SizedBox(width: 20),
                     _TimerControlButton(
-                      onPressed: _stopWorking,
+                      onPressed: () => context.read<SprintsCubit>().stopTask(),
                       icon: Icons.stop_rounded,
                       label: 'Finish Session',
                       color: Colors.redAccent,
@@ -477,7 +354,7 @@ class _SprintsTabState extends State<SprintsTab>
               padding: const EdgeInsets.all(20),
               children: [
                 const Text(
-                  'ACTIVE SPRINT TASKS',
+                  'ACTIVE SPRINT TASK',
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.bold,
@@ -485,54 +362,15 @@ class _SprintsTabState extends State<SprintsTab>
                   ),
                 ),
                 const SizedBox(height: 16),
-                ...folder.tasks.map(
-                  (task) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: task.isCompleted
-                        ? const SizedBox.shrink()
-                        : ListTile(
-                            title: Text(
-                              task.title,
-                              style: GoogleFonts.inter(
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            subtitle: Text(task.description),
-                            trailing: ElevatedButton(
-                              onPressed: () => _logTaskDone(task),
-                              child: const Text('Done'),
-                            ),
-                            tileColor: Colors.white.withValues(alpha: 0.05),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                  ),
+                _SprintTaskTile(
+                  task: activeTask,
+                  isDark: isDark,
+                  onStart: () {}, // Already active
+                  active: true,
+                  onComplete: () =>
+                      context.read<SprintsCubit>().completeTask(activeTask.id),
                 ),
-                if (_workLogs.isNotEmpty) ...[
-                  const SizedBox(height: 32),
-                  const Text(
-                    'COMPLETED LOGS',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white38,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ..._workLogs.map(
-                    (log) => ListTile(
-                      dense: true,
-                      title: Text(log['task'] as String),
-                      subtitle: Text(
-                        'Completed at ${DateFormat('HH:mm:ss').format(log['time'] as DateTime)}',
-                      ),
-                      trailing: Text(
-                        _formatDuration(log['duration'] as Duration),
-                      ),
-                    ),
-                  ),
-                ],
+                // Other tasks in the same folder could be shown here if needed
               ],
             ),
           ),
@@ -540,26 +378,31 @@ class _SprintsTabState extends State<SprintsTab>
       ),
     );
   }
-
-  String _formatDuration(Duration d) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(d.inHours);
-    final minutes = twoDigits(d.inMinutes.remainder(60));
-    final seconds = twoDigits(d.inSeconds.remainder(60));
-    return "$hours:$minutes:$seconds";
-  }
 }
 
 class _SprintFolderTile extends StatelessWidget {
-  final SprintFolder folder;
+  final TaskType type;
+  final List<CommonNoteItem> tasks;
+  final bool isDark;
   final VoidCallback onTap;
 
-  const _SprintFolderTile({required this.folder, required this.onTap});
+  const _SprintFolderTile({
+    required this.type,
+    required this.tasks,
+    required this.isDark,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = _getCategoryColor(folder.category);
-    final mediaUrls = folder.tasks.expand((t) => t.mediaUrls).toList();
+    final color = _getCategoryColor(type);
+    final incompleteCount = tasks
+        .where((t) => !(t.completionStatus ?? false))
+        .length;
+    final totalEstSeconds = tasks.fold<int>(
+      0,
+      (sum, t) => sum + (t.estTime ?? 0),
+    );
 
     return Material(
       color: Colors.transparent,
@@ -569,9 +412,9 @@ class _SprintFolderTile extends StatelessWidget {
         child: Ink(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
+            color: color.withAlpha(isDark ? 30 : 20),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withValues(alpha: 0.08), width: 1),
+            border: Border.all(color: color.withAlpha(20), width: 1),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -579,18 +422,14 @@ class _SprintFolderTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(
-                    _getCategoryIcon(folder.category),
-                    size: 18,
-                    color: color,
-                  ),
+                  Icon(_getCategoryIcon(type), size: 18, color: color),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          folder.name.toUpperCase(),
+                          type.name.toUpperCase(),
                           style: GoogleFonts.inter(
                             color: color,
                             fontSize: 15,
@@ -604,15 +443,15 @@ class _SprintFolderTile extends StatelessWidget {
                             Icon(
                               Icons.timer_outlined,
                               size: 12,
-                              color: color.withValues(alpha: 0.6),
+                              color: color.withAlpha(150),
                             ),
                             const SizedBox(width: 4),
                             Text(
                               _formatDurationShort(
-                                folder.totalEstimatedDuration,
+                                Duration(seconds: totalEstSeconds),
                               ),
                               style: TextStyle(
-                                color: color.withValues(alpha: 0.6),
+                                color: color.withAlpha(150),
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -623,27 +462,32 @@ class _SprintFolderTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Task Count to the left of Media
+                  // Task Count
                   Text(
-                    '${folder.taskCount} tasks',
+                    '$incompleteCount tasks left',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.15),
+                      color: isDark
+                          ? Colors.white.withAlpha(40)
+                          : Colors.black.withAlpha(40),
                       fontSize: 11,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Media Stack at Top-Right
-                  if (mediaUrls.isNotEmpty) _buildMediaStack(mediaUrls, color),
+                  // Media Stack
+                  _buildMediaStack(
+                    tasks.expand((t) => t.assetIds).toList(),
+                    color,
+                  ),
                 ],
               ),
               const SizedBox(height: 10),
-              // AI Description (Caveman style Rundown)
+              // AI Description style rundown (mocking it for now or pulling from context)
               Text(
-                folder.aiDescription,
-                style: const TextStyle(
+                _getMockRundown(type),
+                style: TextStyle(
                   fontSize: 13,
-                  color: Colors.white70,
+                  color: isDark ? Colors.white70 : Colors.black87,
                   height: 1.3,
                 ),
                 maxLines: 2,
@@ -656,13 +500,14 @@ class _SprintFolderTile extends StatelessWidget {
     );
   }
 
-  Widget _buildMediaStack(List<String> mediaUrls, Color color) {
-    final count = mediaUrls.length.clamp(0, 3);
+  Widget _buildMediaStack(List<String> assetIds, Color color) {
+    if (assetIds.isEmpty) return const SizedBox.shrink();
+    final count = assetIds.length.clamp(0, 3);
     return SizedBox(
       height: 24,
       width: 24 + (count - 1) * 14.0,
       child: Stack(
-        children: mediaUrls.take(3).toList().asMap().entries.map((e) {
+        children: assetIds.take(3).toList().asMap().entries.map((e) {
           return Positioned(
             left: e.key * 14.0,
             child: Container(
@@ -670,13 +515,10 @@ class _SprintFolderTile extends StatelessWidget {
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: color.withValues(alpha: 0.4),
-                  width: 1.5,
-                ),
+                border: Border.all(color: color.withAlpha(100), width: 1.5),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.3),
+                    color: Colors.black.withAlpha(80),
                     blurRadius: 4,
                     offset: const Offset(0, 2),
                   ),
@@ -684,8 +526,8 @@ class _SprintFolderTile extends StatelessWidget {
               ),
               child: ClipOval(
                 child: Image.network(
-                  e.value,
-                  fit: BoxFit.contain,
+                  "https://jzxfhtthknwegozofkvg.supabase.co/storage/v1/object/public/assets/${e.value}",
+                  fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) => Container(
                     color: Colors.white10,
                     child: const Icon(
@@ -703,239 +545,159 @@ class _SprintFolderTile extends StatelessWidget {
     );
   }
 
-  Color _getCategoryColor(SprintCategory category) {
-    switch (category) {
-      case SprintCategory.urgent:
-        return Colors.redAccent;
-      case SprintCategory.approaching:
-        return Colors.orangeAccent;
-      case SprintCategory.maintenance:
-        return Colors.blueAccent;
-      case SprintCategory.fun:
-        return Colors.purpleAccent;
+  String _getMockRundown(TaskType type) {
+    switch (type) {
+      case TaskType.urgent:
+        return "Critical blockers. Real-time issues. High priority tasks requiring immediate attention.";
+      case TaskType.approaching:
+        return "Upcoming deadlines. Next-action items. Items that need to stay on your radar.";
+      case TaskType.admin:
+        return "Maintenance and operations. System upkeep. Email clearing. Logistics.";
+      case TaskType.fun:
+        return "Exploration and play. Low pressure tasks. Creative experiments.";
+      case TaskType.uncategorized:
+        return "Tasks awaiting classification. Brain dump overflows.";
     }
-  }
-
-  IconData _getCategoryIcon(SprintCategory category) {
-    switch (category) {
-      case SprintCategory.urgent:
-        return Icons.warning_amber_rounded;
-      case SprintCategory.approaching:
-        return Icons.access_time_rounded;
-      case SprintCategory.maintenance:
-        return Icons.build_rounded;
-      case SprintCategory.fun:
-        return Icons.palette_rounded;
-    }
-  }
-
-  String _formatDurationShort(Duration d) {
-    if (d.inHours > 0) {
-      return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
-    }
-    return '${d.inMinutes}m';
   }
 }
 
-class _SprintTaskTile extends StatefulWidget {
-  final SprintTask task;
-  final bool isUrgent;
-  final bool isApproaching;
+class _SprintTaskTile extends StatelessWidget {
+  final CommonNoteItem task;
+  final bool isDark;
+  final VoidCallback onStart;
+  final bool active;
+  final VoidCallback? onComplete;
 
   const _SprintTaskTile({
     required this.task,
-    this.isUrgent = false,
-    this.isApproaching = false,
+    required this.isDark,
+    required this.onStart,
+    this.active = false,
+    this.onComplete,
   });
 
   @override
-  State<_SprintTaskTile> createState() => _SprintTaskTileState();
-}
+  Widget build(BuildContext context) {
+    final isCompleted = task.completionStatus ?? false;
 
-class _SprintTaskTileState extends State<_SprintTaskTile> {
-  Timer? _countdownTimer;
-  late Duration _timeLeft;
-  bool _isHovered = false;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: active
+            ? (isDark ? Colors.blue.withAlpha(30) : Colors.blue.withAlpha(10))
+            : (isDark
+                  ? Colors.white.withAlpha(10)
+                  : Colors.black.withAlpha(10)),
+        borderRadius: BorderRadius.circular(16),
+        border: active ? Border.all(color: Colors.blue.withAlpha(50)) : null,
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: _getGroupColorStatic(task.group),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              _getGroupIconStatic(task.group),
+              size: 16,
+              color: Colors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  task.title ?? task.textContent ?? "Untitled Task",
+                  style: GoogleFonts.inter(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    decoration: isCompleted ? TextDecoration.lineThrough : null,
+                    color: isCompleted
+                        ? (isDark ? Colors.white38 : Colors.black38)
+                        : (isDark ? Colors.white : Colors.black),
+                  ),
+                ),
+                Text(
+                  task.textContent ?? "No description",
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!isCompleted && !active)
+            IconButton(
+              icon: const Icon(
+                Icons.play_circle_outline_rounded,
+                size: 28,
+                color: Colors.blueAccent,
+              ),
+              onPressed: onStart,
+            ),
+          if (active)
+            ElevatedButton(
+              onPressed: onComplete,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Complete'),
+            ),
+        ],
+      ),
+    );
+  }
 
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isUrgent && widget.task.dueDate != null) {
-      _timeLeft = widget.task.dueDate!.difference(DateTime.now());
-      _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-        if (!mounted) {
-          timer.cancel();
-          return;
-        }
-        setState(() {
-          _timeLeft = widget.task.dueDate!.difference(DateTime.now());
-        });
-      });
+  Color _getGroupColorStatic(String? group) {
+    if (group == null) return Colors.grey;
+    switch (group.toLowerCase()) {
+      case 'messenger':
+        return const Color(0xFF00B2FF);
+      case 'email':
+      case 'gmail':
+        return const Color(0xFFEA4335);
+      case 'facebook':
+        return const Color(0xFF1877F2);
+      case 'school':
+        return const Color(0xFF4CAF50);
+      case 'google docs':
+        return const Color(0xFF4285F4);
+      case 'canva':
+        return const Color(0xFF8B3DFF);
+      default:
+        return Colors.grey.shade600;
     }
   }
 
-  @override
-  void dispose() {
-    _countdownTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: widget.isUrgent
-              ? Colors.red.withValues(alpha: _isHovered ? 0.08 : 0.05)
-              : Colors.white.withValues(alpha: _isHovered ? 0.05 : 0.02),
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Stack(
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        widget.task.title,
-                        style: GoogleFonts.inter(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: widget.isUrgent
-                              ? Colors.redAccent
-                              : Colors.white,
-                        ),
-                      ),
-                    ),
-                    if (widget.task.dueDate != null && !widget.isUrgent)
-                      Text(
-                        _getRemainingDaysText(widget.task.dueDate!),
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white38,
-                        ),
-                      ),
-                    const SizedBox(width: 80), // Space for hover buttons
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  widget.task.description,
-                  style: const TextStyle(fontSize: 14, color: Colors.white60),
-                ),
-                if (widget.isUrgent && widget.task.dueDate != null) ...[
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      const Icon(
-                        Icons.timer_rounded,
-                        size: 14,
-                        color: Colors.redAccent,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        _formatCountdown(_timeLeft),
-                        style: GoogleFonts.jetBrainsMono(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                      const Text(
-                        ' REMAINING',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.redAccent,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ],
-            ),
-            if (_isHovered)
-              Positioned(
-                top: 0,
-                right: 0,
-                child: Row(
-                  children: [
-                    _HoverAction(
-                      icon: Icons.edit_rounded,
-                      onTap: () {},
-                      tooltip: 'Edit',
-                    ),
-                    const SizedBox(width: 8),
-                    _HoverAction(
-                      icon: Icons.more_horiz_rounded,
-                      onTap: () {},
-                      tooltip: 'More',
-                    ),
-                  ],
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  String _getRemainingDaysText(DateTime due) {
-    final diff = due.difference(DateTime.now());
-    if (diff.isNegative) return 'Overdue';
-    if (diff.inDays > 0) return '${diff.inDays} days left';
-    return '${diff.inHours} hours left';
-  }
-
-  String _formatCountdown(Duration d) {
-    bool negative = d.isNegative;
-    d = d.abs();
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    final hours = twoDigits(d.inHours);
-    final minutes = twoDigits(d.inMinutes.remainder(60));
-    final seconds = twoDigits(d.inSeconds.remainder(60));
-    return "${negative ? '-' : ''}$hours:$minutes:$seconds";
-  }
-}
-
-class _HoverAction extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  const _HoverAction({
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.05),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(icon, size: 16, color: Colors.white70),
-          ),
-        ),
-      ),
-    );
+  IconData _getGroupIconStatic(String? group) {
+    if (group == null) return Icons.blur_on_rounded;
+    switch (group.toLowerCase()) {
+      case 'messenger':
+        return Icons.messenger_rounded;
+      case 'email':
+      case 'gmail':
+        return Icons.email_rounded;
+      case 'facebook':
+        return Icons.facebook_rounded;
+      case 'school':
+        return Icons.book_rounded;
+      case 'google docs':
+        return Icons.description_rounded;
+      case 'canva':
+        return Icons.palette_rounded;
+      default:
+        return Icons.category_rounded;
+    }
   }
 }
 
@@ -960,7 +722,7 @@ class _TimerControlButton extends StatelessWidget {
           onPressed: onPressed,
           icon: Icon(icon, size: 32, color: color),
           style: IconButton.styleFrom(
-            backgroundColor: color.withValues(alpha: 0.1),
+            backgroundColor: color.withAlpha(25),
             padding: const EdgeInsets.all(20),
           ),
         ),
@@ -976,4 +738,41 @@ class _TimerControlButton extends StatelessWidget {
       ],
     );
   }
+}
+
+Color _getCategoryColor(TaskType type) {
+  switch (type) {
+    case TaskType.urgent:
+      return Colors.redAccent;
+    case TaskType.approaching:
+      return Colors.orangeAccent;
+    case TaskType.admin:
+      return Colors.blueAccent;
+    case TaskType.fun:
+      return Colors.purpleAccent;
+    case TaskType.uncategorized:
+      return Colors.grey;
+  }
+}
+
+IconData _getCategoryIcon(TaskType type) {
+  switch (type) {
+    case TaskType.urgent:
+      return Icons.warning_amber_rounded;
+    case TaskType.approaching:
+      return Icons.access_time_rounded;
+    case TaskType.admin:
+      return Icons.build_rounded;
+    case TaskType.fun:
+      return Icons.palette_rounded;
+    case TaskType.uncategorized:
+      return Icons.category_outlined;
+  }
+}
+
+String _formatDurationShort(Duration d) {
+  if (d.inHours > 0) {
+    return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+  }
+  return '${d.inMinutes}m';
 }

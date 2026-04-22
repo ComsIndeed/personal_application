@@ -212,7 +212,18 @@ class _MainInterfaceState extends State<MainInterface> {
                                             header.sourceTabIndex ==
                                             currentIndex;
                                         final displayLeading = isCustomHeader
-                                            ? header.leading
+                                            ? (header.leading ??
+                                                  (header.onBack != null
+                                                      ? IconButton(
+                                                          icon: const Icon(
+                                                            Icons
+                                                                .arrow_back_rounded,
+                                                            size: 20,
+                                                          ),
+                                                          onPressed:
+                                                              header.onBack,
+                                                        )
+                                                      : null))
                                             : null;
 
                                         const defaultTitles = [

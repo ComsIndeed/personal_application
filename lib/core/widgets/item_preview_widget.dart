@@ -8,6 +8,8 @@ import 'package:personal_application/core/services/item_preview_cubit.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:personal_application/core/database/app_database.dart';
+import 'package:personal_application/core/services/sprints_service.dart';
+import 'package:personal_application/core/models/message/enums.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:provider/provider.dart';
 
@@ -335,7 +337,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                       duration: const Duration(milliseconds: 300),
                       child: Padding(
                         padding: const EdgeInsets.only(left: 12),
-                        child: _buildControls(context),
+                        child: _buildControls(context, displayItem),
                       ),
                     ),
                   ),
@@ -348,7 +350,7 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     );
   }
 
-  Widget _buildControls(BuildContext context) {
+  Widget _buildControls(BuildContext context, CommonNoteItem item) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Container(
@@ -368,6 +370,13 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
             label: 'Edit',
             onPressed: () {},
           ),
+          if (item.category != TabCategory.tasks)
+            _ControlButton(
+              icon: Icons.rocket_launch_rounded,
+              label: 'Promote to Task',
+              color: Colors.blueAccent,
+              onPressed: () => _showPromotionDialog(context, item),
+            ),
           _ControlButton(
             icon: Icons.delete_rounded,
             label: 'Delete',
@@ -391,6 +400,96 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
             onPressed: () => context.read<ItemPreviewCubit>().clear(),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showPromotionDialog(BuildContext context, CommonNoteItem item) {
+    TaskType selectedType = TaskType.uncategorized;
+    String? selectedGroup;
+    int estMinutes = 30;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Promote to Task'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<TaskType>(
+                initialValue: selectedType,
+                decoration: const InputDecoration(labelText: 'Task Type'),
+                items: TaskType.values
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t.name.toUpperCase()),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (val) => setDialogState(() => selectedType = val!),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: selectedGroup,
+                decoration: const InputDecoration(
+                  labelText: 'Group / Platform',
+                ),
+                items:
+                    [
+                          'Messenger',
+                          'Email',
+                          'Facebook',
+                          'School',
+                          'Google Docs',
+                          'Canva',
+                          'Others',
+                        ]
+                        .map((g) => DropdownMenuItem(value: g, child: Text(g)))
+                        .toList(),
+                onChanged: (val) => setDialogState(() => selectedGroup = val),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Text('Est. Time: '),
+                  Expanded(
+                    child: Slider(
+                      value: estMinutes.toDouble(),
+                      min: 5,
+                      max: 240,
+                      divisions: 47,
+                      label: '${estMinutes}m',
+                      onChanged: (val) =>
+                          setDialogState(() => estMinutes = val.round()),
+                    ),
+                  ),
+                  Text('${estMinutes}m'),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                SprintsService().promoteToTask(
+                  item,
+                  type: selectedType,
+                  group: selectedGroup,
+                  estTime: estMinutes * 60,
+                );
+                Navigator.pop(context);
+                context.read<ItemPreviewCubit>().clear();
+              },
+              child: const Text('Promote'),
+            ),
+          ],
+        ),
       ),
     );
   }

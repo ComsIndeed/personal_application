@@ -26,6 +26,7 @@ class _BrainDumpTabState extends State<BrainDumpTab>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TabHeaderManager>().update(
+        tabIndex: 0,
         actions: [
           SearchHeaderWidget(hintText: 'Search dump...', onTap: () {}),
           Padding(

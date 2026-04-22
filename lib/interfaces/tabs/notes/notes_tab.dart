@@ -26,6 +26,7 @@ class _NotesTabState extends State<NotesTab>
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<TabHeaderManager>().update(
+        tabIndex: 1,
         actions: [
           SearchHeaderWidget(hintText: 'Search notes...', onTap: () {}),
           Padding(

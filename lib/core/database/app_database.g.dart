@@ -1325,6 +1325,51 @@ class $CommonNoteItemsTable extends CommonNoteItems
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       ).withConverter<TaskType?>($CommonNoteItemsTable.$converterpriorityn);
+  static const VerificationMeta _groupMeta = const VerificationMeta('group');
+  @override
+  late final GeneratedColumn<String> group = GeneratedColumn<String>(
+    'group',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _estTimeMeta = const VerificationMeta(
+    'estTime',
+  );
+  @override
+  late final GeneratedColumn<int> estTime = GeneratedColumn<int>(
+    'est_time',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _completionStatusMeta = const VerificationMeta(
+    'completionStatus',
+  );
+  @override
+  late final GeneratedColumn<bool> completionStatus = GeneratedColumn<bool>(
+    'completion_status',
+    aliasedName,
+    true,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("completion_status" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _timerSecondsMeta = const VerificationMeta(
+    'timerSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> timerSeconds = GeneratedColumn<int>(
+    'timer_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _dueDateMeta = const VerificationMeta(
     'dueDate',
   );
@@ -1362,6 +1407,10 @@ class $CommonNoteItemsTable extends CommonNoteItems
     createdAt,
     isPinned,
     priority,
+    group,
+    estTime,
+    completionStatus,
+    timerSeconds,
     dueDate,
     metadata,
   ];
@@ -1423,6 +1472,36 @@ class $CommonNoteItemsTable extends CommonNoteItems
       context.handle(
         _isPinnedMeta,
         isPinned.isAcceptableOrUnknown(data['is_pinned']!, _isPinnedMeta),
+      );
+    }
+    if (data.containsKey('group')) {
+      context.handle(
+        _groupMeta,
+        group.isAcceptableOrUnknown(data['group']!, _groupMeta),
+      );
+    }
+    if (data.containsKey('est_time')) {
+      context.handle(
+        _estTimeMeta,
+        estTime.isAcceptableOrUnknown(data['est_time']!, _estTimeMeta),
+      );
+    }
+    if (data.containsKey('completion_status')) {
+      context.handle(
+        _completionStatusMeta,
+        completionStatus.isAcceptableOrUnknown(
+          data['completion_status']!,
+          _completionStatusMeta,
+        ),
+      );
+    }
+    if (data.containsKey('timer_seconds')) {
+      context.handle(
+        _timerSecondsMeta,
+        timerSeconds.isAcceptableOrUnknown(
+          data['timer_seconds']!,
+          _timerSecondsMeta,
+        ),
       );
     }
     if (data.containsKey('due_date')) {
@@ -1496,6 +1575,22 @@ class $CommonNoteItemsTable extends CommonNoteItems
           data['${effectivePrefix}priority'],
         ),
       ),
+      group: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}group'],
+      ),
+      estTime: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}est_time'],
+      ),
+      completionStatus: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}completion_status'],
+      ),
+      timerSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timer_seconds'],
+      ),
       dueDate: attachedDatabase.typeMapping.read(
         DriftSqlType.dateTime,
         data['${effectivePrefix}due_date'],
@@ -1543,6 +1638,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
   final Value<DateTime> createdAt;
   final Value<bool> isPinned;
   final Value<TaskType?> priority;
+  final Value<String?> group;
+  final Value<int?> estTime;
+  final Value<bool?> completionStatus;
+  final Value<int?> timerSeconds;
   final Value<DateTime?> dueDate;
   final Value<Map<String, dynamic>?> metadata;
   final Value<int> rowid;
@@ -1559,6 +1658,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     this.createdAt = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.priority = const Value.absent(),
+    this.group = const Value.absent(),
+    this.estTime = const Value.absent(),
+    this.completionStatus = const Value.absent(),
+    this.timerSeconds = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1576,6 +1679,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     this.createdAt = const Value.absent(),
     this.isPinned = const Value.absent(),
     this.priority = const Value.absent(),
+    this.group = const Value.absent(),
+    this.estTime = const Value.absent(),
+    this.completionStatus = const Value.absent(),
+    this.timerSeconds = const Value.absent(),
     this.dueDate = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1593,6 +1700,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Expression<DateTime>? createdAt,
     Expression<bool>? isPinned,
     Expression<String>? priority,
+    Expression<String>? group,
+    Expression<int>? estTime,
+    Expression<bool>? completionStatus,
+    Expression<int>? timerSeconds,
     Expression<DateTime>? dueDate,
     Expression<String>? metadata,
     Expression<int>? rowid,
@@ -1610,6 +1721,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       if (createdAt != null) 'created_at': createdAt,
       if (isPinned != null) 'is_pinned': isPinned,
       if (priority != null) 'priority': priority,
+      if (group != null) 'group': group,
+      if (estTime != null) 'est_time': estTime,
+      if (completionStatus != null) 'completion_status': completionStatus,
+      if (timerSeconds != null) 'timer_seconds': timerSeconds,
       if (dueDate != null) 'due_date': dueDate,
       if (metadata != null) 'metadata': metadata,
       if (rowid != null) 'rowid': rowid,
@@ -1629,6 +1744,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Value<DateTime>? createdAt,
     Value<bool>? isPinned,
     Value<TaskType?>? priority,
+    Value<String?>? group,
+    Value<int?>? estTime,
+    Value<bool?>? completionStatus,
+    Value<int?>? timerSeconds,
     Value<DateTime?>? dueDate,
     Value<Map<String, dynamic>?>? metadata,
     Value<int>? rowid,
@@ -1646,6 +1765,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       createdAt: createdAt ?? this.createdAt,
       isPinned: isPinned ?? this.isPinned,
       priority: priority ?? this.priority,
+      group: group ?? this.group,
+      estTime: estTime ?? this.estTime,
+      completionStatus: completionStatus ?? this.completionStatus,
+      timerSeconds: timerSeconds ?? this.timerSeconds,
       dueDate: dueDate ?? this.dueDate,
       metadata: metadata ?? this.metadata,
       rowid: rowid ?? this.rowid,
@@ -1699,6 +1822,18 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
         $CommonNoteItemsTable.$converterpriorityn.toSql(priority.value),
       );
     }
+    if (group.present) {
+      map['group'] = Variable<String>(group.value);
+    }
+    if (estTime.present) {
+      map['est_time'] = Variable<int>(estTime.value);
+    }
+    if (completionStatus.present) {
+      map['completion_status'] = Variable<bool>(completionStatus.value);
+    }
+    if (timerSeconds.present) {
+      map['timer_seconds'] = Variable<int>(timerSeconds.value);
+    }
     if (dueDate.present) {
       map['due_date'] = Variable<DateTime>(dueDate.value);
     }
@@ -1728,6 +1863,10 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
           ..write('createdAt: $createdAt, ')
           ..write('isPinned: $isPinned, ')
           ..write('priority: $priority, ')
+          ..write('group: $group, ')
+          ..write('estTime: $estTime, ')
+          ..write('completionStatus: $completionStatus, ')
+          ..write('timerSeconds: $timerSeconds, ')
           ..write('dueDate: $dueDate, ')
           ..write('metadata: $metadata, ')
           ..write('rowid: $rowid')
@@ -2855,6 +2994,10 @@ typedef $$CommonNoteItemsTableCreateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<bool> isPinned,
       Value<TaskType?> priority,
+      Value<String?> group,
+      Value<int?> estTime,
+      Value<bool?> completionStatus,
+      Value<int?> timerSeconds,
       Value<DateTime?> dueDate,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
@@ -2873,6 +3016,10 @@ typedef $$CommonNoteItemsTableUpdateCompanionBuilder =
       Value<DateTime> createdAt,
       Value<bool> isPinned,
       Value<TaskType?> priority,
+      Value<String?> group,
+      Value<int?> estTime,
+      Value<bool?> completionStatus,
+      Value<int?> timerSeconds,
       Value<DateTime?> dueDate,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
@@ -2950,6 +3097,26 @@ class $$CommonNoteItemsTableFilterComposer
         column: $table.priority,
         builder: (column) => ColumnWithTypeConverterFilters(column),
       );
+
+  ColumnFilters<String> get group => $composableBuilder(
+    column: $table.group,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get estTime => $composableBuilder(
+    column: $table.estTime,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get completionStatus => $composableBuilder(
+    column: $table.completionStatus,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timerSeconds => $composableBuilder(
+    column: $table.timerSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
 
   ColumnFilters<DateTime> get dueDate => $composableBuilder(
     column: $table.dueDate,
@@ -3036,6 +3203,26 @@ class $$CommonNoteItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get group => $composableBuilder(
+    column: $table.group,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get estTime => $composableBuilder(
+    column: $table.estTime,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get completionStatus => $composableBuilder(
+    column: $table.completionStatus,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timerSeconds => $composableBuilder(
+    column: $table.timerSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<DateTime> get dueDate => $composableBuilder(
     column: $table.dueDate,
     builder: (column) => ColumnOrderings(column),
@@ -3094,6 +3281,22 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumnWithTypeConverter<TaskType?, String> get priority =>
       $composableBuilder(column: $table.priority, builder: (column) => column);
 
+  GeneratedColumn<String> get group =>
+      $composableBuilder(column: $table.group, builder: (column) => column);
+
+  GeneratedColumn<int> get estTime =>
+      $composableBuilder(column: $table.estTime, builder: (column) => column);
+
+  GeneratedColumn<bool> get completionStatus => $composableBuilder(
+    column: $table.completionStatus,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timerSeconds => $composableBuilder(
+    column: $table.timerSeconds,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<DateTime> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
@@ -3151,6 +3354,10 @@ class $$CommonNoteItemsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<TaskType?> priority = const Value.absent(),
+                Value<String?> group = const Value.absent(),
+                Value<int?> estTime = const Value.absent(),
+                Value<bool?> completionStatus = const Value.absent(),
+                Value<int?> timerSeconds = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3167,6 +3374,10 @@ class $$CommonNoteItemsTableTableManager
                 createdAt: createdAt,
                 isPinned: isPinned,
                 priority: priority,
+                group: group,
+                estTime: estTime,
+                completionStatus: completionStatus,
+                timerSeconds: timerSeconds,
                 dueDate: dueDate,
                 metadata: metadata,
                 rowid: rowid,
@@ -3185,6 +3396,10 @@ class $$CommonNoteItemsTableTableManager
                 Value<DateTime> createdAt = const Value.absent(),
                 Value<bool> isPinned = const Value.absent(),
                 Value<TaskType?> priority = const Value.absent(),
+                Value<String?> group = const Value.absent(),
+                Value<int?> estTime = const Value.absent(),
+                Value<bool?> completionStatus = const Value.absent(),
+                Value<int?> timerSeconds = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3201,6 +3416,10 @@ class $$CommonNoteItemsTableTableManager
                 createdAt: createdAt,
                 isPinned: isPinned,
                 priority: priority,
+                group: group,
+                estTime: estTime,
+                completionStatus: completionStatus,
+                timerSeconds: timerSeconds,
                 dueDate: dueDate,
                 metadata: metadata,
                 rowid: rowid,

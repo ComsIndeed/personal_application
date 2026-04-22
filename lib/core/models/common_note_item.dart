@@ -23,6 +23,10 @@ class CommonNoteItem extends Equatable implements Syncable {
     required this.createdAt,
     this.isPinned = false,
     this.priority,
+    this.group,
+    this.estTime,
+    this.completionStatus,
+    this.timerSeconds,
     this.dueDate,
     this.metadata,
   });
@@ -53,6 +57,10 @@ class CommonNoteItem extends Equatable implements Syncable {
   final DateTime createdAt;
   final bool isPinned;
   final TaskType? priority;
+  final String? group;
+  final int? estTime;
+  final bool? completionStatus;
+  final int? timerSeconds;
   final DateTime? dueDate;
   final Map<String, dynamic>? metadata;
 
@@ -74,6 +82,10 @@ class CommonNoteItem extends Equatable implements Syncable {
       createdAt: Value(createdAt),
       isPinned: Value(isPinned),
       priority: Value(priority),
+      group: Value(group),
+      estTime: Value(estTime),
+      completionStatus: Value(completionStatus),
+      timerSeconds: Value(timerSeconds),
       dueDate: Value(dueDate),
       metadata: Value(metadata),
     );
@@ -92,6 +104,10 @@ class CommonNoteItem extends Equatable implements Syncable {
     DateTime? createdAt,
     bool? isPinned,
     TaskType? priority,
+    String? group,
+    int? estTime,
+    bool? completionStatus,
+    int? timerSeconds,
     DateTime? dueDate,
     Map<String, dynamic>? metadata,
   }) {
@@ -108,6 +124,10 @@ class CommonNoteItem extends Equatable implements Syncable {
       createdAt: createdAt ?? this.createdAt,
       isPinned: isPinned ?? this.isPinned,
       priority: priority ?? this.priority,
+      group: group ?? this.group,
+      estTime: estTime ?? this.estTime,
+      completionStatus: completionStatus ?? this.completionStatus,
+      timerSeconds: timerSeconds ?? this.timerSeconds,
       dueDate: dueDate ?? this.dueDate,
       metadata: metadata ?? this.metadata,
     );
@@ -127,6 +147,10 @@ class CommonNoteItem extends Equatable implements Syncable {
     createdAt,
     isPinned,
     priority,
+    group,
+    estTime,
+    completionStatus,
+    timerSeconds,
     dueDate,
     metadata,
   ];

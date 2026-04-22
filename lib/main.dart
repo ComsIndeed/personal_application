@@ -7,12 +7,14 @@ import 'package:hotkey_manager/hotkey_manager.dart';
 import 'package:personal_application/interfaces/tabs/assistant_chat/assistant_chat_cubit.dart';
 import 'package:personal_application/interfaces/tabs/brain_dump/brain_dump_cubit.dart';
 import 'package:personal_application/interfaces/tabs/notes/notes_cubit.dart';
+import 'package:personal_application/interfaces/tabs/sprints/sprints_cubit.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/database/app_database.dart';
 import 'core/services/app_prefs.dart';
 import 'core/services/storage_service.dart';
+import 'core/services/sprints_service.dart';
 import 'core/services/item_preview_cubit.dart';
 import 'core/services/database_browser_cubit.dart';
 import 'core/widgets/item_preview_widget.dart';
@@ -40,6 +42,7 @@ void main() async {
 
   final database = AppDatabase();
   StorageService().setDatabase(database);
+  SprintsService().setDatabase(database);
 
   // Background verification of B2 on launch
   StorageService().verifyCredentials().catchError((e) {
@@ -68,6 +71,7 @@ void main() async {
         BlocProvider(create: (context) => AssistantChatCubit(db: database)),
         BlocProvider(create: (context) => BrainDumpCubit(database)),
         BlocProvider(create: (context) => NotesCubit(database)),
+        BlocProvider(create: (context) => SprintsCubit()),
         BlocProvider(create: (context) => ItemPreviewCubit()),
         BlocProvider(create: (context) => DatabaseBrowserCubit()),
         ChangeNotifierProvider(create: (_) => WindowOverlayState()),

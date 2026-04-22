@@ -62,6 +62,10 @@ class CommonNoteItems extends Table implements SyncableTable {
   TextColumn get priority => text()
       .map(const EnumNameConverter<TaskType>(TaskType.values))
       .nullable()();
+  TextColumn get group => text().nullable()();
+  IntColumn get estTime => integer().nullable()();
+  BoolColumn get completionStatus => boolean().nullable()();
+  IntColumn get timerSeconds => integer().nullable()();
   DateTimeColumn get dueDate => dateTime().nullable()();
   TextColumn get metadata => text().map(const MapConverter()).nullable()();
 
