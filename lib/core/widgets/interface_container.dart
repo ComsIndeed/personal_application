@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -250,29 +249,17 @@ class GlassContainer extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Background Blur Layer (Surgical Slice)
+            // Background Blur Layer (Surgical Slice of Pre-blurred Image)
             Positioned.fill(
               child: Consumer<WindowOverlayState>(
                 builder: (context, overlayState, _) {
-                  if (overlayState.bgImage == null ||
+                  if (overlayState.blurredBgImage == null ||
                       !AppPrefs().dynamicBackdropEnabled) {
                     return const SizedBox.shrink();
                   }
-                  return Stack(
-                    children: [
-                      Positioned.fill(
-                        child: BackgroundSlice(
-                          image: overlayState.bgImage!,
-                          windowOffset: overlayState.windowOffset,
-                        ),
-                      ),
-                      Positioned.fill(
-                        child: BackdropFilter(
-                          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                          child: Container(color: Colors.transparent),
-                        ),
-                      ),
-                    ],
+                  return BackgroundSlice(
+                    image: overlayState.blurredBgImage!,
+                    windowOffset: overlayState.windowOffset,
                   );
                 },
               ),

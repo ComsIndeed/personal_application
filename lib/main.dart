@@ -115,8 +115,8 @@ class WindowOverlayState extends ChangeNotifier {
     _registerHotKey();
   }
 
-  ui.Image? _bgImage;
-  ui.Image? get bgImage => _bgImage;
+  ui.Image? _blurredBgImage;
+  ui.Image? get blurredBgImage => _blurredBgImage;
 
   Offset _windowOffset = Offset.zero;
   Offset get windowOffset => _windowOffset;
@@ -139,9 +139,25 @@ class WindowOverlayState extends ChangeNotifier {
       final bytes = await DesktopScreenshot().getScreenshot();
 
       if (bytes != null && bytes.isNotEmpty) {
-        _bgImage = await decodeImageFromList(bytes);
+        final sharpImage = await decodeImageFromList(bytes);
+
+        // Pre-blur the image once to avoid edge artifacts and live BackdropFilter costs
+        final recorder = ui.PictureRecorder();
+        final canvas = Canvas(recorder);
+        final paint = Paint()
+          ..imageFilter = ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50);
+
+        canvas.drawImage(sharpImage, Offset.zero, paint);
+        final picture = recorder.endRecording();
+
+        _blurredBgImage = await picture.toImage(
+          sharpImage.width,
+          sharpImage.height,
+        );
+        sharpImage
+            .dispose(); // Save memory, we only need the blurred 'glass' version
       } else {
-        _bgImage = null;
+        _blurredBgImage = null;
       }
 
       _windowOffset = await windowManager.getPosition();
@@ -172,8 +188,9 @@ class WindowOverlayState extends ChangeNotifier {
     await _controller.reverse();
     await windowManager.hide();
 
-    _bgImage?.dispose();
-    _bgImage = null;
+    // Clear background to avoid "ghost" frames on next open
+    _blurredBgImage?.dispose(); // Proper clean up of image memory
+    _blurredBgImage = null;
     notifyListeners();
   }
 
