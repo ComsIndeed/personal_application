@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 class BackgroundSlice extends StatefulWidget {
   final ui.Image image;
@@ -15,14 +16,15 @@ class BackgroundSlice extends StatefulWidget {
   State<BackgroundSlice> createState() => _BackgroundSliceState();
 }
 
-class _BackgroundSliceState extends State<BackgroundSlice> {
+class _BackgroundSliceState extends State<BackgroundSlice>
+    with SingleTickerProviderStateMixin {
   Offset _currentOffset = Offset.zero;
+  late final Ticker _ticker;
 
   @override
-  Widget build(BuildContext context) {
-    // We update the offset every frame to keep it synced during animations
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
+  void initState() {
+    super.initState();
+    _ticker = createTicker((_) {
       final RenderBox? box = context.findRenderObject() as RenderBox?;
       if (box != null && box.hasSize) {
         final newOffset = box.localToGlobal(Offset.zero);
@@ -32,8 +34,17 @@ class _BackgroundSliceState extends State<BackgroundSlice> {
           });
         }
       }
-    });
+    })..start();
+  }
 
+  @override
+  void dispose() {
+    _ticker.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final dpr = MediaQuery.of(context).devicePixelRatio;
 
     return CustomPaint(
