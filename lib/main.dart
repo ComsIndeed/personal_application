@@ -122,6 +122,11 @@ class WindowOverlayState extends ChangeNotifier {
   Offset _windowOffset = Offset.zero;
   Offset get windowOffset => _windowOffset;
 
+  void toggleDynamicBackdrop() {
+    AppPrefs().dynamicBackdropEnabled = !AppPrefs().dynamicBackdropEnabled;
+    notifyListeners();
+  }
+
   void toggle() async {
     if (_isVisible) {
       await close();
@@ -132,11 +137,9 @@ class WindowOverlayState extends ChangeNotifier {
 
   Future<void> _captureScreen() async {
     try {
-      // Use desktop_screenshot for ultra-snappy and silent capture
       final bytes = await DesktopScreenshot().getScreenshot();
 
       if (bytes != null && bytes.isNotEmpty) {
-        // decodeImageFromList is hardware-accelerated and returns ui.Image
         _bgImage = await decodeImageFromList(bytes);
       } else {
         _bgImage = null;
@@ -152,11 +155,12 @@ class WindowOverlayState extends ChangeNotifier {
   Future<void> open() async {
     if (_isVisible) return;
 
-    // Capture the screen while the app is still transparent/hidden
-    await _captureScreen();
+    if (AppPrefs().dynamicBackdropEnabled) {
+      await _captureScreen();
+    }
 
     _isVisible = true;
-    notifyListeners(); // trigger panel slide-in immediately
+    notifyListeners();
     await windowManager.show();
     await windowManager.focus();
     _controller.forward();
@@ -165,12 +169,11 @@ class WindowOverlayState extends ChangeNotifier {
   Future<void> close() async {
     if (!_isVisible) return;
     _isVisible = false;
-    notifyListeners(); // trigger panel slide-out immediately
+    notifyListeners();
     await _controller.reverse();
     await windowManager.hide();
 
-    // Clear background to avoid "ghost" frames on next open
-    _bgImage?.dispose(); // Proper clean up of image memory
+    _bgImage?.dispose();
     _bgImage = null;
     notifyListeners();
   }
@@ -230,8 +233,6 @@ class _MainAppState extends State<MainApp> with TickerProviderStateMixin {
 class OverlayPage extends StatelessWidget {
   const OverlayPage({super.key});
 
-  static const double panelWidth = 530;
-
   @override
   Widget build(BuildContext context) {
     final overlayState = context.watch<WindowOverlayState>();
@@ -240,14 +241,13 @@ class OverlayPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          // Blurred dynamic background
-          BlurredBackground(
-            image: overlayState.bgImage,
-            windowOffset: overlayState.windowOffset,
-            isVisible: overlayState.isVisible,
-          ),
+          if (overlayState.bgImage != null && AppPrefs().dynamicBackdropEnabled)
+            BlurredBackground(
+              image: overlayState.bgImage,
+              windowOffset: overlayState.windowOffset,
+              isVisible: overlayState.isVisible,
+            ),
 
-          // Clickable transparent backdrop → close
           Positioned.fill(
             child: GestureDetector(
               onTap: () => overlayState.close(),
@@ -255,13 +255,8 @@ class OverlayPage extends StatelessWidget {
             ),
           ),
 
-          // Consolidated Main Interface (includes Nav Tabs and AppTab)
           const MainInterface(),
-
-          // Root Overlay Preview (Anchored Left of Screen)
           const ItemPreviewWidget(),
-
-          // Database Browser (Anchored Left of Screen)
           const DatabaseBrowserWidget(),
         ],
       ),

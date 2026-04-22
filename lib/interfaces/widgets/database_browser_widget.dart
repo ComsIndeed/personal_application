@@ -8,6 +8,7 @@ import 'package:personal_application/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:personal_application/core/services/app_prefs.dart';
 import 'package:personal_application/core/services/storage_service.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
 import 'package:personal_application/core/models/asset_item.dart';
@@ -308,6 +309,11 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               side: const BorderSide(color: Colors.white10),
             ),
             onSelected: (value) async {
+              if (value == 'toggle_backdrop') {
+                context.read<WindowOverlayState>().toggleDynamicBackdrop();
+                return;
+              }
+
               final storage = StorageService();
               final db = context.read<AppDatabase>();
 
@@ -453,6 +459,51 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
                     'Only Cloud',
                     style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
+                ),
+              ),
+              const PopupMenuDivider(),
+              PopupMenuItem(
+                enabled: false,
+                height: 24,
+                child: Text(
+                  'SYSTEM EXPERIMENTS',
+                  style: TextStyle(
+                    color: Colors.white.withAlpha(40),
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+              ),
+              PopupMenuItem(
+                value: 'toggle_backdrop',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_awesome_motion_rounded,
+                      size: 18,
+                      color: AppPrefs().dynamicBackdropEnabled
+                          ? Colors.blueAccent
+                          : Colors.white24,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Dynamic Glass Backdrop',
+                      style: TextStyle(
+                        color: AppPrefs().dynamicBackdropEnabled
+                            ? Colors.white
+                            : Colors.white60,
+                        fontSize: 13,
+                      ),
+                    ),
+                    const Spacer(),
+                    if (AppPrefs().dynamicBackdropEnabled)
+                      const Icon(
+                        Icons.check_circle_rounded,
+                        size: 14,
+                        color: Colors.blueAccent,
+                      ),
+                  ],
                 ),
               ),
               const PopupMenuDivider(),
