@@ -348,7 +348,9 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
                     ],
                   ),
                   content: Text(
-                    value.contains('assets')
+                    value == 'wipe_all'
+                        ? 'CRITICAL: This will delete EVERYTHING (all database rows and all assets). This cannot be undone. Are you sure?'
+                        : value.contains('assets')
                         ? 'This will delete asset records and files. Are you sure?'
                         : 'This will delete database entries (conversations, messages, etc). Are you sure?',
                     style: const TextStyle(color: Colors.white70),
@@ -377,7 +379,9 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               final storage = StorageService();
               final db = context.read<AppDatabase>();
 
-              if (value == 'wipe_db_both') {
+              if (value == 'wipe_all') {
+                await cubit.wipeAll(storage: storage, db: db);
+              } else if (value == 'wipe_db_both') {
                 await cubit.wipeDatabase(db: db, local: true, cloud: true);
               } else if (value == 'wipe_db_local') {
                 await cubit.wipeDatabase(db: db, local: true, cloud: false);
@@ -390,6 +394,29 @@ class _DatabaseBrowserTitleBar extends StatelessWidget {
               }
             },
             itemBuilder: (context) => [
+              // --- FULL WIPE ---
+              PopupMenuItem(
+                value: 'wipe_all',
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      size: 18,
+                      color: Colors.orangeAccent.withAlpha(200),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'Wipe All (Full System)',
+                      style: TextStyle(
+                        color: Colors.orangeAccent,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               // --- Database Wipe ---
               PopupMenuItem(
                 value: 'wipe_db_both',
@@ -1238,15 +1265,67 @@ class _DatabaseMaintenanceResults extends StatelessWidget {
     return Column(
       children: [
         Expanded(
-          child: type == 'assets'
-              ? _AssetMaintenanceTable(
-                  data: List<Map<String, dynamic>>.from(data),
-                )
-              : _DatabaseMaintenanceTable(
-                  data: Map<String, List<Map<String, dynamic>>>.from(data),
-                ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.only(bottom: 40),
+            child: Column(
+              children: [
+                if (type == 'all' || type == 'database') ...[
+                  if (type == 'all')
+                    const _ResultsSectionHeader(title: 'DATABASE RESULTS'),
+                  _DatabaseMaintenanceTable(
+                    data: Map<String, List<Map<String, dynamic>>>.from(
+                      type == 'all' ? data['database'] : data,
+                    ),
+                  ),
+                ],
+                if (type == 'all' || type == 'assets') ...[
+                  if (type == 'all')
+                    const _ResultsSectionHeader(title: 'ASSET RESULTS'),
+                  _AssetMaintenanceTable(
+                    data: List<Map<String, dynamic>>.from(
+                      type == 'all' ? data['assets'] : data,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ],
+    );
+  }
+}
+
+class _ResultsSectionHeader extends StatelessWidget {
+  final String title;
+  const _ResultsSectionHeader({required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 4,
+            height: 16,
+            decoration: BoxDecoration(
+              color: Colors.blueAccent,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: Colors.blueAccent,
+              letterSpacing: 1.2,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -1348,6 +1427,8 @@ class _DatabaseMaintenanceTable extends StatelessWidget {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: tables.length,
       itemBuilder: (context, index) {
         final tableName = tables[index];

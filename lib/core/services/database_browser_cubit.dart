@@ -275,4 +275,124 @@ class DatabaseBrowserCubit extends Cubit<DatabaseBrowserState> {
       );
     }
   }
+
+  Future<void> wipeAll({
+    required StorageService storage,
+    required SyncableDatabase db,
+  }) async {
+    emit(
+      state.copyWith(
+        isWiping: true,
+        wipeProgressMessage: 'Preparing total system wipe...',
+        clearResults: true,
+      ),
+    );
+
+    final Map<String, List<Map<String, dynamic>>> dbResults = {};
+    final List<Map<String, dynamic>> assetResults = [];
+    const tables = ['conversations', 'messages', 'common_note_items'];
+
+    try {
+      // 1. Database Wipe Logic
+      if (db is AppDatabase) {
+        emit(state.copyWith(wipeProgressMessage: 'Fetching local rows...'));
+        for (final tableName in tables) {
+          final table = db.allTables.firstWhere(
+            (t) => t.actualTableName == tableName,
+          );
+          final rows = await (db.select(table)).get();
+          dbResults['local_$tableName'] = rows
+              .map((r) => (r as dynamic).toJson() as Map<String, dynamic>)
+              .toList();
+        }
+
+        emit(state.copyWith(wipeProgressMessage: 'Deleting local rows...'));
+        await db.wipeLocalData(exclude: const ['asset_items']);
+      }
+
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
+
+      for (final tableName in tables) {
+        emit(
+          state.copyWith(
+            wipeProgressMessage: 'Fetching cloud rows from $tableName...',
+          ),
+        );
+        dynamic query = client.from(tableName).select();
+        if (userId != null) query = query.eq('user_id', userId);
+        final response = await query;
+        dbResults['cloud_$tableName'] = List<Map<String, dynamic>>.from(
+          response,
+        );
+
+        emit(
+          state.copyWith(
+            wipeProgressMessage: 'Deleting cloud rows from $tableName...',
+          ),
+        );
+        if (userId != null) {
+          await client.from(tableName).delete().eq('user_id', userId);
+        } else {
+          await client
+              .from(tableName)
+              .delete()
+              .neq('id', '00000000-0000-0000-0000-000000000000');
+        }
+      }
+
+      // 2. Asset Wipe Logic
+      if (db is AppDatabase) {
+        emit(state.copyWith(wipeProgressMessage: 'Tracking assets...'));
+        final currentAssets = await db.select(db.assetItems).get();
+        for (var asset in currentAssets) {
+          assetResults.add({
+            'id': asset.id,
+            'displayName': asset.displayName ?? asset.id.substring(0, 8),
+            'mimeType': asset.mimeType,
+            'recordDeleted': true,
+            'cacheCleared': true,
+            'cloudFileDeleted': asset.isUploaded,
+          });
+        }
+      }
+
+      emit(state.copyWith(wipeProgressMessage: 'Deleting cloud files...'));
+      await storage.wipeCloudStorage();
+
+      emit(state.copyWith(wipeProgressMessage: 'Deleting asset records...'));
+      if (db is AppDatabase) {
+        await (db.delete(db.assetItems)).go();
+      }
+
+      if (userId != null) {
+        await client.from('asset_items').delete().eq('user_id', userId);
+      } else {
+        await client
+            .from('asset_items')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+      }
+      storage.clearMemoryCache();
+
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Total wipe complete',
+          maintenanceResults: {
+            'type': 'all',
+            'data': {'database': dbResults, 'assets': assetResults},
+            'timestamp': DateTime.now().toIso8601String(),
+          },
+        ),
+      );
+    } catch (e) {
+      emit(
+        state.copyWith(
+          isWiping: false,
+          wipeProgressMessage: 'Error: ${e.toString()}',
+        ),
+      );
+    }
+  }
 }
