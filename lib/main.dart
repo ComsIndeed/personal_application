@@ -145,7 +145,7 @@ class WindowOverlayState extends ChangeNotifier {
         final recorder = ui.PictureRecorder();
         final canvas = Canvas(recorder);
         final paint = Paint()
-          ..imageFilter = ui.ImageFilter.blur(sigmaX: 50, sigmaY: 50);
+          ..imageFilter = ui.ImageFilter.blur(sigmaX: 150, sigmaY: 150);
 
         canvas.drawImage(sharpImage, Offset.zero, paint);
         final picture = recorder.endRecording();
