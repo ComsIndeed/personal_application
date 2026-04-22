@@ -24,7 +24,6 @@ import 'core/services/item_preview_cubit.dart';
 import 'core/services/sprints_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/widgets/app_tab.dart';
-import 'core/widgets/blurred_background.dart';
 import 'core/widgets/item_preview_widget.dart';
 import 'interfaces/main_interface.dart';
 import 'interfaces/widgets/database_browser_widget.dart';
@@ -241,13 +240,6 @@ class OverlayPage extends StatelessWidget {
       backgroundColor: Colors.transparent,
       body: Stack(
         children: [
-          if (overlayState.bgImage != null && AppPrefs().dynamicBackdropEnabled)
-            BlurredBackground(
-              image: overlayState.bgImage,
-              windowOffset: overlayState.windowOffset,
-              isVisible: overlayState.isVisible,
-            ),
-
           Positioned.fill(
             child: GestureDetector(
               onTap: () => overlayState.close(),

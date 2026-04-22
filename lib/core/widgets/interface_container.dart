@@ -3,6 +3,8 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:personal_application/core/services/app_prefs.dart';
+import 'package:personal_application/core/widgets/blurred_background.dart';
 import 'package:personal_application/main.dart';
 import 'package:provider/provider.dart';
 
@@ -248,28 +250,52 @@ class GlassContainer extends StatelessWidget {
         borderRadius: borderRadius ?? BorderRadius.circular(16),
         child: Stack(
           children: [
-            // Background Blur Layer
+            // Background Blur Layer (Surgical Slice)
             Positioned.fill(
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color:
-                        color ??
-                        (isDark
-                            ? Colors.black.withValues(alpha: 0.4)
-                            : Colors.white.withValues(alpha: 0.4)),
-                    border: Border.fromBorderSide(
-                      border ??
-                          BorderSide(
-                            color: isDark
-                                ? Colors.white.withValues(alpha: 0.12)
-                                : Colors.black.withValues(alpha: 0.12),
-                            width: 0.5,
-                          ),
-                    ),
-                    borderRadius: borderRadius ?? BorderRadius.circular(16),
+              child: Consumer<WindowOverlayState>(
+                builder: (context, overlayState, _) {
+                  if (overlayState.bgImage == null ||
+                      !AppPrefs().dynamicBackdropEnabled) {
+                    return const SizedBox.shrink();
+                  }
+                  return Stack(
+                    children: [
+                      Positioned.fill(
+                        child: BackgroundSlice(
+                          image: overlayState.bgImage!,
+                          windowOffset: overlayState.windowOffset,
+                        ),
+                      ),
+                      Positioned.fill(
+                        child: BackdropFilter(
+                          filter: ui.ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                          child: Container(color: Colors.transparent),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            // Tint and Border Layer
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color:
+                      color ??
+                      (isDark
+                          ? Colors.black.withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.4)),
+                  border: Border.fromBorderSide(
+                    border ??
+                        BorderSide(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.15)
+                              : Colors.black.withValues(alpha: 0.15),
+                          width: 1.0,
+                        ),
                   ),
+                  borderRadius: borderRadius ?? BorderRadius.circular(16),
                 ),
               ),
             ),

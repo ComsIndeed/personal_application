@@ -1,41 +1,57 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
-class BlurredBackground extends StatelessWidget {
-  final ui.Image? image;
+class BackgroundSlice extends StatefulWidget {
+  final ui.Image image;
   final Offset windowOffset;
-  final bool isVisible;
 
-  const BlurredBackground({
+  const BackgroundSlice({
     super.key,
     required this.image,
     required this.windowOffset,
-    required this.isVisible,
   });
 
   @override
-  Widget build(BuildContext context) {
-    if (image == null) return const SizedBox.shrink();
+  State<BackgroundSlice> createState() => _BackgroundSliceState();
+}
 
-    // Use devicePixelRatio to map physical screenshot pixels to logical Flutter pixels
+class _BackgroundSliceState extends State<BackgroundSlice> {
+  Offset _globalOffset = Offset.zero;
+
+  void _updateOffset() {
+    if (!mounted) return;
+    final RenderBox? box = context.findRenderObject() as RenderBox?;
+    if (box != null && box.hasSize) {
+      final offset = box.localToGlobal(Offset.zero);
+      if (_globalOffset != offset) {
+        setState(() {
+          _globalOffset = offset;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Update offset after build to align the image slice
+    WidgetsBinding.instance.addPostFrameCallback((_) => _updateOffset());
+
     final dpr = MediaQuery.of(context).devicePixelRatio;
 
-    return AnimatedOpacity(
-      opacity: isVisible ? 1.0 : 0.0,
-      duration: const Duration(milliseconds: 300),
+    return OverflowBox(
+      alignment: Alignment.topLeft,
+      maxWidth: double.infinity,
+      maxHeight: double.infinity,
       child: Transform.translate(
-        offset: -windowOffset,
-        child: OverflowBox(
+        // Shift image by global position and window offset to pin it to the screen
+        offset: -_globalOffset - widget.windowOffset,
+        child: RawImage(
+          image: widget.image,
+          fit: BoxFit.none,
           alignment: Alignment.topLeft,
-          maxWidth: double.infinity,
-          maxHeight: double.infinity,
-          child: RawImage(
-            image: image,
-            fit: BoxFit.none,
-            alignment: Alignment.topLeft,
-            scale: dpr, // Correctly scale physical pixels to logical pixels
-            filterQuality: FilterQuality.medium,
-          ),
+          scale: dpr,
+          filterQuality: FilterQuality
+              .low, // Performance over precision for blurred layers
         ),
       ),
     );
