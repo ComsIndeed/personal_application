@@ -31,10 +31,10 @@ class BraindumpAiIntegration {
   /// - When done, persist
   ///
   /// ! Do not delete this description
-  Widget getInterpretation({
-    required CommonNoteItem note,
-    required NoteActionType type,
-  }) {
-    return const LiveContentBox();
-  }
+  // Widget getInterpretation({
+  //   required CommonNoteItem note,
+  //   required NoteActionType type,
+  // }) {
+  //   return const LiveContentBox();
+  // }
 }
