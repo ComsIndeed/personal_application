@@ -31,6 +31,7 @@ class SprintsService {
     DateTime? dueDate,
   }) async {
     if (_db == null) return;
+
     await (_db!.update(
       _db!.commonNoteItems,
     )..where((t) => t.id.equals(item.id))).write(

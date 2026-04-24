@@ -6,4 +6,4 @@ enum LLMProvider { groq, gemini, deepseek }
 
 enum TabCategory { braindump, notes, tasks }
 
-enum TaskType { urgent, approaching, admin, fun, uncategorized }
+enum TaskType { important, admin, fun, uncategorized }

@@ -44,8 +44,7 @@ class MainNavTabs extends StatelessWidget {
                 brainDumpState.pendingItems.isNotEmpty;
             final hasUrgentSprints = sprintsState.tasks.any(
               (t) =>
-                  (t.priority == TaskType.urgent ||
-                      t.priority == TaskType.approaching) &&
+                  t.priority == TaskType.important &&
                   (t.completionStatus != true),
             );
 
@@ -106,7 +105,7 @@ class MainNavTabs extends StatelessWidget {
                         children: [
                           _NavButton(
                             index: 0,
-                            icon: const Icon(Icons.psychology_rounded),
+                            icon: const Icon(Icons.lightbulb_rounded),
                             label: 'Brain Dump',
                             onTap: () => tabController.animateToIndex(0),
                             isPulsing: hasBrainDumpItems,

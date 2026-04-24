@@ -62,6 +62,16 @@ class CommonNoteItem extends Equatable implements Syncable {
   final bool? completionStatus;
   final int? timerSeconds;
   final DateTime? dueDate;
+
+  bool get isUrgent {
+    if (category != TabCategory.tasks || dueDate == null) return false;
+    final now = DateTime.now();
+    final difference = dueDate!.difference(now).inDays;
+    return difference <= 2;
+  }
+
+  TaskType? get effectivePriority => priority;
+
   final Map<String, dynamic>? metadata;
 
   @override

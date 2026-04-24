@@ -110,6 +110,28 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
     }
   }
 
+  Future<void> deleteItem(String id) async {
+    await (_db.update(_db.commonNoteItems)..where((t) => t.id.equals(id)))
+        .write(const CommonNoteItemsCompanion(deleted: Value(true)));
+  }
+
+  Future<void> promoteToTask(
+    CommonNoteItem item,
+    TaskType type, {
+    DateTime? dueDate,
+  }) async {
+    await (_db.update(
+      _db.commonNoteItems,
+    )..where((t) => t.id.equals(item.id))).write(
+      CommonNoteItemsCompanion(
+        category: const Value(TabCategory.tasks),
+        priority: Value(type),
+        dueDate: Value(dueDate),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
   void sendProcessed() {}
 
   @override

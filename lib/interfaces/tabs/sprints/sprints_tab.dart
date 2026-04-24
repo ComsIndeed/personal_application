@@ -20,7 +20,7 @@ class _SprintsTabState extends State<SprintsTab>
   @override
   bool get wantKeepAlive => true;
 
-  TaskType? _selectedFolderType;
+  dynamic _selectedFolderKey;
 
   @override
   void initState() {
@@ -32,16 +32,16 @@ class _SprintsTabState extends State<SprintsTab>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
 
-      final title = _selectedFolderType != null
-          ? _selectedFolderType!.name.toUpperCase()
+      final title = _selectedFolderKey != null
+          ? (_selectedFolderKey as String).toUpperCase()
           : 'Sprints';
 
       context.read<AppTabController<AppTabId>>().updateHeader(
         title: title,
-        onBack: _selectedFolderType != null
+        onBack: _selectedFolderKey != null
             ? () {
                 setState(() {
-                  _selectedFolderType = null;
+                  _selectedFolderKey = null;
                 });
                 _updateHeader();
               }
@@ -69,11 +69,30 @@ class _SprintsTabState extends State<SprintsTab>
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Map tasks to folders
-        final folders = <TaskType, List<CommonNoteItem>>{};
-        for (var type in TaskType.values) {
-          folders[type] = state.tasks.where((t) => t.priority == type).toList();
-        }
+        // Map tasks to folders (UI categories)
+        final folders = <String, List<CommonNoteItem>>{
+          'urgent': state.tasks
+              .where((t) => t.priority == TaskType.important && t.isUrgent)
+              .toList(),
+          'approaching': state.tasks
+              .where((t) => t.priority == TaskType.important && !t.isUrgent)
+              .toList(),
+          'admin': state.tasks
+              .where((t) => t.priority == TaskType.admin)
+              .toList(),
+          'fun': state.tasks.where((t) => t.priority == TaskType.fun).toList(),
+          'uncategorized': state.tasks
+              .where((t) => t.priority == TaskType.uncategorized)
+              .toList(),
+        };
+
+        const folderKeys = [
+          'urgent',
+          'approaching',
+          'admin',
+          'fun',
+          'uncategorized',
+        ];
 
         return Container(
           color: Colors.transparent,
@@ -81,13 +100,13 @@ class _SprintsTabState extends State<SprintsTab>
             duration: const Duration(milliseconds: 400),
             child: state.activeTaskId != null
                 ? _buildTimerView(context, state, isDark)
-                : _selectedFolderType == null
-                ? _buildFolderGrid(context, folders, isDark)
+                : _selectedFolderKey == null
+                ? _buildFolderGrid(context, folders, folderKeys, isDark)
                 : _buildFolderContents(
                     context,
                     state,
-                    _selectedFolderType!,
-                    folders[_selectedFolderType!] ?? [],
+                    _selectedFolderKey as String,
+                    folders[_selectedFolderKey] ?? [],
                     isDark,
                   ),
           ),
@@ -98,22 +117,23 @@ class _SprintsTabState extends State<SprintsTab>
 
   Widget _buildFolderGrid(
     BuildContext context,
-    Map<TaskType, List<CommonNoteItem>> folders,
+    Map<String, List<CommonNoteItem>> folders,
+    List<String> folderKeys,
     bool isDark,
   ) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      children: TaskType.values.map((type) {
-        final tasks = folders[type] ?? [];
+      children: folderKeys.map((key) {
+        final tasks = folders[key] ?? [];
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: _SprintFolderTile(
-            type: type,
+            folderKey: key,
             tasks: tasks,
             isDark: isDark,
             onTap: () {
               setState(() {
-                _selectedFolderType = type;
+                _selectedFolderKey = key;
               });
               _updateHeader();
             },
@@ -126,13 +146,13 @@ class _SprintsTabState extends State<SprintsTab>
   Widget _buildFolderContents(
     BuildContext context,
     SprintsState state,
-    TaskType type,
+    String folderKey,
     List<CommonNoteItem> tasks,
     bool isDark,
   ) {
     return Column(
       children: [
-        if (type != TaskType.fun && tasks.isNotEmpty)
+        if (folderKey != 'fun' && tasks.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
             child: Material(
@@ -151,11 +171,11 @@ class _SprintsTabState extends State<SprintsTab>
                 child: Ink(
                   height: 56,
                   decoration: BoxDecoration(
-                    color: _getCategoryColor(type),
+                    color: _getFolderColor(folderKey),
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: _getCategoryColor(type).withAlpha(80),
+                        color: _getFolderColor(folderKey).withAlpha(80),
                         blurRadius: 12,
                         offset: const Offset(0, 4),
                       ),
@@ -181,7 +201,7 @@ class _SprintsTabState extends State<SprintsTab>
             ),
           ),
         Expanded(
-          child: type == TaskType.admin || type == TaskType.uncategorized
+          child: folderKey == 'admin' || folderKey == 'uncategorized'
               ? _buildMaintenanceList(context, tasks, isDark)
               : _buildNormalList(context, tasks, isDark),
         ),
@@ -383,21 +403,21 @@ class _SprintsTabState extends State<SprintsTab>
 }
 
 class _SprintFolderTile extends StatelessWidget {
-  final TaskType type;
-  final List<CommonNoteItem> tasks;
-  final bool isDark;
-  final VoidCallback onTap;
-
   const _SprintFolderTile({
-    required this.type,
+    required this.folderKey,
     required this.tasks,
     required this.isDark,
     required this.onTap,
   });
 
+  final String folderKey;
+  final List<CommonNoteItem> tasks;
+  final bool isDark;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    final color = _getCategoryColor(type);
+    final color = _getFolderColor(folderKey);
     final incompleteCount = tasks
         .where((t) => !(t.completionStatus ?? false))
         .length;
@@ -431,14 +451,14 @@ class _SprintFolderTile extends StatelessWidget {
               Row(
                 children: [
                   Icon(
-                    _getCategoryIcon(type),
+                    _getFolderIcon(folderKey),
                     size: 24,
                     color: isEmpty ? color.withAlpha(100) : color,
                   ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      type.name.toUpperCase(),
+                      folderKey.toUpperCase(),
                       style: GoogleFonts.inter(
                         color: isEmpty ? color.withAlpha(100) : color,
                         fontSize: 20,
@@ -458,7 +478,7 @@ class _SprintFolderTile extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                _getMockRundown(type),
+                _getFolderRundown(folderKey),
                 style: TextStyle(
                   fontSize: 14,
                   color: isEmpty
@@ -560,21 +580,6 @@ class _SprintFolderTile extends StatelessWidget {
         }).toList(),
       ),
     );
-  }
-
-  String _getMockRundown(TaskType type) {
-    switch (type) {
-      case TaskType.urgent:
-        return "Critical blockers. Real-time issues. High priority tasks requiring immediate attention.";
-      case TaskType.approaching:
-        return "Upcoming deadlines. Next-action items. Items that need to stay on your radar.";
-      case TaskType.admin:
-        return "Maintenance and operations. System upkeep. Email clearing. Logistics.";
-      case TaskType.fun:
-        return "Exploration and play. Low pressure tasks. Creative experiments.";
-      case TaskType.uncategorized:
-        return "Tasks awaiting classification. Brain dump overflows.";
-    }
   }
 }
 
@@ -757,33 +762,48 @@ class _TimerControlButton extends StatelessWidget {
   }
 }
 
-Color _getCategoryColor(TaskType type) {
-  switch (type) {
-    case TaskType.urgent:
+Color _getFolderColor(String key) {
+  switch (key) {
+    case 'urgent':
       return Colors.redAccent;
-    case TaskType.approaching:
+    case 'approaching':
       return Colors.orangeAccent;
-    case TaskType.admin:
+    case 'admin':
       return Colors.blueAccent;
-    case TaskType.fun:
+    case 'fun':
       return Colors.purpleAccent;
-    case TaskType.uncategorized:
+    default:
       return Colors.grey;
   }
 }
 
-IconData _getCategoryIcon(TaskType type) {
-  switch (type) {
-    case TaskType.urgent:
+IconData _getFolderIcon(String key) {
+  switch (key) {
+    case 'urgent':
       return Icons.warning_amber_rounded;
-    case TaskType.approaching:
+    case 'approaching':
       return Icons.access_time_rounded;
-    case TaskType.admin:
+    case 'admin':
       return Icons.build_rounded;
-    case TaskType.fun:
+    case 'fun':
       return Icons.palette_rounded;
-    case TaskType.uncategorized:
+    default:
       return Icons.category_outlined;
+  }
+}
+
+String _getFolderRundown(String key) {
+  switch (key) {
+    case 'urgent':
+      return "Critical blockers. Real-time issues. High priority tasks requiring immediate attention.";
+    case 'approaching':
+      return "Upcoming deadlines. Next-action items. Items that need to stay on your radar.";
+    case 'admin':
+      return "Maintenance and operations. System upkeep. Email clearing. Logistics.";
+    case 'fun':
+      return "Exploration and play. Low pressure tasks. Creative experiments.";
+    default:
+      return "Tasks awaiting classification. Brain dump overflows.";
   }
 }
 

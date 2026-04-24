@@ -5,6 +5,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/widgets/asset_preview_widget.dart';
 import 'package:personal_application/core/services/item_preview_cubit.dart';
+import 'package:personal_application/core/models/message/enums.dart';
+import 'package:personal_application/core/constants/app_tab_id.dart';
+import 'package:personal_application/core/widgets/app_tab.dart';
+import 'package:personal_application/interfaces/tabs/brain_dump/brain_dump_cubit.dart';
 
 class BrainDumpItemWidget extends StatefulWidget {
   final CommonNoteItem item;
@@ -111,14 +115,79 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                     ),
                                     child: Row(
                                       children: [
-                                        _ActionButton(
-                                          icon: Icons.check_rounded,
-                                          onPressed: () {},
-                                          tooltip: 'Complete',
+                                        _ImportantButton(
+                                          onTap: () async {
+                                            final date = await showDatePicker(
+                                              context: context,
+                                              initialDate: DateTime.now().add(
+                                                const Duration(days: 1),
+                                              ),
+                                              firstDate: DateTime.now(),
+                                              lastDate: DateTime.now().add(
+                                                const Duration(days: 365),
+                                              ),
+                                              helpText: 'Select Deadline',
+                                            );
+
+                                            if (date == null) return;
+                                            if (!context.mounted) return;
+
+                                            context
+                                                .read<BrainDumpCubit>()
+                                                .promoteToTask(
+                                                  widget.item,
+                                                  TaskType.important,
+                                                  dueDate: date,
+                                                );
+                                            context
+                                                .read<
+                                                  AppTabController<AppTabId>
+                                                >()
+                                                .animateToId(AppTabId.sprints);
+                                          },
                                         ),
+                                        _CategorySquircle(
+                                          color: Colors.blueAccent,
+                                          tooltip: 'Admin',
+                                          onTap: () {
+                                            context
+                                                .read<BrainDumpCubit>()
+                                                .promoteToTask(
+                                                  widget.item,
+                                                  TaskType.admin,
+                                                );
+                                            context
+                                                .read<
+                                                  AppTabController<AppTabId>
+                                                >()
+                                                .animateToId(AppTabId.sprints);
+                                          },
+                                        ),
+                                        _CategorySquircle(
+                                          color: Colors.purpleAccent,
+                                          tooltip: 'Fun',
+                                          onTap: () {
+                                            context
+                                                .read<BrainDumpCubit>()
+                                                .promoteToTask(
+                                                  widget.item,
+                                                  TaskType.fun,
+                                                );
+                                            context
+                                                .read<
+                                                  AppTabController<AppTabId>
+                                                >()
+                                                .animateToId(AppTabId.sprints);
+                                          },
+                                        ),
+                                        const SizedBox(width: 8),
                                         _ActionButton(
-                                          icon: Icons.close_rounded,
-                                          onPressed: () {},
+                                          icon: Icons.delete_outline_rounded,
+                                          onPressed: () {
+                                            context
+                                                .read<BrainDumpCubit>()
+                                                .deleteItem(widget.item.id);
+                                          },
                                           tooltip: 'Delete',
                                         ),
                                         const Spacer(),
@@ -131,13 +200,6 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                           icon: Icons.edit_rounded,
                                           onPressed: () {},
                                           tooltip: 'Edit',
-                                        ),
-                                        const SizedBox(width: 8),
-                                        _ActionButton(
-                                          icon: Icons.auto_awesome_rounded,
-                                          onPressed: () {},
-                                          tooltip: 'AI Actions',
-                                          isSpecial: true,
                                         ),
                                       ],
                                     ),
@@ -301,13 +363,11 @@ class _ActionButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onPressed;
   final String tooltip;
-  final bool isSpecial;
 
   const _ActionButton({
     required this.icon,
     required this.onPressed,
     required this.tooltip,
-    this.isSpecial = false,
   });
 
   @override
@@ -328,11 +388,88 @@ class _ActionButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 18,
-                color: isSpecial
-                    ? (isDark ? Colors.amber.shade200 : Colors.amber.shade700)
-                    : (isDark ? Colors.white38 : Colors.black38),
+                color: isDark ? Colors.white38 : Colors.black38,
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ImportantButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _ImportantButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: Colors.redAccent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.star_rounded, size: 14, color: Colors.white),
+                const SizedBox(width: 4),
+                const Text(
+                  'IMPORTANT',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategorySquircle extends StatelessWidget {
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  const _CategorySquircle({
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'Promote to $tooltip',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(6),
+        child: Container(
+          width: 14,
+          height: 14,
+          margin: const EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(4),
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.3),
+                blurRadius: 4,
+                spreadRadius: 1,
+              ),
+            ],
           ),
         ),
       ),

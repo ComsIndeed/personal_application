@@ -65,8 +65,7 @@ const _$TabCategoryEnumMap = {
 };
 
 const _$TaskTypeEnumMap = {
-  TaskType.urgent: 'urgent',
-  TaskType.approaching: 'approaching',
+  TaskType.important: 'important',
   TaskType.admin: 'admin',
   TaskType.fun: 'fun',
   TaskType.uncategorized: 'uncategorized',
