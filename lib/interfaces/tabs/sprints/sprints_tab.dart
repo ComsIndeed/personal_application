@@ -170,7 +170,7 @@ class _SprintsTabState extends State<SprintsTab>
                         'Start Working',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 16,
+                          fontSize: 18,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -317,8 +317,9 @@ class _SprintsTabState extends State<SprintsTab>
                     'SESSION INTERRUPTED',
                     style: TextStyle(
                       color: Colors.orangeAccent,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
+                      letterSpacing: 1.5,
                     ),
                   ),
                 const SizedBox(height: 30),
@@ -356,9 +357,10 @@ class _SprintsTabState extends State<SprintsTab>
                 const Text(
                   'ACTIVE SPRINT TASK',
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: 15,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white38,
+                    letterSpacing: 1.2,
+                    color: Colors.white54,
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -403,6 +405,7 @@ class _SprintFolderTile extends StatelessWidget {
       0,
       (sum, t) => sum + (t.estTime ?? 0),
     );
+    final isEmpty = tasks.isEmpty;
 
     return Material(
       color: Colors.transparent,
@@ -410,11 +413,16 @@ class _SprintFolderTile extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
           decoration: BoxDecoration(
-            color: color.withAlpha(isDark ? 30 : 20),
+            color: isEmpty
+                ? color.withAlpha(isDark ? 12 : 8)
+                : color.withAlpha(isDark ? 30 : 20),
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color.withAlpha(20), width: 1),
+            border: Border.all(
+              color: isEmpty ? color.withAlpha(25) : color.withAlpha(50),
+              width: 1.2,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -422,76 +430,85 @@ class _SprintFolderTile extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Icon(_getCategoryIcon(type), size: 18, color: color),
-                  const SizedBox(width: 10),
+                  Icon(
+                    _getCategoryIcon(type),
+                    size: 24,
+                    color: isEmpty ? color.withAlpha(100) : color,
+                  ),
+                  const SizedBox(width: 12),
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          type.name.toUpperCase(),
-                          style: GoogleFonts.inter(
-                            color: color,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                          ),
-                        ),
-                        // Compact Timer Row below Title
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.timer_outlined,
-                              size: 12,
-                              color: color.withAlpha(150),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              _formatDurationShort(
-                                Duration(seconds: totalEstSeconds),
-                              ),
-                              style: TextStyle(
-                                color: color.withAlpha(150),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                    child: Text(
+                      type.name.toUpperCase(),
+                      style: GoogleFonts.inter(
+                        color: isEmpty ? color.withAlpha(100) : color,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  // Task Count
-                  Text(
-                    '$incompleteCount tasks left',
-                    style: TextStyle(
-                      color: isDark
-                          ? Colors.white.withAlpha(40)
-                          : Colors.black.withAlpha(40),
-                      fontSize: 11,
-                      fontWeight: FontWeight.w700,
+                  Opacity(
+                    opacity: isEmpty ? 0.3 : 1.0,
+                    child: _buildMediaStack(
+                      tasks.expand((t) => t.assetIds).toList(),
+                      color,
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  // Media Stack
-                  _buildMediaStack(
-                    tasks.expand((t) => t.assetIds).toList(),
-                    color,
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
-              // AI Description style rundown (mocking it for now or pulling from context)
+              const SizedBox(height: 8),
               Text(
                 _getMockRundown(type),
                 style: TextStyle(
-                  fontSize: 13,
-                  color: isDark ? Colors.white70 : Colors.black87,
-                  height: 1.3,
+                  fontSize: 14,
+                  color: isEmpty
+                      ? color.withAlpha(80)
+                      : (isDark ? Colors.white70 : Colors.black87),
+                  height: 1.4,
                 ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 12),
+              // Bottom row with strong timer and task info
+              Row(
+                children: [
+                  Icon(
+                    Icons.timer_outlined,
+                    size: 15,
+                    color: isEmpty ? color.withAlpha(60) : color,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    _formatDurationShort(Duration(seconds: totalEstSeconds)),
+                    style: TextStyle(
+                      color: isEmpty ? color.withAlpha(60) : color,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Container(
+                    height: 15,
+                    width: 1.5,
+                    margin: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: isEmpty
+                          ? color.withAlpha(40)
+                          : color.withAlpha(60),
+                      borderRadius: BorderRadius.circular(1),
+                    ),
+                  ),
+                  Text(
+                    '$incompleteCount TASKS',
+                    style: TextStyle(
+                      color: isEmpty
+                          ? color.withAlpha(60)
+                          : (isDark ? Colors.white : Colors.black87),
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -504,15 +521,15 @@ class _SprintFolderTile extends StatelessWidget {
     if (assetIds.isEmpty) return const SizedBox.shrink();
     final count = assetIds.length.clamp(0, 3);
     return SizedBox(
-      height: 24,
-      width: 24 + (count - 1) * 14.0,
+      height: 32,
+      width: 32 + (count - 1) * 18.0,
       child: Stack(
         children: assetIds.take(3).toList().asMap().entries.map((e) {
           return Positioned(
-            left: e.key * 14.0,
+            left: e.key * 18.0,
             child: Container(
-              width: 24,
-              height: 24,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(color: color.withAlpha(100), width: 1.5),
@@ -595,15 +612,15 @@ class _SprintTaskTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               color: _getGroupColorStatic(task.group),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(
               _getGroupIconStatic(task.group),
-              size: 16,
+              size: 20,
               color: Colors.white,
             ),
           ),
@@ -615,7 +632,7 @@ class _SprintTaskTile extends StatelessWidget {
                 Text(
                   task.title ?? task.textContent ?? "Untitled Task",
                   style: GoogleFonts.inter(
-                    fontSize: 16,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     decoration: isCompleted ? TextDecoration.lineThrough : null,
                     color: isCompleted
@@ -625,10 +642,10 @@ class _SprintTaskTile extends StatelessWidget {
                 ),
                 Text(
                   task.textContent ?? "No description",
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     color: isDark ? Colors.white60 : Colors.black54,
                   ),
                 ),
@@ -730,7 +747,7 @@ class _TimerControlButton extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: FontWeight.bold,
             color: color,
           ),
