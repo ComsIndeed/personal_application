@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../core/constants/app_tab_id.dart';
 import '../core/widgets/app_tab.dart';
 import '../core/widgets/interface_container.dart';
@@ -16,6 +17,7 @@ import 'tabs/brain_dump/brain_dump_tab.dart';
 import 'tabs/brain_dump/brain_dump_cubit.dart';
 import '../core/services/sync_service.dart';
 import '../core/database/app_database.dart';
+import 'package:personal_application/core/widgets/assistant_state.dart';
 import 'widgets/main_nav_tabs.dart';
 
 class TabIntent extends Intent {
@@ -33,6 +35,10 @@ class PrevTabIntent extends Intent {
 
 class HideIntent extends Intent {
   const HideIntent();
+}
+
+class ToggleAssistantIntent extends Intent {
+  const ToggleAssistantIntent();
 }
 
 class MainInterface extends StatefulWidget {
@@ -55,11 +61,6 @@ class MainInterface extends StatefulWidget {
       builder: (context, controller) => const SprintsTab(),
     ),
     AppTabPage(
-      id: AppTabId.assistant,
-      initialTitle: 'Assistant',
-      builder: (context, controller) => const ChatTab(),
-    ),
-    AppTabPage(
       id: AppTabId.settings,
       initialTitle: 'Settings',
       builder: (context, controller) => const SettingsTab(),
@@ -72,6 +73,18 @@ class MainInterface extends StatefulWidget {
 
 class _MainInterfaceState extends State<MainInterface> {
   StreamSubscription<AuthState>? _authSubscription;
+  final Set<AppTabId> _assistantOpenTabs = {};
+
+  void _toggleAssistant(AppTabController<AppTabId> tabController) {
+    setState(() {
+      final currentId = tabController.currentId;
+      if (_assistantOpenTabs.contains(currentId)) {
+        _assistantOpenTabs.remove(currentId);
+      } else {
+        _assistantOpenTabs.add(currentId);
+      }
+    });
+  }
 
   @override
   void initState() {
@@ -103,8 +116,15 @@ class _MainInterfaceState extends State<MainInterface> {
   Widget build(BuildContext context) {
     final tabController = context.watch<AppTabController<AppTabId>>();
 
-    return ChangeNotifierProvider(
-      create: (_) => ComposerHeightNotifier(),
+    return MultiProvider(
+      providers: [
+        Provider<AssistantState>.value(
+          value: AssistantState(
+            openIds: _assistantOpenTabs,
+            onToggle: () => _toggleAssistant(tabController),
+          ),
+        ),
+      ],
       child: InterfaceContainer(
         layoutBuilder: (context, controller, container) {
           return Row(
@@ -123,25 +143,35 @@ class _MainInterfaceState extends State<MainInterface> {
           return Shortcuts(
             shortcuts: controller.isVisible
                 ? <ShortcutActivator, Intent>{
-                    const SingleActivator(LogicalKeyboardKey.digit1, alt: true):
-                        const TabIntent(0),
-                    const SingleActivator(LogicalKeyboardKey.digit2, alt: true):
-                        const TabIntent(1),
-                    const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
-                        const TabIntent(2),
                     const SingleActivator(
-                      LogicalKeyboardKey.backquote,
-                      alt: true,
+                      LogicalKeyboardKey.digit1,
+                      control: true,
                     ): const TabIntent(
-                      3,
+                      0,
                     ),
                     const SingleActivator(
+                      LogicalKeyboardKey.digit2,
+                      control: true,
+                    ): const TabIntent(
+                      1,
+                    ),
+                    const SingleActivator(
+                      LogicalKeyboardKey.digit3,
+                      control: true,
+                    ): const TabIntent(
+                      2,
+                    ),
+                    const SingleActivator(
+                      LogicalKeyboardKey.backquote,
+                      control: true,
+                    ): const ToggleAssistantIntent(),
+                    const SingleActivator(
                       LogicalKeyboardKey.arrowUp,
-                      alt: true,
+                      control: true,
                     ): const PrevTabIntent(),
                     const SingleActivator(
                       LogicalKeyboardKey.arrowDown,
-                      alt: true,
+                      control: true,
                     ): const NextTabIntent(),
                   }
                 : <ShortcutActivator, Intent>{},
@@ -173,70 +203,168 @@ class _MainInterfaceState extends State<MainInterface> {
                     return null;
                   },
                 ),
+                ToggleAssistantIntent: CallbackAction<ToggleAssistantIntent>(
+                  onInvoke: (intent) {
+                    _toggleAssistant(tabController);
+                    return null;
+                  },
+                ),
               },
               child: Focus(
                 autofocus: true,
                 includeSemantics: false,
                 child: AppTab<AppTabId>(
                   controller: tabController,
-                  pages: tabController.pages,
+                  pages: tabController.pages.map((page) {
+                    return AppTabPage<AppTabId>(
+                      id: page.id,
+                      initialTitle: page.initialTitle,
+                      builder: (context, controller) {
+                        return AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder:
+                              (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SlideTransition(
+                                    position: Tween<Offset>(
+                                      begin: const Offset(0, 0.05),
+                                      end: Offset.zero,
+                                    ).animate(animation),
+                                    child: child,
+                                  ),
+                                );
+                              },
+                          child: _assistantOpenTabs.contains(page.id)
+                              ? ChatTab(
+                                  key: ValueKey('chat_${page.id}'),
+                                  contextTabId: page.id,
+                                  onClose: () => _toggleAssistant(controller),
+                                )
+                              : page.builder(context, controller),
+                        );
+                      },
+                    );
+                  }).toList(),
                   trailingHeaderWidget: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Consumer<ThemeController>(
-                        builder: (context, theme, _) {
-                          return MenuAnchor(
-                            builder: (context, menuController, child) {
-                              return IconButton(
-                                icon: const Icon(Icons.menu_rounded, size: 20),
-                                onPressed: () {
-                                  if (menuController.isOpen) {
-                                    menuController.close();
-                                  } else {
-                                    menuController.open();
-                                  }
+                      Consumer2<ThemeController, AssistantState>(
+                        builder: (context, theme, assistant, _) {
+                          final isDark = theme.isDarkMode;
+                          final isAssistantOpen = assistant.openIds.contains(
+                            tabController.currentId,
+                          );
+
+                          return Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AnimatedSwitcher(
+                                duration: const Duration(milliseconds: 300),
+                                transitionBuilder: (child, animation) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: ScaleTransition(
+                                      scale: animation,
+                                      child: child,
+                                    ),
+                                  );
                                 },
-                                tooltip: 'Options',
-                                style: IconButton.styleFrom(
-                                  backgroundColor: theme.isDarkMode
-                                      ? Colors.white.withValues(alpha: 0.05)
-                                      : Colors.black.withValues(alpha: 0.05),
-                                ),
-                              );
-                            },
-                            menuChildren: [
-                              MenuItemButton(
-                                leadingIcon: Icon(
-                                  theme.isDarkMode
-                                      ? Icons.light_mode_rounded
-                                      : Icons.dark_mode_rounded,
-                                  size: 18,
-                                ),
-                                onPressed: theme.toggleTheme,
-                                child: Text(
-                                  theme.isDarkMode ? 'Light Mode' : 'Dark Mode',
-                                ),
+                                child: isAssistantOpen
+                                    ? const SizedBox.shrink()
+                                    : Tooltip(
+                                        message: 'AI Assistant (Ctrl + `)',
+                                        child: IconButton(
+                                          icon: FaIcon(
+                                            FontAwesomeIcons.diamond,
+                                            size: 16,
+                                            color: isAssistantOpen
+                                                ? Colors.white
+                                                : (isDark
+                                                      ? Colors.white70
+                                                      : Colors.black87),
+                                          ),
+                                          onPressed: assistant.onToggle,
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: isAssistantOpen
+                                                ? Theme.of(
+                                                    context,
+                                                  ).colorScheme.primary
+                                                : (isDark
+                                                      ? Colors.white.withValues(
+                                                          alpha: 0.05,
+                                                        )
+                                                      : Colors.black.withValues(
+                                                          alpha: 0.05,
+                                                        )),
+                                          ),
+                                        ),
+                                      ),
                               ),
-                              MenuItemButton(
-                                leadingIcon: const Icon(
-                                  Icons.refresh_rounded,
-                                  size: 18,
-                                ),
-                                onPressed: () {
-                                  context.read<BrainDumpCubit>().refresh();
-                                  context.read<NotesCubit>().refresh();
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 300),
+                                width: isAssistantOpen ? 0 : 8,
+                                child: const SizedBox.shrink(),
+                              ),
+                              MenuAnchor(
+                                builder: (context, menuController, child) {
+                                  return IconButton(
+                                    icon: const Icon(
+                                      Icons.menu_rounded,
+                                      size: 20,
+                                    ),
+                                    onPressed: () {
+                                      if (menuController.isOpen) {
+                                        menuController.close();
+                                      } else {
+                                        menuController.open();
+                                      }
+                                    },
+                                    tooltip: 'Options',
+                                    style: IconButton.styleFrom(
+                                      backgroundColor: isDark
+                                          ? Colors.white.withValues(alpha: 0.05)
+                                          : Colors.black.withValues(
+                                              alpha: 0.05,
+                                            ),
+                                    ),
+                                  );
                                 },
-                                child: const Text('Reload All Data'),
-                              ),
-                              MenuItemButton(
-                                leadingIcon: const Icon(
-                                  Icons.settings_rounded,
-                                  size: 18,
-                                ),
-                                onPressed: () => tabController.animateToId(
-                                  AppTabId.settings,
-                                ),
-                                child: const Text('Settings'),
+                                menuChildren: [
+                                  MenuItemButton(
+                                    leadingIcon: Icon(
+                                      isDark
+                                          ? Icons.light_mode_rounded
+                                          : Icons.dark_mode_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: theme.toggleTheme,
+                                    child: Text(
+                                      isDark ? 'Light Mode' : 'Dark Mode',
+                                    ),
+                                  ),
+                                  MenuItemButton(
+                                    leadingIcon: const Icon(
+                                      Icons.refresh_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () {
+                                      context.read<BrainDumpCubit>().refresh();
+                                      context.read<NotesCubit>().refresh();
+                                    },
+                                    child: const Text('Reload All Data'),
+                                  ),
+                                  MenuItemButton(
+                                    leadingIcon: const Icon(
+                                      Icons.settings_rounded,
+                                      size: 18,
+                                    ),
+                                    onPressed: () => tabController.animateToId(
+                                      AppTabId.settings,
+                                    ),
+                                    child: const Text('Settings'),
+                                  ),
+                                ],
                               ),
                             ],
                           );
@@ -267,15 +395,5 @@ class _MainInterfaceState extends State<MainInterface> {
         },
       ),
     );
-  }
-}
-
-class ComposerHeightNotifier extends ChangeNotifier {
-  double _height = 0;
-  double get height => _height;
-  set height(double value) {
-    if (_height == value) return;
-    _height = value;
-    notifyListeners();
   }
 }

@@ -76,7 +76,7 @@ class _SprintsTabState extends State<SprintsTab>
         }
 
         return Container(
-          color: theme.scaffoldBackgroundColor,
+          color: Colors.transparent,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
             child: state.activeTaskId != null

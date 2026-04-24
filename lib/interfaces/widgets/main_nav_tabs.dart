@@ -1,10 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../../core/constants/app_tab_id.dart';
 import '../../core/widgets/interface_container.dart';
 import '../../core/widgets/app_tab.dart';
+import '../../core/widgets/assistant_state.dart';
 
 class MainNavTabs extends StatelessWidget {
   const MainNavTabs({super.key});
@@ -28,7 +28,10 @@ class MainNavTabs extends StatelessWidget {
         child: ListenableBuilder(
           listenable: tabController,
           builder: (context, _) {
+            final assistantState = context.watch<AssistantState>();
             final currentId = tabController.currentId;
+            final isAssistantOpen = assistantState.openIds.contains(currentId);
+
             int? buttonIndex;
             switch (currentId) {
               case AppTabId.brainDump:
@@ -40,79 +43,74 @@ class MainNavTabs extends StatelessWidget {
               case AppTabId.sprints:
                 buttonIndex = 2;
                 break;
-              case AppTabId.assistant:
-                buttonIndex = 3;
-                break;
               default:
                 buttonIndex = null;
             }
 
-            return Stack(
+            return Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // Sliding Indicator Pill
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOutCubic,
-                  top: buttonIndex == null
-                      ? 0
-                      : padding + (buttonIndex * (buttonSize + spacing)),
-                  left: padding,
-                  right: padding,
-                  height: buttonIndex == null ? 0 : buttonSize,
-                  child: AnimatedOpacity(
-                    duration: const Duration(milliseconds: 200),
-                    opacity: buttonIndex == null ? 0 : 1,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.15),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
+                Stack(
+                  children: [
+                    // Sliding Indicator Pill
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOutCubic,
+                      top: buttonIndex == null
+                          ? 0
+                          : padding + (buttonIndex * (buttonSize + spacing)),
+                      left: padding,
+                      right: padding,
+                      height: buttonIndex == null ? 0 : buttonSize,
+                      child: AnimatedOpacity(
+                        duration: const Duration(milliseconds: 200),
+                        opacity: buttonIndex == null || isAssistantOpen ? 0 : 1,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: theme.cardColor,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.15),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Button Icons
+                    Padding(
+                      padding: const EdgeInsets.all(padding),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _NavButton(
+                            index: 0,
+                            icon: const Icon(Icons.psychology_rounded),
+                            label: 'Brain Dump',
+                            onTap: () => tabController.animateToIndex(0),
+                          ),
+                          const SizedBox(height: spacing),
+                          _NavButton(
+                            index: 1,
+                            icon: const Icon(Icons.notes_rounded),
+                            label: 'Notes',
+                            onTap: () => tabController.animateToIndex(1),
+                          ),
+                          const SizedBox(height: spacing),
+                          _NavButton(
+                            index: 2,
+                            icon: const Icon(Icons.bolt_rounded),
+                            label: 'Sprints',
+                            onTap: () => tabController.animateToIndex(2),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ),
-
-                // Button Icons
-                Padding(
-                  padding: const EdgeInsets.all(padding),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _NavButton(
-                        index: 0,
-                        icon: const Icon(Icons.psychology_rounded),
-                        label: 'Brain Dump',
-                        onTap: () => tabController.animateToIndex(0),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 1,
-                        icon: const Icon(Icons.notes_rounded),
-                        label: 'Notes',
-                        onTap: () => tabController.animateToIndex(1),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 2,
-                        icon: const Icon(Icons.bolt_rounded),
-                        label: 'Sprints',
-                        onTap: () => tabController.animateToIndex(2),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 3,
-                        icon: const FaIcon(FontAwesomeIcons.diamond),
-                        label: 'Assistant',
-                        onTap: () => tabController.animateToIndex(3),
-                      ),
-                    ],
-                  ),
+                  ],
                 ),
               ],
             );

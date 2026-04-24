@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:provider/provider.dart';
+import 'package:personal_application/core/widgets/composer_height_notifier.dart';
 
 class ChatComposer extends StatefulWidget {
   final Function(String text) onSend;
@@ -79,7 +79,9 @@ class _ChatComposerState extends State<ChatComposer> {
     if (renderBox != null) {
       final height = renderBox.size.height;
       final bottomSafeArea = MediaQuery.of(context).padding.bottom;
-      context.read<ComposerHeightNotifier>().setHeight(height - bottomSafeArea);
+      context.read<AppComposerHeightNotifier>().setHeight(
+        height - bottomSafeArea,
+      );
     }
   }
 

@@ -25,6 +25,7 @@ import 'core/services/sprints_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/widgets/app_tab.dart';
 import 'core/widgets/item_preview_widget.dart';
+import 'core/widgets/composer_height_notifier.dart';
 import 'interfaces/main_interface.dart';
 import 'interfaces/widgets/database_browser_widget.dart';
 import 'theme/app_theme.dart';
@@ -81,6 +82,7 @@ void main() async {
         BlocProvider(create: (context) => SprintsCubit()),
         BlocProvider(create: (context) => ItemPreviewCubit()),
         BlocProvider(create: (context) => DatabaseBrowserCubit()),
+        ChangeNotifierProvider(create: (_) => AppComposerHeightNotifier()),
         ChangeNotifierProvider(
           create: (_) => AppTabController<AppTabId>(pages: MainInterface.pages),
         ),

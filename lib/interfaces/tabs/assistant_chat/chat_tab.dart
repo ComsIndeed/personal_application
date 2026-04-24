@@ -17,7 +17,10 @@ import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/interfaces/tabs/assistant_chat/widgets/model_recommendation_grid.dart';
 
 class ChatTab extends StatefulWidget {
-  const ChatTab({super.key});
+  final AppTabId? contextTabId;
+  final VoidCallback? onClose;
+
+  const ChatTab({super.key, this.contextTabId, this.onClose});
 
   @override
   State<ChatTab> createState() => _ChatTabState();
@@ -62,7 +65,15 @@ class _ChatTabState extends State<ChatTab> {
     );
 
     controller.updateHeader(
-      title: currentConvo.title ?? 'New Conversation',
+      title: widget.contextTabId != null
+          ? 'AI Assistant (${widget.contextTabId!.name})'
+          : currentConvo.title ?? 'New Conversation',
+      leading: widget.onClose != null
+          ? IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, size: 20),
+              onPressed: widget.onClose,
+            )
+          : null,
       actions: [
         _HeaderActionButton(
           icon: Icons.psychology_rounded,
