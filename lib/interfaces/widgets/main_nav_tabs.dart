@@ -28,29 +28,52 @@ class MainNavTabs extends StatelessWidget {
         child: ListenableBuilder(
           listenable: tabController,
           builder: (context, _) {
+            final currentId = tabController.currentId;
+            int? buttonIndex;
+            switch (currentId) {
+              case AppTabId.brainDump:
+                buttonIndex = 0;
+                break;
+              case AppTabId.notes:
+                buttonIndex = 1;
+                break;
+              case AppTabId.sprints:
+                buttonIndex = 2;
+                break;
+              case AppTabId.assistant:
+                buttonIndex = 3;
+                break;
+              default:
+                buttonIndex = null;
+            }
+
             return Stack(
               children: [
                 // Sliding Indicator Pill
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
                   curve: Curves.easeOutCubic,
-                  top:
-                      padding +
-                      (tabController.currentIndex * (buttonSize + spacing)),
+                  top: buttonIndex == null
+                      ? 0
+                      : padding + (buttonIndex * (buttonSize + spacing)),
                   left: padding,
                   right: padding,
-                  height: buttonSize,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.15),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
+                  height: buttonIndex == null ? 0 : buttonSize,
+                  child: AnimatedOpacity(
+                    duration: const Duration(milliseconds: 200),
+                    opacity: buttonIndex == null ? 0 : 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -84,30 +107,9 @@ class MainNavTabs extends StatelessWidget {
                       const SizedBox(height: spacing),
                       _NavButton(
                         index: 3,
-                        icon: const Icon(Icons.dashboard_rounded),
-                        label: 'Dashboard',
-                        onTap: () => tabController.animateToIndex(3),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 4,
-                        icon: const Icon(Icons.build_circle_rounded),
-                        label: 'Utilities',
-                        onTap: () => tabController.animateToIndex(4),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 5,
-                        icon: const Icon(Icons.settings_rounded),
-                        label: 'Settings',
-                        onTap: () => tabController.animateToIndex(5),
-                      ),
-                      const SizedBox(height: spacing),
-                      _NavButton(
-                        index: 6,
                         icon: const FaIcon(FontAwesomeIcons.diamond),
                         label: 'Assistant',
-                        onTap: () => tabController.animateToIndex(6),
+                        onTap: () => tabController.animateToIndex(3),
                       ),
                     ],
                   ),

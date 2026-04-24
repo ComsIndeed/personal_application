@@ -3,12 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'tabs/utilities_tab.dart';
 import '../core/constants/app_tab_id.dart';
 import '../core/widgets/app_tab.dart';
 import '../core/widgets/interface_container.dart';
 import '../theme/app_theme.dart';
-import 'tabs/dashboard_tab.dart';
 import 'tabs/settings_tab.dart';
 import 'tabs/assistant_chat/chat_tab.dart';
 import 'tabs/sprints/sprints_tab.dart';
@@ -57,24 +55,14 @@ class MainInterface extends StatefulWidget {
       builder: (context, controller) => const SprintsTab(),
     ),
     AppTabPage(
-      id: AppTabId.dashboard,
-      initialTitle: 'Dashboard',
-      builder: (context, controller) => const DashboardTab(),
-    ),
-    AppTabPage(
-      id: AppTabId.utilities,
-      initialTitle: 'Utilities',
-      builder: (context, controller) => const UtilitiesTab(),
+      id: AppTabId.assistant,
+      initialTitle: 'Assistant',
+      builder: (context, controller) => const ChatTab(),
     ),
     AppTabPage(
       id: AppTabId.settings,
       initialTitle: 'Settings',
       builder: (context, controller) => const SettingsTab(),
-    ),
-    AppTabPage(
-      id: AppTabId.assistant,
-      initialTitle: 'Assistant',
-      builder: (context, controller) => const ChatTab(),
     ),
   ];
 
@@ -141,17 +129,11 @@ class _MainInterfaceState extends State<MainInterface> {
                         const TabIntent(1),
                     const SingleActivator(LogicalKeyboardKey.digit3, alt: true):
                         const TabIntent(2),
-                    const SingleActivator(LogicalKeyboardKey.digit4, alt: true):
-                        const TabIntent(3),
-                    const SingleActivator(LogicalKeyboardKey.digit5, alt: true):
-                        const TabIntent(4),
-                    const SingleActivator(LogicalKeyboardKey.digit6, alt: true):
-                        const TabIntent(5),
                     const SingleActivator(
                       LogicalKeyboardKey.backquote,
                       alt: true,
                     ): const TabIntent(
-                      6,
+                      3,
                     ),
                     const SingleActivator(
                       LogicalKeyboardKey.arrowUp,
