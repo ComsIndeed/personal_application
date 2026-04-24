@@ -30,3 +30,7 @@ Checklist to keep things sane
 
 ! INFO HERE MAY CHANGE, POINT IS, WE HAVE ONE PLACE TO STORE THEM TO KEEP THEM
 IN-CHECK
+
+## DUMP
+
+- Sprint button indicate timer maybe
