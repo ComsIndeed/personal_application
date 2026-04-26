@@ -115,7 +115,10 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                     ),
                                     child: Row(
                                       children: [
-                                        _ImportantButton(
+                                        _CategorySquircle(
+                                          color: Colors.redAccent,
+                                          tooltip: 'Important',
+                                          icon: Icons.priority_high_rounded,
                                           onTap: () async {
                                             final date = await showDatePicker(
                                               context: context,
@@ -398,54 +401,16 @@ class _ActionButton extends StatelessWidget {
   }
 }
 
-class _ImportantButton extends StatelessWidget {
-  final VoidCallback onTap;
-
-  const _ImportantButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: Colors.redAccent,
-        borderRadius: BorderRadius.circular(8),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.star_rounded, size: 14, color: Colors.white),
-                const SizedBox(width: 4),
-                const Text(
-                  'IMPORTANT',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 class _CategorySquircle extends StatelessWidget {
   final Color color;
   final String tooltip;
+  final IconData? icon;
   final VoidCallback onTap;
 
   const _CategorySquircle({
     required this.color,
     required this.tooltip,
+    this.icon,
     required this.onTap,
   });
 
@@ -471,6 +436,9 @@ class _CategorySquircle extends StatelessWidget {
               ),
             ],
           ),
+          child: icon != null
+              ? Center(child: Icon(icon, size: 10, color: Colors.white))
+              : null,
         ),
       ),
     );

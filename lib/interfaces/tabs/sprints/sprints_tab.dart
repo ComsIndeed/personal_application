@@ -6,6 +6,7 @@ import '../../../core/models/common_note_item.dart';
 import '../../../core/models/message/enums.dart';
 import '../../../core/constants/app_tab_id.dart';
 import '../../../core/widgets/app_tab.dart';
+import 'package:personal_application/core/widgets/sprint_task_item_widget.dart';
 import 'package:personal_application/interfaces/tabs/sprints/sprints_cubit.dart';
 
 class SprintsTab extends StatefulWidget {
@@ -219,10 +220,11 @@ class _SprintsTabState extends State<SprintsTab>
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
-        return _SprintTaskTile(
+        return SprintTaskItemWidget(
           task: task,
           isDark: isDark,
           onStart: () => context.read<SprintsCubit>().startTask(task.id),
+          onComplete: () => context.read<SprintsCubit>().completeTask(task.id),
         );
       },
     );
@@ -268,10 +270,12 @@ class _SprintsTabState extends State<SprintsTab>
               ),
             ),
             ...entry.value.map(
-              (task) => _SprintTaskTile(
+              (task) => SprintTaskItemWidget(
                 task: task,
                 isDark: isDark,
                 onStart: () => context.read<SprintsCubit>().startTask(task.id),
+                onComplete: () =>
+                    context.read<SprintsCubit>().completeTask(task.id),
               ),
             ),
             const SizedBox(height: 10),
@@ -384,7 +388,7 @@ class _SprintsTabState extends State<SprintsTab>
                   ),
                 ),
                 const SizedBox(height: 16),
-                _SprintTaskTile(
+                SprintTaskItemWidget(
                   task: activeTask,
                   isDark: isDark,
                   onStart: () {}, // Already active
@@ -580,146 +584,6 @@ class _SprintFolderTile extends StatelessWidget {
         }).toList(),
       ),
     );
-  }
-}
-
-class _SprintTaskTile extends StatelessWidget {
-  final CommonNoteItem task;
-  final bool isDark;
-  final VoidCallback onStart;
-  final bool active;
-  final VoidCallback? onComplete;
-
-  const _SprintTaskTile({
-    required this.task,
-    required this.isDark,
-    required this.onStart,
-    this.active = false,
-    this.onComplete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isCompleted = task.completionStatus ?? false;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: active
-            ? (isDark ? Colors.blue.withAlpha(30) : Colors.blue.withAlpha(10))
-            : (isDark
-                  ? Colors.white.withAlpha(10)
-                  : Colors.black.withAlpha(10)),
-        borderRadius: BorderRadius.circular(16),
-        border: active ? Border.all(color: Colors.blue.withAlpha(50)) : null,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _getGroupColorStatic(task.group),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              _getGroupIconStatic(task.group),
-              size: 20,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  task.title ?? task.textContent ?? "Untitled Task",
-                  style: GoogleFonts.inter(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    decoration: isCompleted ? TextDecoration.lineThrough : null,
-                    color: isCompleted
-                        ? (isDark ? Colors.white38 : Colors.black38)
-                        : (isDark ? Colors.white : Colors.black),
-                  ),
-                ),
-                Text(
-                  task.textContent ?? "No description",
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (!isCompleted && !active)
-            IconButton(
-              icon: const Icon(
-                Icons.play_circle_outline_rounded,
-                size: 28,
-                color: Colors.blueAccent,
-              ),
-              onPressed: onStart,
-            ),
-          if (active)
-            ElevatedButton(
-              onPressed: onComplete,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Complete'),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Color _getGroupColorStatic(String? group) {
-    if (group == null) return Colors.grey;
-    switch (group.toLowerCase()) {
-      case 'messenger':
-        return const Color(0xFF00B2FF);
-      case 'email':
-      case 'gmail':
-        return const Color(0xFFEA4335);
-      case 'facebook':
-        return const Color(0xFF1877F2);
-      case 'school':
-        return const Color(0xFF4CAF50);
-      case 'google docs':
-        return const Color(0xFF4285F4);
-      case 'canva':
-        return const Color(0xFF8B3DFF);
-      default:
-        return Colors.grey.shade600;
-    }
-  }
-
-  IconData _getGroupIconStatic(String? group) {
-    if (group == null) return Icons.blur_on_rounded;
-    switch (group.toLowerCase()) {
-      case 'messenger':
-        return Icons.messenger_rounded;
-      case 'email':
-      case 'gmail':
-        return Icons.email_rounded;
-      case 'facebook':
-        return Icons.facebook_rounded;
-      case 'school':
-        return Icons.book_rounded;
-      case 'google docs':
-        return Icons.description_rounded;
-      case 'canva':
-        return Icons.palette_rounded;
-      default:
-        return Icons.category_rounded;
-    }
   }
 }
 
