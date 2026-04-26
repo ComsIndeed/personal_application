@@ -36,3 +36,17 @@ IN-CHECK
 - Sprint button indicate timer maybe
 - The sprint timer logs, show like some kind of line thing summariizng time
   spent or something? Keeps it infomrative
+
+## Current list of tasks (so that we see what we really needs doing)
+
+- AI integration
+  - Agentic loop via packages
+  - Command definitions
+
+- Brain dump
+  - AI interpretation
+  -
+
+- Sprints
+  - Logging
+  - Archiving of finished tasks

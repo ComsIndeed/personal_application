@@ -27,12 +27,14 @@ class BrainDumpItemWidget extends StatefulWidget {
 class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
   bool _isHovered = false;
   bool _isDatePromptVisible = false;
+  TaskType? _pendingTaskType;
 
   @override
   void didUpdateWidget(BrainDumpItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.id != widget.item.id) {
       _isDatePromptVisible = false;
+      _pendingTaskType = null;
     }
   }
 
@@ -135,52 +137,33 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                                 color: Colors.redAccent,
                                                 tooltip: 'Important',
                                                 onTap: () {
-                                                  setState(
-                                                    () => _isDatePromptVisible =
-                                                        true,
-                                                  );
+                                                  setState(() {
+                                                    _pendingTaskType =
+                                                        TaskType.important;
+                                                    _isDatePromptVisible = true;
+                                                  });
                                                 },
                                               ),
                                               _CategorySquircle(
                                                 color: Colors.blueAccent,
                                                 tooltip: 'Admin',
                                                 onTap: () {
-                                                  context
-                                                      .read<BrainDumpCubit>()
-                                                      .promoteToTask(
-                                                        widget.item,
-                                                        TaskType.admin,
-                                                      );
-                                                  context
-                                                      .read<
-                                                        AppTabController<
-                                                          AppTabId
-                                                        >
-                                                      >()
-                                                      .animateToId(
-                                                        AppTabId.sprints,
-                                                      );
+                                                  setState(() {
+                                                    _pendingTaskType =
+                                                        TaskType.admin;
+                                                    _isDatePromptVisible = true;
+                                                  });
                                                 },
                                               ),
                                               _CategorySquircle(
                                                 color: Colors.purpleAccent,
                                                 tooltip: 'Fun',
                                                 onTap: () {
-                                                  context
-                                                      .read<BrainDumpCubit>()
-                                                      .promoteToTask(
-                                                        widget.item,
-                                                        TaskType.fun,
-                                                      );
-                                                  context
-                                                      .read<
-                                                        AppTabController<
-                                                          AppTabId
-                                                        >
-                                                      >()
-                                                      .animateToId(
-                                                        AppTabId.sprints,
-                                                      );
+                                                  setState(() {
+                                                    _pendingTaskType =
+                                                        TaskType.fun;
+                                                    _isDatePromptVisible = true;
+                                                  });
                                                 },
                                               ),
                                               const SizedBox(width: 8),
@@ -212,14 +195,27 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                         ),
                                       if (_isDatePromptVisible)
                                         _DatePromptWidget(
-                                          onDateSelected: (date) {
+                                          onConfirmed: (date, time) {
+                                            DateTime? finalDueDate;
+                                            if (date != null) {
+                                              finalDueDate = DateTime(
+                                                date.year,
+                                                date.month,
+                                                date.day,
+                                                time?.hour ?? 0,
+                                                time?.minute ?? 0,
+                                              );
+                                            }
+
                                             context
                                                 .read<BrainDumpCubit>()
                                                 .promoteToTask(
                                                   widget.item,
-                                                  TaskType.important,
-                                                  dueDate: date,
+                                                  _pendingTaskType ??
+                                                      TaskType.important,
+                                                  dueDate: finalDueDate,
                                                 );
+
                                             context
                                                 .read<
                                                   AppTabController<AppTabId>
@@ -227,10 +223,10 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                                 .animateToId(AppTabId.sprints);
                                           },
                                           onCancel: () {
-                                            setState(
-                                              () =>
-                                                  _isDatePromptVisible = false,
-                                            );
+                                            setState(() {
+                                              _isDatePromptVisible = false;
+                                              _pendingTaskType = null;
+                                            });
                                           },
                                         ),
                                     ],
@@ -391,20 +387,46 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
 }
 
 class _DatePromptWidget extends StatefulWidget {
-  final Function(DateTime) onDateSelected;
+  final Function(DateTime?, TimeOfDay?) onConfirmed;
   final VoidCallback onCancel;
 
-  const _DatePromptWidget({
-    required this.onDateSelected,
-    required this.onCancel,
-  });
+  const _DatePromptWidget({required this.onConfirmed, required this.onCancel});
 
   @override
   State<_DatePromptWidget> createState() => _DatePromptWidgetState();
 }
 
 class _DatePromptWidgetState extends State<_DatePromptWidget> {
-  int _selectedTabIndex = 0; // 0 for 3-weeks, 1 for full calendar
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
+
+  Future<void> _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: _selectedTime ?? TimeOfDay.now(),
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: isDark
+                ? const ColorScheme.dark(
+                    primary: Colors.redAccent,
+                    onPrimary: Colors.white,
+                    surface: Color(0xFF1E293B),
+                  )
+                : const ColorScheme.light(
+                    primary: Colors.redAccent,
+                    onPrimary: Colors.white,
+                  ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) {
+      setState(() => _selectedTime = picked);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -429,16 +451,15 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
         children: [
           Row(
             children: [
-              _TabButton(
-                label: 'Quick Pick',
-                isSelected: _selectedTabIndex == 0,
-                onTap: () => setState(() => _selectedTabIndex = 0),
-              ),
               const SizedBox(width: 8),
-              _TabButton(
-                label: 'Calendar',
-                isSelected: _selectedTabIndex == 1,
-                onTap: () => setState(() => _selectedTabIndex = 1),
+              Text(
+                'Set Final Deadline',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 0.5,
+                  color: isDark ? Colors.white70 : Colors.black87,
+                ),
               ),
               const Spacer(),
               IconButton(
@@ -451,14 +472,47 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            child: _selectedTabIndex == 0
-                ? _WeeklyDateSlider(onDateSelected: widget.onDateSelected)
-                : _FullCalendarPlaceholder(
-                    onDateSelected: widget.onDateSelected,
+          const SizedBox(height: 12),
+          _WeeklyDateSlider(
+            selectedDate: _selectedDate,
+            onDateSelected: (date) => setState(() => _selectedDate = date),
+            selectedTime: _selectedTime,
+            onTimeTap: () => _selectTime(context),
+            actions: [
+              TextButton(
+                onPressed: () => widget.onConfirmed(null, null),
+                child: Text(
+                  'Skip',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.white38 : Colors.black38,
                   ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _selectedDate == null
+                    ? null
+                    : () => widget.onConfirmed(_selectedDate, _selectedTime),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: isDark
+                      ? Colors.white.withAlpha(20)
+                      : Colors.black.withAlpha(20),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  minimumSize: const Size(60, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                ),
+                child: const Text(
+                  'Set',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -466,180 +520,462 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
   }
 }
 
-class _TabButton extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TabButton({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark
-                    ? Colors.white.withAlpha(30)
-                    : Colors.black.withAlpha(20))
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-            color: isSelected
-                ? (isDark ? Colors.white : Colors.black87)
-                : (isDark ? Colors.white38 : Colors.black38),
-          ),
-        ),
-      ),
-    );
+Color _getMonthColor(int month) {
+  switch (month) {
+    case 1:
+      return Colors.blueAccent;
+    case 2:
+      return Colors.pinkAccent;
+    case 3:
+      return Colors.lightGreenAccent;
+    case 4:
+      return Colors.cyanAccent;
+    case 5:
+      return Colors.tealAccent;
+    case 6:
+      return Colors.amberAccent;
+    case 7:
+      return Colors.orangeAccent;
+    case 8:
+      return Colors.redAccent;
+    case 9:
+      return Colors.deepOrangeAccent;
+    case 10:
+      return Colors.deepPurpleAccent;
+    case 11:
+      return Colors.indigoAccent;
+    case 12:
+      return Colors.blueGrey;
+    default:
+      return Colors.white70;
   }
 }
 
 class _WeeklyDateSlider extends StatefulWidget {
+  final DateTime? selectedDate;
   final Function(DateTime) onDateSelected;
+  final TimeOfDay? selectedTime;
+  final VoidCallback onTimeTap;
+  final List<Widget> actions;
 
-  const _WeeklyDateSlider({required this.onDateSelected});
+  const _WeeklyDateSlider({
+    this.selectedDate,
+    required this.onDateSelected,
+    this.selectedTime,
+    required this.onTimeTap,
+    required this.actions,
+  });
 
   @override
   State<_WeeklyDateSlider> createState() => _WeeklyDateSliderState();
 }
 
 class _WeeklyDateSliderState extends State<_WeeklyDateSlider> {
-  final PageController _pageController = PageController();
-  int _currentPage = 0;
+  late PageController _pageController;
+  late int _currentPage;
+  final DateTime _baseSunday = DateTime.now().subtract(
+    Duration(days: DateTime.now().weekday % 7),
+  );
+
+  // Jump UI state
+  bool _isJumpUIOpen = false;
+  int _selectedJumpMonth = DateTime.now().month;
+  int _selectedJumpYear = DateTime.now().year;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentPage =
+        1000; // Start in the "middle" for infinite-ish horizontal scroll
+    _pageController = PageController(initialPage: _currentPage);
+  }
+
+  void _jumpToDate(int month, int year) {
+    final targetDate = DateTime(year, month, 1);
+    final targetSunday = targetDate.subtract(
+      Duration(days: targetDate.weekday % 7),
+    );
+    final daysDiff = targetSunday.difference(_baseSunday).inDays;
+    final weeksDiff = (daysDiff / 7).floor();
+    final pageOffset = (weeksDiff / 3).floor();
+
+    setState(() {
+      _isJumpUIOpen = false;
+    });
+
+    _pageController.animateToPage(
+      1000 + pageOffset,
+      duration: const Duration(milliseconds: 500),
+      curve: Curves.easeInOutQuad,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    // Start of the week (assuming Sunday start)
-    final startOfThisWeek = today.subtract(Duration(days: today.weekday % 7));
-
+    final today = DateTime.now().copyWith(
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+    );
     const weekdayLabels = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    // Calculate current range for the indicator
-    final firstDay = startOfThisWeek.add(Duration(days: _currentPage * 21));
+    final weeksOffset = (_currentPage - 1000) * 3;
+    final firstDay = _baseSunday.add(Duration(days: weeksOffset * 7));
     final lastDay = firstDay.add(const Duration(days: 20));
     final dateRangeStr =
         '${DateFormat('MMM d').format(firstDay)} - ${DateFormat('MMM d').format(lastDay)}';
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: weekdayLabels
-                .map(
-                  (l) => Expanded(
-                    child: Text(
-                      l,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: isDark ? Colors.white24 : Colors.black26,
+        Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: weekdayLabels
+                    .map(
+                      (l) => Expanded(
+                        child: Text(
+                          l,
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white24 : Colors.black26,
+                          ),
+                        ),
+                      ),
+                    )
+                    .toList(),
+              ),
+            ),
+            SizedBox(
+              height: 240,
+              child: PageView.builder(
+                controller: _pageController,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemBuilder: (context, pageIndex) {
+                  final weeksFromBase = (pageIndex - 1000) * 3;
+                  final pageStartDate = _baseSunday.add(
+                    Duration(days: weeksFromBase * 7),
+                  );
+
+                  return Column(
+                    children: List.generate(3, (rowIndex) {
+                      return Expanded(
+                        child: Row(
+                          children: List.generate(7, (colIndex) {
+                            final dayIndex = rowIndex * 7 + colIndex;
+                            final day = pageStartDate.add(
+                              Duration(days: dayIndex),
+                            );
+                            final isPast =
+                                day.isBefore(today) &&
+                                !day.isAtSameMomentAs(today);
+                            final isToday = day.isAtSameMomentAs(today);
+                            final isEven = dayIndex % 2 == 0;
+                            final isSelected =
+                                widget.selectedDate != null &&
+                                day.year == widget.selectedDate!.year &&
+                                day.month == widget.selectedDate!.month &&
+                                day.day == widget.selectedDate!.day;
+
+                            return Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: _DateTile(
+                                  date: day,
+                                  isPast: isPast,
+                                  isToday: isToday,
+                                  isSelected: isSelected,
+                                  isEven: isEven,
+                                  monthColor: _getMonthColor(day.month),
+                                  onTap: isPast
+                                      ? null
+                                      : () => widget.onDateSelected(day),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    }),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 12),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Row(
+                children: [
+                  Material(
+                    color: isDark
+                        ? Colors.white.withAlpha(25)
+                        : Colors.black.withAlpha(20),
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: () => setState(() => _isJumpUIOpen = true),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.calendar_month_rounded,
+                              size: 14,
+                              color: isDark ? Colors.white70 : Colors.black87,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              dateRangeStr,
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: isDark ? Colors.white70 : Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                )
-                .toList(),
-          ),
-        ),
-        SizedBox(
-          height: 240, // Increased for 3 rows
-          child: PageView.builder(
-            controller: _pageController,
-            onPageChanged: (i) => setState(() => _currentPage = i),
-            itemCount: 5, // 5 pages of 3 weeks each
-            itemBuilder: (context, pageIndex) {
-              final pageStartDate = startOfThisWeek.add(
-                Duration(days: pageIndex * 21),
-              );
-              return Column(
-                children: List.generate(3, (rowIndex) {
-                  return Expanded(
-                    child: Row(
-                      children: List.generate(7, (colIndex) {
-                        final dayIndex = rowIndex * 7 + colIndex;
-                        final day = pageStartDate.add(Duration(days: dayIndex));
-                        final isPast = day.isBefore(today);
-                        final isToday = day.isAtSameMomentAs(today);
-                        final isEven = dayIndex % 2 == 0;
-
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(2.0),
-                            child: _DateTile(
-                              date: day,
-                              isPast: isPast,
-                              isToday: isToday,
-                              isEven: isEven,
-                              onTap: isPast
-                                  ? null
-                                  : () => widget.onDateSelected(day),
+                  ).animate().scale(begin: const Offset(0.95, 0.95)),
+                  const SizedBox(width: 8),
+                  // Time Picker Trigger
+                  Material(
+                    color: isDark
+                        ? Colors.white.withAlpha(25)
+                        : Colors.black.withAlpha(20),
+                    borderRadius: BorderRadius.circular(10),
+                    child: InkWell(
+                      onTap: widget.onTimeTap,
+                      borderRadius: BorderRadius.circular(10),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.access_time_rounded,
+                              size: 14,
+                              color: widget.selectedTime != null
+                                  ? Colors.redAccent
+                                  : (isDark ? Colors.white70 : Colors.black87),
                             ),
-                          ),
-                        );
-                      }),
+                            const SizedBox(width: 6),
+                            Text(
+                              widget.selectedTime != null
+                                  ? widget.selectedTime!.format(context)
+                                  : 'Add Time',
+                              style: TextStyle(
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                color: widget.selectedTime != null
+                                    ? Colors.redAccent
+                                    : (isDark
+                                          ? Colors.white70
+                                          : Colors.black87),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                  );
-                }),
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 12),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          child: Row(
-            children: [
-              Text(
-                dateRangeStr,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.white24 : Colors.black26,
-                ),
+                  ).animate().scale(begin: const Offset(0.95, 0.95)),
+                  const Spacer(),
+                  ...widget.actions,
+                ],
               ),
-              const Spacer(),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (index) {
-                  return AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 2),
-                    width: _currentPage == index ? 12 : 4,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: _currentPage == index
-                          ? (isDark ? Colors.white38 : Colors.black38)
-                          : (isDark ? Colors.white12 : Colors.black12),
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  );
-                }),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
+        if (_isJumpUIOpen)
+          Positioned.fill(
+            child: GestureDetector(
+              onTap: () => setState(() => _isJumpUIOpen = false),
+              child:
+                  Container(
+                        decoration: BoxDecoration(
+                          color:
+                              (isDark ? const Color(0xFF0F172A) : Colors.white)
+                                  .withAlpha(240),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: GridView.builder(
+                                      shrinkWrap: true,
+                                      physics:
+                                          const NeverScrollableScrollPhysics(),
+                                      gridDelegate:
+                                          const SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 3,
+                                            childAspectRatio: 1.5,
+                                            mainAxisSpacing: 8,
+                                            crossAxisSpacing: 8,
+                                          ),
+                                      itemCount: 12,
+                                      itemBuilder: (context, index) {
+                                        final isSelected =
+                                            _selectedJumpMonth == (index + 1);
+                                        final mColor = _getMonthColor(
+                                          index + 1,
+                                        );
+                                        return InkWell(
+                                              onTap: () => setState(
+                                                () => _selectedJumpMonth =
+                                                    index + 1,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: isSelected
+                                                      ? mColor.withAlpha(40)
+                                                      : Colors.transparent,
+                                                  border: Border.all(
+                                                    color: isSelected
+                                                        ? mColor
+                                                        : (isDark
+                                                              ? Colors.white
+                                                                    .withAlpha(
+                                                                      26,
+                                                                    )
+                                                              : Colors.black
+                                                                    .withAlpha(
+                                                                      15,
+                                                                    )),
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    DateFormat('MMM').format(
+                                                      DateTime(2024, index + 1),
+                                                    ),
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      fontWeight: isSelected
+                                                          ? FontWeight.bold
+                                                          : FontWeight.normal,
+                                                      color: isSelected
+                                                          ? mColor
+                                                          : (isDark
+                                                                ? Colors.white70
+                                                                : Colors
+                                                                      .black87),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            )
+                                            .animate()
+                                            .fadeIn(delay: (index * 20).ms)
+                                            .scale(
+                                              begin: const Offset(0.9, 0.9),
+                                            );
+                                      },
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  SizedBox(
+                                    width: 60,
+                                    child: ListWheelScrollView.useDelegate(
+                                      itemExtent: 40,
+                                      perspective: 0.005,
+                                      physics: const FixedExtentScrollPhysics(),
+                                      onSelectedItemChanged: (index) {
+                                        setState(
+                                          () => _selectedJumpYear =
+                                              DateTime.now().year + index,
+                                        );
+                                      },
+                                      childDelegate:
+                                          ListWheelChildBuilderDelegate(
+                                            builder: (context, index) {
+                                              final year =
+                                                  DateTime.now().year + index;
+                                              final isSelected =
+                                                  _selectedJumpYear == year;
+                                              return Center(
+                                                child: Text(
+                                                  year.toString(),
+                                                  style: TextStyle(
+                                                    fontSize: isSelected
+                                                        ? 18
+                                                        : 14,
+                                                    fontWeight: isSelected
+                                                        ? FontWeight.bold
+                                                        : FontWeight.normal,
+                                                    color: isSelected
+                                                        ? Colors.redAccent
+                                                        : (isDark
+                                                              ? Colors.white24
+                                                              : Colors.black26),
+                                                  ),
+                                                ),
+                                              );
+                                            },
+                                            childCount: 100,
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton(
+                                      onPressed: () =>
+                                          setState(() => _isJumpUIOpen = false),
+                                      child: const Text('Cancel'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () => _jumpToDate(
+                                        _selectedJumpMonth,
+                                        _selectedJumpYear,
+                                      ),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.redAccent,
+                                        foregroundColor: Colors.white,
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('Jump'),
+                                    ),
+                                  ],
+                                )
+                                .animate()
+                                .fadeIn(delay: 300.ms)
+                                .slideY(begin: 0.2, end: 0),
+                          ],
+                        ),
+                      )
+                      .animate()
+                      .fadeIn(duration: 300.ms)
+                      .scale(begin: const Offset(0.95, 0.95)),
+            ),
+          ),
       ],
     );
   }
@@ -649,14 +985,18 @@ class _DateTile extends StatelessWidget {
   final DateTime date;
   final bool isPast;
   final bool isToday;
+  final bool isSelected;
   final bool isEven;
+  final Color monthColor;
   final VoidCallback? onTap;
 
   const _DateTile({
     required this.date,
     required this.isPast,
     required this.isToday,
+    required this.isSelected,
     required this.isEven,
+    required this.monthColor,
     this.onTap,
   });
 
@@ -666,30 +1006,8 @@ class _DateTile extends StatelessWidget {
     final monthStr = DateFormat('MMM').format(date).toUpperCase();
     final dayNum = date.day.toString();
 
-    Widget content = Container(
-      decoration: BoxDecoration(
-        color: isToday
-            ? Colors.redAccent.withAlpha(40)
-            : (isPast
-                  ? Colors.transparent
-                  : (isDark
-                        ? (isEven
-                              ? Colors.white.withAlpha(8)
-                              : Colors.white.withAlpha(3))
-                        : (isEven
-                              ? Colors.black.withAlpha(8)
-                              : Colors.black.withAlpha(3)))),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isToday
-              ? Colors.redAccent.withAlpha(100)
-              : (isDark
-                    ? Colors.white.withAlpha(10)
-                    : Colors.black.withAlpha(10)),
-          width: isToday ? 2 : 1,
-        ),
-      ),
-      child: Column(
+    if (onTap != null) {
+      Widget animatedContent = Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
@@ -700,9 +1018,9 @@ class _DateTile extends StatelessWidget {
               letterSpacing: 0.5,
               color: isPast
                   ? (isDark ? Colors.white12 : Colors.black12)
-                  : (isToday
-                        ? Colors.redAccent.withAlpha(180)
-                        : (isDark ? Colors.white24 : Colors.black26)),
+                  : (isToday || isSelected
+                        ? Colors.white
+                        : monthColor.withAlpha(180)),
             ),
           ),
           Text(
@@ -713,86 +1031,103 @@ class _DateTile extends StatelessWidget {
               height: 1.1,
               color: isPast
                   ? (isDark ? Colors.white12 : Colors.black12)
-                  : (isToday
-                        ? Colors.redAccent
+                  : (isToday || isSelected
+                        ? Colors.white
                         : (isDark ? Colors.white : Colors.black87)),
+            ),
+          ),
+        ],
+      );
+
+      return Container(
+        decoration: BoxDecoration(
+          color: isSelected
+              ? monthColor
+              : (isToday
+                    ? (isDark
+                          ? Colors.white.withAlpha(20)
+                          : Colors.black.withAlpha(10))
+                    : (isPast
+                          ? Colors.transparent
+                          : (isDark
+                                ? (isEven
+                                      ? Colors.white.withAlpha(8)
+                                      : Colors.white.withAlpha(3))
+                                : (isEven
+                                      ? Colors.black.withAlpha(8)
+                                      : Colors.black.withAlpha(3))))),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: isToday
+                ? Colors.redAccent
+                : (isSelected
+                      ? monthColor
+                      : (isDark
+                            ? Colors.white.withAlpha(10)
+                            : Colors.black.withAlpha(10))),
+            width: isToday || isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: monthColor.withAlpha(100),
+                    blurRadius: 12,
+                    spreadRadius: 2,
+                  ),
+                ]
+              : (isToday
+                    ? [
+                        BoxShadow(
+                          color: Colors.redAccent.withAlpha(40),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(12),
+            child: animatedContent,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withAlpha(5) : Colors.black.withAlpha(5),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withAlpha(10)
+              : Colors.black.withAlpha(10),
+        ),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            monthStr,
+            style: TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white12 : Colors.black12,
+            ),
+          ),
+          Text(
+            dayNum,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white12 : Colors.black12,
             ),
           ),
         ],
       ),
     );
-
-    if (onTap != null) {
-      if (!isToday) {
-        content = content
-            .animate(onPlay: (controller) => controller.repeat(reverse: true))
-            .scale(
-              begin: const Offset(1, 1),
-              end: const Offset(1.02, 1.02),
-              duration: 2.seconds,
-              curve: Curves.easeInOut,
-            )
-            .custom(
-              duration: 2.seconds,
-              builder: (context, value, child) {
-                return Opacity(opacity: 0.8 + (value * 0.2), child: child);
-              },
-            );
-      }
-      return InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(8),
-        child: content,
-      );
-    }
-
-    return content;
-  }
-}
-
-class _FullCalendarPlaceholder extends StatelessWidget {
-  final Function(DateTime) onDateSelected;
-
-  const _FullCalendarPlaceholder({required this.onDateSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.calendar_month_rounded,
-            size: 32,
-            color: Colors.blueAccent,
-          ),
-          const SizedBox(height: 12),
-          ElevatedButton.icon(
-            onPressed: () async {
-              final date = await showDatePicker(
-                context: context,
-                initialDate: DateTime.now().add(const Duration(days: 1)),
-                firstDate: DateTime.now(),
-                lastDate: DateTime.now().add(const Duration(days: 365)),
-                helpText: 'Select Deadline',
-              );
-              if (date != null) onDateSelected(date);
-            },
-            icon: const Icon(Icons.open_in_new_rounded, size: 16),
-            label: const Text('Open System Picker'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blueAccent.withAlpha(40),
-              foregroundColor: Colors.blueAccent,
-              elevation: 0,
-              textStyle: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    ).animate().fadeIn().scale(begin: const Offset(0.95, 0.95));
   }
 }
 
