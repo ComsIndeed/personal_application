@@ -246,147 +246,141 @@ class _MainInterfaceState extends State<MainInterface> {
                       },
                     );
                   }).toList(),
-                  trailingHeaderWidget: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Consumer2<ThemeController, AssistantState>(
-                        builder: (context, theme, assistant, _) {
-                          final isDark = theme.isDarkMode;
-                          final isAssistantOpen = assistant.openIds.contains(
-                            tabController.currentId,
-                          );
+                  globalActions: [
+                    Consumer2<ThemeController, AssistantState>(
+                      builder: (context, theme, assistant, _) {
+                        final isDark = theme.isDarkMode;
+                        final isAssistantOpen = assistant.openIds.contains(
+                          tabController.currentId,
+                        );
 
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              AnimatedSwitcher(
-                                duration: const Duration(milliseconds: 300),
-                                transitionBuilder: (child, animation) {
-                                  return FadeTransition(
-                                    opacity: animation,
-                                    child: ScaleTransition(
-                                      scale: animation,
-                                      child: child,
-                                    ),
-                                  );
-                                },
-                                child: isAssistantOpen
-                                    ? const SizedBox.shrink()
-                                    : Tooltip(
-                                        message: 'AI Assistant (Ctrl + `)',
-                                        child: IconButton(
-                                          icon: FaIcon(
-                                            FontAwesomeIcons.diamond,
-                                            size: 16,
-                                            color: isAssistantOpen
-                                                ? Colors.white
-                                                : (isDark
-                                                      ? Colors.white70
-                                                      : Colors.black87),
-                                          ),
-                                          onPressed: assistant.onToggle,
-                                          style: IconButton.styleFrom(
-                                            backgroundColor: isAssistantOpen
-                                                ? Theme.of(
-                                                    context,
-                                                  ).colorScheme.primary
-                                                : (isDark
-                                                      ? Colors.white.withValues(
-                                                          alpha: 0.05,
-                                                        )
-                                                      : Colors.black.withValues(
-                                                          alpha: 0.05,
-                                                        )),
-                                          ),
+                        return Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: ScaleTransition(
+                                    scale: animation,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child: isAssistantOpen
+                                  ? const SizedBox.shrink()
+                                  : Tooltip(
+                                      message: 'AI Assistant (Ctrl + `)',
+                                      child: IconButton(
+                                        icon: FaIcon(
+                                          FontAwesomeIcons.diamond,
+                                          size: 16,
+                                          color: isAssistantOpen
+                                              ? Colors.white
+                                              : (isDark
+                                                    ? Colors.white70
+                                                    : Colors.black87),
+                                        ),
+                                        onPressed: assistant.onToggle,
+                                        style: IconButton.styleFrom(
+                                          backgroundColor: isAssistantOpen
+                                              ? Theme.of(
+                                                  context,
+                                                ).colorScheme.primary
+                                              : (isDark
+                                                    ? Colors.white.withValues(
+                                                        alpha: 0.05,
+                                                      )
+                                                    : Colors.black.withValues(
+                                                        alpha: 0.05,
+                                                      )),
                                         ),
                                       ),
-                              ),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 300),
-                                width: isAssistantOpen ? 0 : 8,
-                                child: const SizedBox.shrink(),
-                              ),
-                              MenuAnchor(
-                                builder: (context, menuController, child) {
-                                  return IconButton(
-                                    icon: const Icon(
-                                      Icons.menu_rounded,
-                                      size: 20,
                                     ),
-                                    onPressed: () {
-                                      if (menuController.isOpen) {
-                                        menuController.close();
-                                      } else {
-                                        menuController.open();
-                                      }
-                                    },
-                                    tooltip: 'Options',
-                                    style: IconButton.styleFrom(
-                                      backgroundColor: isDark
-                                          ? Colors.white.withValues(alpha: 0.05)
-                                          : Colors.black.withValues(
-                                              alpha: 0.05,
-                                            ),
-                                    ),
-                                  );
-                                },
-                                menuChildren: [
-                                  MenuItemButton(
-                                    leadingIcon: Icon(
-                                      isDark
-                                          ? Icons.light_mode_rounded
-                                          : Icons.dark_mode_rounded,
-                                      size: 18,
-                                    ),
-                                    onPressed: theme.toggleTheme,
-                                    child: Text(
-                                      isDark ? 'Light Mode' : 'Dark Mode',
-                                    ),
+                            ),
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              width: isAssistantOpen ? 0 : 8,
+                              child: const SizedBox.shrink(),
+                            ),
+                            MenuAnchor(
+                              builder: (context, menuController, child) {
+                                return IconButton(
+                                  icon: const Icon(
+                                    Icons.menu_rounded,
+                                    size: 20,
                                   ),
-                                  MenuItemButton(
-                                    leadingIcon: const Icon(
-                                      Icons.refresh_rounded,
-                                      size: 18,
-                                    ),
-                                    onPressed: () {
-                                      context.read<BrainDumpCubit>().refresh();
-                                      context.read<NotesCubit>().refresh();
-                                    },
-                                    child: const Text('Reload All Data'),
+                                  onPressed: () {
+                                    if (menuController.isOpen) {
+                                      menuController.close();
+                                    } else {
+                                      menuController.open();
+                                    }
+                                  },
+                                  tooltip: 'Options',
+                                  style: IconButton.styleFrom(
+                                    backgroundColor: isDark
+                                        ? Colors.white.withValues(alpha: 0.05)
+                                        : Colors.black.withValues(alpha: 0.05),
                                   ),
-                                  MenuItemButton(
-                                    leadingIcon: const Icon(
-                                      Icons.settings_rounded,
-                                      size: 18,
-                                    ),
-                                    onPressed: () => tabController.animateToId(
-                                      AppTabId.settings,
-                                    ),
-                                    child: const Text('Settings'),
+                                );
+                              },
+                              menuChildren: [
+                                MenuItemButton(
+                                  leadingIcon: Icon(
+                                    isDark
+                                        ? Icons.light_mode_rounded
+                                        : Icons.dark_mode_rounded,
+                                    size: 18,
                                   ),
-                                ],
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: const Icon(
-                          Icons.close_rounded,
-                          size: 20,
-                          color: Colors.redAccent,
-                        ),
-                        onPressed: controller.close,
-                        style: IconButton.styleFrom(
-                          backgroundColor:
-                              Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white.withValues(alpha: 0.05)
-                              : Colors.black.withValues(alpha: 0.05),
-                          hoverColor: Colors.red.withValues(alpha: 0.1),
-                        ),
-                      ),
-                    ],
+                                  onPressed: theme.toggleTheme,
+                                  child: Text(
+                                    isDark ? 'Light Mode' : 'Dark Mode',
+                                  ),
+                                ),
+                                MenuItemButton(
+                                  leadingIcon: const Icon(
+                                    Icons.refresh_rounded,
+                                    size: 18,
+                                  ),
+                                  onPressed: () {
+                                    context.read<BrainDumpCubit>().refresh();
+                                    context.read<NotesCubit>().refresh();
+                                  },
+                                  child: const Text('Reload All Data'),
+                                ),
+                                MenuItemButton(
+                                  leadingIcon: const Icon(
+                                    Icons.settings_rounded,
+                                    size: 18,
+                                  ),
+                                  onPressed: () => tabController.animateToId(
+                                    AppTabId.settings,
+                                  ),
+                                  child: const Text('Settings'),
+                                ),
+                              ],
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ],
+                  trailingHeaderWidget: IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      size: 20,
+                      color: Colors.redAccent,
+                    ),
+                    onPressed: controller.close,
+                    style: IconButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).brightness == Brightness.dark
+                          ? Colors.white.withValues(alpha: 0.05)
+                          : Colors.black.withValues(alpha: 0.05),
+                      hoverColor: Colors.red.withValues(alpha: 0.1),
+                    ),
                   ),
                 ),
               ),

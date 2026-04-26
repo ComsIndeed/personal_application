@@ -145,12 +145,15 @@ class AppTabController<T> extends ChangeNotifier {
 class AppTab<T> extends StatefulWidget {
   final List<AppTabPage<T>> pages;
   final AppTabController<T>? controller;
-  final Widget? trailingHeaderWidget; // e.g. the close button or menu
+  final List<Widget> globalActions; // Actions that can be relocated
+  final Widget?
+  trailingHeaderWidget; // Always stays in Row 1 (e.g. Close button)
 
   const AppTab({
     super.key,
     required this.pages,
     this.controller,
+    this.globalActions = const [],
     this.trailingHeaderWidget,
   });
 
@@ -193,79 +196,209 @@ class _AppTabState<T> extends State<AppTab<T>> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 20, 12, 10),
               child: AnimatedSize(
-                duration: const Duration(milliseconds: 150),
+                duration: const Duration(milliseconds: 400),
                 curve: Curves.easeOutCubic,
-                child: Row(
-                  children: [
-                    // Leading/Back Section
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 150),
-                      transitionBuilder: (child, animation) => FadeTransition(
-                        opacity: animation,
-                        child: SizeTransition(
-                          sizeFactor: animation,
-                          axis: Axis.horizontal,
-                          axisAlignment: -1,
-                          child: child,
-                        ),
-                      ),
-                      child: (header.leading != null || header.onBack != null)
-                          ? Padding(
-                              key: const ValueKey('header_leading'),
-                              padding: const EdgeInsets.only(right: 12),
-                              child:
-                                  header.leading ??
-                                  IconButton(
-                                    icon: const Icon(
-                                      Icons.arrow_back_rounded,
-                                      size: 20,
-                                    ),
-                                    onPressed: header.onBack,
-                                  ),
-                            )
-                          : const SizedBox.shrink(),
-                    ),
+                alignment: Alignment.topCenter,
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final availableWidth = constraints.maxWidth;
 
-                    // Title Section
-                    Expanded(
-                      child: Text(
-                        header.title,
-                        key: ValueKey(header.title),
+                    // Estimate widths for responsiveness
+                    // Margins (32) + Leading (52 if exists) + Close/Trailing (~52) + Buffers
+                    final double fixedWidths =
+                        32 +
+                        (header.leading != null || header.onBack != null
+                            ? 52
+                            : 0) +
+                        60;
+
+                    // Measure title width
+                    final textPainter = TextPainter(
+                      text: TextSpan(
+                        text: header.title,
                         style: const TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 0.5,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        maxLines: 1,
-                      ),
-                    ),
-
-                    // Actions Section
-                    const SizedBox(width: 8),
-                    ...header.actions,
-
-                    // Trailing Section
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 150),
-                      transitionBuilder: (child, animation) => FadeTransition(
-                        opacity: animation,
-                        child: SizeTransition(
-                          sizeFactor: animation,
-                          axis: Axis.horizontal,
-                          axisAlignment: 1,
-                          child: child,
                         ),
                       ),
-                      child: (widget.trailingHeaderWidget != null)
-                          ? Padding(
-                              key: const ValueKey('header_trailing'),
-                              padding: const EdgeInsets.only(left: 8),
-                              child: widget.trailingHeaderWidget!,
-                            )
-                          : const SizedBox.shrink(),
-                    ),
-                  ],
+                      maxLines: 1,
+                      textDirection: TextDirection.ltr,
+                    )..layout();
+
+                    final titleWidth = textPainter.width;
+
+                    // Combine tab actions and global actions
+                    final allRelocatableActions = [
+                      ...header.actions,
+                      ...widget.globalActions,
+                    ];
+
+                    // Separate actions by type
+                    // Note: We check specifically for Expanded/Flexible or widgets that likely contain them
+                    final flexibleActions = allRelocatableActions
+                        .where((a) => a is Expanded || a is Flexible)
+                        .toList();
+                    final staticActions = allRelocatableActions
+                        .where((a) => a is! Expanded && a is! Flexible)
+                        .toList();
+
+                    // Estimate static actions width
+                    final double staticActionsWidth =
+                        staticActions.length * 44.0;
+
+                    // Determine if buttons need to stack (overflowing title)
+                    final bool buttonsNeedStack =
+                        staticActions.isNotEmpty &&
+                        (titleWidth + staticActionsWidth + fixedWidths >
+                            availableWidth);
+
+                    // Determine if flexible actions exist
+                    final bool hasFlexible = flexibleActions.isNotEmpty;
+
+                    // The header is in "stacked mode" if we have flexible actions OR overflowing buttons
+                    final bool isStackedMode = hasFlexible || buttonsNeedStack;
+
+                    return Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          children: [
+                            // Leading/Back Section
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: SizeTransition(
+                                      sizeFactor: animation,
+                                      axis: Axis.horizontal,
+                                      axisAlignment: -1,
+                                      child: child,
+                                    ),
+                                  ),
+                              child:
+                                  (header.leading != null ||
+                                      header.onBack != null)
+                                  ? Padding(
+                                      key: const ValueKey('header_leading'),
+                                      padding: const EdgeInsets.only(right: 12),
+                                      child:
+                                          header.leading ??
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.arrow_back_rounded,
+                                              size: 20,
+                                            ),
+                                            onPressed: header.onBack,
+                                          ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+
+                            // Title Section
+                            Expanded(
+                              child: Text(
+                                header.title,
+                                key: ValueKey('title_${header.title}'),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                maxLines: 1,
+                              ),
+                            ),
+
+                            // Inline Static Actions (only if they fit and aren't forced down)
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 400),
+                              transitionBuilder: (child, animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: SizeTransition(
+                                    sizeFactor: animation,
+                                    axis: Axis.horizontal,
+                                    axisAlignment: 1,
+                                    child: child,
+                                  ),
+                                );
+                              },
+                              child:
+                                  !buttonsNeedStack && staticActions.isNotEmpty
+                                  ? Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      key: const ValueKey('inline_actions'),
+                                      children: [
+                                        const SizedBox(width: 8),
+                                        ...staticActions,
+                                      ],
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+
+                            // Trailing Section
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                    opacity: animation,
+                                    child: SizeTransition(
+                                      sizeFactor: animation,
+                                      axis: Axis.horizontal,
+                                      axisAlignment: 1,
+                                      child: child,
+                                    ),
+                                  ),
+                              child: (widget.trailingHeaderWidget != null)
+                                  ? Padding(
+                                      key: const ValueKey('header_trailing'),
+                                      padding: const EdgeInsets.only(left: 8),
+                                      child: widget.trailingHeaderWidget!,
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          ],
+                        ),
+
+                        // Stacked Actions Row
+                        AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 400),
+                          switchInCurve: Curves.easeOutBack,
+                          switchOutCurve: Curves.easeInCubic,
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, -0.5),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: isStackedMode
+                              ? Padding(
+                                  key: const ValueKey('stacked_actions'),
+                                  padding: const EdgeInsets.only(
+                                    top: 12,
+                                    bottom: 4,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const SizedBox(width: 4),
+                                      ...flexibleActions,
+                                      if (buttonsNeedStack) ...staticActions,
+                                    ],
+                                  ),
+                                )
+                              : const SizedBox.shrink(),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),
