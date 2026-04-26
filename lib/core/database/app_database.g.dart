@@ -1875,6 +1875,593 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
   }
 }
 
+class $SprintSessionsTable extends SprintSessions
+    with TableInfo<$SprintSessionsTable, SprintSession> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SprintSessionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  static const VerificationMeta _folderKeyMeta = const VerificationMeta(
+    'folderKey',
+  );
+  @override
+  late final GeneratedColumn<String> folderKey = GeneratedColumn<String>(
+    'folder_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _endedAtMeta = const VerificationMeta(
+    'endedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> endedAt = GeneratedColumn<DateTime>(
+    'ended_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [id, folderKey, startedAt, endedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'sprint_sessions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SprintSession> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('folder_key')) {
+      context.handle(
+        _folderKeyMeta,
+        folderKey.isAcceptableOrUnknown(data['folder_key']!, _folderKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_folderKeyMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('ended_at')) {
+      context.handle(
+        _endedAtMeta,
+        endedAt.isAcceptableOrUnknown(data['ended_at']!, _endedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SprintSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SprintSession(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      folderKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}folder_key'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      endedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}ended_at'],
+      ),
+    );
+  }
+
+  @override
+  $SprintSessionsTable createAlias(String alias) {
+    return $SprintSessionsTable(attachedDatabase, alias);
+  }
+}
+
+class SprintSessionsCompanion extends UpdateCompanion<SprintSession> {
+  final Value<String> id;
+  final Value<String> folderKey;
+  final Value<DateTime> startedAt;
+  final Value<DateTime?> endedAt;
+  final Value<int> rowid;
+  const SprintSessionsCompanion({
+    this.id = const Value.absent(),
+    this.folderKey = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SprintSessionsCompanion.insert({
+    this.id = const Value.absent(),
+    required String folderKey,
+    this.startedAt = const Value.absent(),
+    this.endedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : folderKey = Value(folderKey);
+  static Insertable<SprintSession> custom({
+    Expression<String>? id,
+    Expression<String>? folderKey,
+    Expression<DateTime>? startedAt,
+    Expression<DateTime>? endedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (folderKey != null) 'folder_key': folderKey,
+      if (startedAt != null) 'started_at': startedAt,
+      if (endedAt != null) 'ended_at': endedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SprintSessionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? folderKey,
+    Value<DateTime>? startedAt,
+    Value<DateTime?>? endedAt,
+    Value<int>? rowid,
+  }) {
+    return SprintSessionsCompanion(
+      id: id ?? this.id,
+      folderKey: folderKey ?? this.folderKey,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (folderKey.present) {
+      map['folder_key'] = Variable<String>(folderKey.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (endedAt.present) {
+      map['ended_at'] = Variable<DateTime>(endedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SprintSessionsCompanion(')
+          ..write('id: $id, ')
+          ..write('folderKey: $folderKey, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('endedAt: $endedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ActivityLogsTable extends ActivityLogs
+    with TableInfo<$ActivityLogsTable, ActivityLog> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ActivityLogsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    clientDefault: () => const Uuid().v4(),
+  );
+  @override
+  late final GeneratedColumnWithTypeConverter<ActivityType, String>
+  activityType = GeneratedColumn<String>(
+    'activity_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  ).withConverter<ActivityType>($ActivityLogsTable.$converteractivityType);
+  static const VerificationMeta _loggedAtMeta = const VerificationMeta(
+    'loggedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> loggedAt = GeneratedColumn<DateTime>(
+    'logged_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _elapsedSecondsMeta = const VerificationMeta(
+    'elapsedSeconds',
+  );
+  @override
+  late final GeneratedColumn<int> elapsedSeconds = GeneratedColumn<int>(
+    'elapsed_seconds',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _taskIdMeta = const VerificationMeta('taskId');
+  @override
+  late final GeneratedColumn<String> taskId = GeneratedColumn<String>(
+    'task_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updateContentMeta = const VerificationMeta(
+    'updateContent',
+  );
+  @override
+  late final GeneratedColumn<String> updateContent = GeneratedColumn<String>(
+    'update_content',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _pausedAtMeta = const VerificationMeta(
+    'pausedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> pausedAt = GeneratedColumn<DateTime>(
+    'paused_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _resumedAtMeta = const VerificationMeta(
+    'resumedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> resumedAt = GeneratedColumn<DateTime>(
+    'resumed_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    activityType,
+    loggedAt,
+    sessionId,
+    elapsedSeconds,
+    taskId,
+    updateContent,
+    pausedAt,
+    resumedAt,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'activity_logs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ActivityLog> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('logged_at')) {
+      context.handle(
+        _loggedAtMeta,
+        loggedAt.isAcceptableOrUnknown(data['logged_at']!, _loggedAtMeta),
+      );
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    }
+    if (data.containsKey('elapsed_seconds')) {
+      context.handle(
+        _elapsedSecondsMeta,
+        elapsedSeconds.isAcceptableOrUnknown(
+          data['elapsed_seconds']!,
+          _elapsedSecondsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('task_id')) {
+      context.handle(
+        _taskIdMeta,
+        taskId.isAcceptableOrUnknown(data['task_id']!, _taskIdMeta),
+      );
+    }
+    if (data.containsKey('update_content')) {
+      context.handle(
+        _updateContentMeta,
+        updateContent.isAcceptableOrUnknown(
+          data['update_content']!,
+          _updateContentMeta,
+        ),
+      );
+    }
+    if (data.containsKey('paused_at')) {
+      context.handle(
+        _pausedAtMeta,
+        pausedAt.isAcceptableOrUnknown(data['paused_at']!, _pausedAtMeta),
+      );
+    }
+    if (data.containsKey('resumed_at')) {
+      context.handle(
+        _resumedAtMeta,
+        resumedAt.isAcceptableOrUnknown(data['resumed_at']!, _resumedAtMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ActivityLog map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ActivityLog(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      activityType: $ActivityLogsTable.$converteractivityType.fromSql(
+        attachedDatabase.typeMapping.read(
+          DriftSqlType.string,
+          data['${effectivePrefix}activity_type'],
+        )!,
+      ),
+      loggedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}logged_at'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      ),
+      elapsedSeconds: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}elapsed_seconds'],
+      ),
+      taskId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}task_id'],
+      ),
+      updateContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}update_content'],
+      ),
+      pausedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}paused_at'],
+      ),
+      resumedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}resumed_at'],
+      ),
+    );
+  }
+
+  @override
+  $ActivityLogsTable createAlias(String alias) {
+    return $ActivityLogsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ActivityType, String, String>
+  $converteractivityType = const EnumNameConverter<ActivityType>(
+    ActivityType.values,
+  );
+}
+
+class ActivityLogsCompanion extends UpdateCompanion<ActivityLog> {
+  final Value<String> id;
+  final Value<ActivityType> activityType;
+  final Value<DateTime> loggedAt;
+  final Value<String?> sessionId;
+  final Value<int?> elapsedSeconds;
+  final Value<String?> taskId;
+  final Value<String?> updateContent;
+  final Value<DateTime?> pausedAt;
+  final Value<DateTime?> resumedAt;
+  final Value<int> rowid;
+  const ActivityLogsCompanion({
+    this.id = const Value.absent(),
+    this.activityType = const Value.absent(),
+    this.loggedAt = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.elapsedSeconds = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.updateContent = const Value.absent(),
+    this.pausedAt = const Value.absent(),
+    this.resumedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ActivityLogsCompanion.insert({
+    this.id = const Value.absent(),
+    required ActivityType activityType,
+    this.loggedAt = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.elapsedSeconds = const Value.absent(),
+    this.taskId = const Value.absent(),
+    this.updateContent = const Value.absent(),
+    this.pausedAt = const Value.absent(),
+    this.resumedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : activityType = Value(activityType);
+  static Insertable<ActivityLog> custom({
+    Expression<String>? id,
+    Expression<String>? activityType,
+    Expression<DateTime>? loggedAt,
+    Expression<String>? sessionId,
+    Expression<int>? elapsedSeconds,
+    Expression<String>? taskId,
+    Expression<String>? updateContent,
+    Expression<DateTime>? pausedAt,
+    Expression<DateTime>? resumedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (activityType != null) 'activity_type': activityType,
+      if (loggedAt != null) 'logged_at': loggedAt,
+      if (sessionId != null) 'session_id': sessionId,
+      if (elapsedSeconds != null) 'elapsed_seconds': elapsedSeconds,
+      if (taskId != null) 'task_id': taskId,
+      if (updateContent != null) 'update_content': updateContent,
+      if (pausedAt != null) 'paused_at': pausedAt,
+      if (resumedAt != null) 'resumed_at': resumedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ActivityLogsCompanion copyWith({
+    Value<String>? id,
+    Value<ActivityType>? activityType,
+    Value<DateTime>? loggedAt,
+    Value<String?>? sessionId,
+    Value<int?>? elapsedSeconds,
+    Value<String?>? taskId,
+    Value<String?>? updateContent,
+    Value<DateTime?>? pausedAt,
+    Value<DateTime?>? resumedAt,
+    Value<int>? rowid,
+  }) {
+    return ActivityLogsCompanion(
+      id: id ?? this.id,
+      activityType: activityType ?? this.activityType,
+      loggedAt: loggedAt ?? this.loggedAt,
+      sessionId: sessionId ?? this.sessionId,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
+      taskId: taskId ?? this.taskId,
+      updateContent: updateContent ?? this.updateContent,
+      pausedAt: pausedAt ?? this.pausedAt,
+      resumedAt: resumedAt ?? this.resumedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (activityType.present) {
+      map['activity_type'] = Variable<String>(
+        $ActivityLogsTable.$converteractivityType.toSql(activityType.value),
+      );
+    }
+    if (loggedAt.present) {
+      map['logged_at'] = Variable<DateTime>(loggedAt.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (elapsedSeconds.present) {
+      map['elapsed_seconds'] = Variable<int>(elapsedSeconds.value);
+    }
+    if (taskId.present) {
+      map['task_id'] = Variable<String>(taskId.value);
+    }
+    if (updateContent.present) {
+      map['update_content'] = Variable<String>(updateContent.value);
+    }
+    if (pausedAt.present) {
+      map['paused_at'] = Variable<DateTime>(pausedAt.value);
+    }
+    if (resumedAt.present) {
+      map['resumed_at'] = Variable<DateTime>(resumedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ActivityLogsCompanion(')
+          ..write('id: $id, ')
+          ..write('activityType: $activityType, ')
+          ..write('loggedAt: $loggedAt, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('elapsedSeconds: $elapsedSeconds, ')
+          ..write('taskId: $taskId, ')
+          ..write('updateContent: $updateContent, ')
+          ..write('pausedAt: $pausedAt, ')
+          ..write('resumedAt: $resumedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1884,6 +2471,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $CommonNoteItemsTable commonNoteItems = $CommonNoteItemsTable(
     this,
   );
+  late final $SprintSessionsTable sprintSessions = $SprintSessionsTable(this);
+  late final $ActivityLogsTable activityLogs = $ActivityLogsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -1893,6 +2482,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     messages,
     assetItems,
     commonNoteItems,
+    sprintSessions,
+    activityLogs,
   ];
 }
 
@@ -3449,6 +4040,473 @@ typedef $$CommonNoteItemsTableProcessedTableManager =
       CommonNoteItem,
       PrefetchHooks Function()
     >;
+typedef $$SprintSessionsTableCreateCompanionBuilder =
+    SprintSessionsCompanion Function({
+      Value<String> id,
+      required String folderKey,
+      Value<DateTime> startedAt,
+      Value<DateTime?> endedAt,
+      Value<int> rowid,
+    });
+typedef $$SprintSessionsTableUpdateCompanionBuilder =
+    SprintSessionsCompanion Function({
+      Value<String> id,
+      Value<String> folderKey,
+      Value<DateTime> startedAt,
+      Value<DateTime?> endedAt,
+      Value<int> rowid,
+    });
+
+class $$SprintSessionsTableFilterComposer
+    extends Composer<_$AppDatabase, $SprintSessionsTable> {
+  $$SprintSessionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get folderKey => $composableBuilder(
+    column: $table.folderKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$SprintSessionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SprintSessionsTable> {
+  $$SprintSessionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get folderKey => $composableBuilder(
+    column: $table.folderKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get endedAt => $composableBuilder(
+    column: $table.endedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$SprintSessionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SprintSessionsTable> {
+  $$SprintSessionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get folderKey =>
+      $composableBuilder(column: $table.folderKey, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get endedAt =>
+      $composableBuilder(column: $table.endedAt, builder: (column) => column);
+}
+
+class $$SprintSessionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SprintSessionsTable,
+          SprintSession,
+          $$SprintSessionsTableFilterComposer,
+          $$SprintSessionsTableOrderingComposer,
+          $$SprintSessionsTableAnnotationComposer,
+          $$SprintSessionsTableCreateCompanionBuilder,
+          $$SprintSessionsTableUpdateCompanionBuilder,
+          (
+            SprintSession,
+            BaseReferences<_$AppDatabase, $SprintSessionsTable, SprintSession>,
+          ),
+          SprintSession,
+          PrefetchHooks Function()
+        > {
+  $$SprintSessionsTableTableManager(
+    _$AppDatabase db,
+    $SprintSessionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SprintSessionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SprintSessionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SprintSessionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> folderKey = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SprintSessionsCompanion(
+                id: id,
+                folderKey: folderKey,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required String folderKey,
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<DateTime?> endedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SprintSessionsCompanion.insert(
+                id: id,
+                folderKey: folderKey,
+                startedAt: startedAt,
+                endedAt: endedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$SprintSessionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SprintSessionsTable,
+      SprintSession,
+      $$SprintSessionsTableFilterComposer,
+      $$SprintSessionsTableOrderingComposer,
+      $$SprintSessionsTableAnnotationComposer,
+      $$SprintSessionsTableCreateCompanionBuilder,
+      $$SprintSessionsTableUpdateCompanionBuilder,
+      (
+        SprintSession,
+        BaseReferences<_$AppDatabase, $SprintSessionsTable, SprintSession>,
+      ),
+      SprintSession,
+      PrefetchHooks Function()
+    >;
+typedef $$ActivityLogsTableCreateCompanionBuilder =
+    ActivityLogsCompanion Function({
+      Value<String> id,
+      required ActivityType activityType,
+      Value<DateTime> loggedAt,
+      Value<String?> sessionId,
+      Value<int?> elapsedSeconds,
+      Value<String?> taskId,
+      Value<String?> updateContent,
+      Value<DateTime?> pausedAt,
+      Value<DateTime?> resumedAt,
+      Value<int> rowid,
+    });
+typedef $$ActivityLogsTableUpdateCompanionBuilder =
+    ActivityLogsCompanion Function({
+      Value<String> id,
+      Value<ActivityType> activityType,
+      Value<DateTime> loggedAt,
+      Value<String?> sessionId,
+      Value<int?> elapsedSeconds,
+      Value<String?> taskId,
+      Value<String?> updateContent,
+      Value<DateTime?> pausedAt,
+      Value<DateTime?> resumedAt,
+      Value<int> rowid,
+    });
+
+class $$ActivityLogsTableFilterComposer
+    extends Composer<_$AppDatabase, $ActivityLogsTable> {
+  $$ActivityLogsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnWithTypeConverterFilters<ActivityType, ActivityType, String>
+  get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnWithTypeConverterFilters(column),
+  );
+
+  ColumnFilters<DateTime> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get elapsedSeconds => $composableBuilder(
+    column: $table.elapsedSeconds,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get updateContent => $composableBuilder(
+    column: $table.updateContent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get pausedAt => $composableBuilder(
+    column: $table.pausedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get resumedAt => $composableBuilder(
+    column: $table.resumedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ActivityLogsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ActivityLogsTable> {
+  $$ActivityLogsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get activityType => $composableBuilder(
+    column: $table.activityType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get loggedAt => $composableBuilder(
+    column: $table.loggedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+    column: $table.sessionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get elapsedSeconds => $composableBuilder(
+    column: $table.elapsedSeconds,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get taskId => $composableBuilder(
+    column: $table.taskId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get updateContent => $composableBuilder(
+    column: $table.updateContent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get pausedAt => $composableBuilder(
+    column: $table.pausedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get resumedAt => $composableBuilder(
+    column: $table.resumedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ActivityLogsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ActivityLogsTable> {
+  $$ActivityLogsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumnWithTypeConverter<ActivityType, String> get activityType =>
+      $composableBuilder(
+        column: $table.activityType,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<DateTime> get loggedAt =>
+      $composableBuilder(column: $table.loggedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<int> get elapsedSeconds => $composableBuilder(
+    column: $table.elapsedSeconds,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get taskId =>
+      $composableBuilder(column: $table.taskId, builder: (column) => column);
+
+  GeneratedColumn<String> get updateContent => $composableBuilder(
+    column: $table.updateContent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get pausedAt =>
+      $composableBuilder(column: $table.pausedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get resumedAt =>
+      $composableBuilder(column: $table.resumedAt, builder: (column) => column);
+}
+
+class $$ActivityLogsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ActivityLogsTable,
+          ActivityLog,
+          $$ActivityLogsTableFilterComposer,
+          $$ActivityLogsTableOrderingComposer,
+          $$ActivityLogsTableAnnotationComposer,
+          $$ActivityLogsTableCreateCompanionBuilder,
+          $$ActivityLogsTableUpdateCompanionBuilder,
+          (
+            ActivityLog,
+            BaseReferences<_$AppDatabase, $ActivityLogsTable, ActivityLog>,
+          ),
+          ActivityLog,
+          PrefetchHooks Function()
+        > {
+  $$ActivityLogsTableTableManager(_$AppDatabase db, $ActivityLogsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ActivityLogsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ActivityLogsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ActivityLogsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<ActivityType> activityType = const Value.absent(),
+                Value<DateTime> loggedAt = const Value.absent(),
+                Value<String?> sessionId = const Value.absent(),
+                Value<int?> elapsedSeconds = const Value.absent(),
+                Value<String?> taskId = const Value.absent(),
+                Value<String?> updateContent = const Value.absent(),
+                Value<DateTime?> pausedAt = const Value.absent(),
+                Value<DateTime?> resumedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivityLogsCompanion(
+                id: id,
+                activityType: activityType,
+                loggedAt: loggedAt,
+                sessionId: sessionId,
+                elapsedSeconds: elapsedSeconds,
+                taskId: taskId,
+                updateContent: updateContent,
+                pausedAt: pausedAt,
+                resumedAt: resumedAt,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                required ActivityType activityType,
+                Value<DateTime> loggedAt = const Value.absent(),
+                Value<String?> sessionId = const Value.absent(),
+                Value<int?> elapsedSeconds = const Value.absent(),
+                Value<String?> taskId = const Value.absent(),
+                Value<String?> updateContent = const Value.absent(),
+                Value<DateTime?> pausedAt = const Value.absent(),
+                Value<DateTime?> resumedAt = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ActivityLogsCompanion.insert(
+                id: id,
+                activityType: activityType,
+                loggedAt: loggedAt,
+                sessionId: sessionId,
+                elapsedSeconds: elapsedSeconds,
+                taskId: taskId,
+                updateContent: updateContent,
+                pausedAt: pausedAt,
+                resumedAt: resumedAt,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ActivityLogsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ActivityLogsTable,
+      ActivityLog,
+      $$ActivityLogsTableFilterComposer,
+      $$ActivityLogsTableOrderingComposer,
+      $$ActivityLogsTableAnnotationComposer,
+      $$ActivityLogsTableCreateCompanionBuilder,
+      $$ActivityLogsTableUpdateCompanionBuilder,
+      (
+        ActivityLog,
+        BaseReferences<_$AppDatabase, $ActivityLogsTable, ActivityLog>,
+      ),
+      ActivityLog,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -3461,4 +4519,8 @@ class $AppDatabaseManager {
       $$AssetItemsTableTableManager(_db, _db.assetItems);
   $$CommonNoteItemsTableTableManager get commonNoteItems =>
       $$CommonNoteItemsTableTableManager(_db, _db.commonNoteItems);
+  $$SprintSessionsTableTableManager get sprintSessions =>
+      $$SprintSessionsTableTableManager(_db, _db.sprintSessions);
+  $$ActivityLogsTableTableManager get activityLogs =>
+      $$ActivityLogsTableTableManager(_db, _db.activityLogs);
 }

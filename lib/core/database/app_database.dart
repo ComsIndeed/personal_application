@@ -13,20 +13,33 @@ import 'package:personal_application/core/models/asset_item.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/models/conversation.dart';
 import 'package:personal_application/core/models/message/message.dart';
+import 'package:personal_application/core/models/sprint_session.dart';
+import 'package:personal_application/core/models/activity_log.dart';
 
 import 'package:personal_application/core/tables/asset_items.dart';
 import 'package:personal_application/core/tables/conversation_items.dart';
 import 'package:personal_application/core/tables/message_items.dart';
 import 'package:personal_application/core/tables/common_note_items.dart';
+import 'package:personal_application/core/tables/sprint_sessions.dart';
+import 'package:personal_application/core/tables/activity_logs.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Conversations, Messages, AssetItems, CommonNoteItems])
+@DriftDatabase(
+  tables: [
+    Conversations,
+    Messages,
+    AssetItems,
+    CommonNoteItems,
+    SprintSessions,
+    ActivityLogs,
+  ],
+)
 class AppDatabase extends _$AppDatabase with SyncableDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(

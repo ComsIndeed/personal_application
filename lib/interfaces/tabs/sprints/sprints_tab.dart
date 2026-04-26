@@ -176,7 +176,6 @@ class _SprintsTabState extends State<SprintsTab>
         return SprintTaskItemWidget(
           task: task,
           isDark: isDark,
-          onStart: () => context.read<SprintsCubit>().startTask(task.id),
           onComplete: () => context.read<SprintsCubit>().completeTask(task.id),
         );
       },
@@ -226,7 +225,6 @@ class _SprintsTabState extends State<SprintsTab>
               (task) => SprintTaskItemWidget(
                 task: task,
                 isDark: isDark,
-                onStart: () => context.read<SprintsCubit>().startTask(task.id),
                 onComplete: () =>
                     context.read<SprintsCubit>().completeTask(task.id),
               ),

@@ -1,40 +1,76 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import '../../../core/models/activity_log.dart';
 import '../../../core/models/common_note_item.dart';
 import '../../../core/services/sprints_service.dart';
 
 class SprintsState extends Equatable {
   final List<CommonNoteItem> tasks;
   final bool isLoading;
-  final String? activeTaskId;
+
+  // Session
+  final String? activeSessionId;
+  final DateTime? sessionStartedAt;
+
+  // Timer
   final int timerSeconds;
   final bool isInterrupted;
+
+  // Interruption tracking
+  final String? activeInterruptionLogId;
+  final DateTime? interruptionStartedAt;
+
+  // Log of events in the current session (for the UI log view)
+  final List<ActivityLog> sessionLogs;
 
   const SprintsState({
     this.tasks = const [],
     this.isLoading = true,
-    this.activeTaskId,
+    this.activeSessionId,
+    this.sessionStartedAt,
     this.timerSeconds = 0,
     this.isInterrupted = false,
+    this.activeInterruptionLogId,
+    this.interruptionStartedAt,
+    this.sessionLogs = const [],
   });
+
+  bool get hasActiveSession => activeSessionId != null;
 
   SprintsState copyWith({
     List<CommonNoteItem>? tasks,
     bool? isLoading,
-    String? activeTaskId,
-    bool? isInterrupted,
+    String? activeSessionId,
+    DateTime? sessionStartedAt,
     int? timerSeconds,
-    bool clearActiveTaskId = false,
+    bool? isInterrupted,
+    String? activeInterruptionLogId,
+    DateTime? interruptionStartedAt,
+    List<ActivityLog>? sessionLogs,
+    bool clearSession = false,
+    bool clearInterruption = false,
   }) {
     return SprintsState(
       tasks: tasks ?? this.tasks,
       isLoading: isLoading ?? this.isLoading,
-      activeTaskId: clearActiveTaskId
+      activeSessionId: clearSession
           ? null
-          : (activeTaskId ?? this.activeTaskId),
-      timerSeconds: timerSeconds ?? this.timerSeconds,
-      isInterrupted: isInterrupted ?? this.isInterrupted,
+          : (activeSessionId ?? this.activeSessionId),
+      sessionStartedAt: clearSession
+          ? null
+          : (sessionStartedAt ?? this.sessionStartedAt),
+      timerSeconds: clearSession ? 0 : (timerSeconds ?? this.timerSeconds),
+      isInterrupted: clearSession
+          ? false
+          : (isInterrupted ?? this.isInterrupted),
+      activeInterruptionLogId: clearInterruption
+          ? null
+          : (activeInterruptionLogId ?? this.activeInterruptionLogId),
+      interruptionStartedAt: clearInterruption
+          ? null
+          : (interruptionStartedAt ?? this.interruptionStartedAt),
+      sessionLogs: clearSession ? const [] : (sessionLogs ?? this.sessionLogs),
     );
   }
 
@@ -42,78 +78,136 @@ class SprintsState extends Equatable {
   List<Object?> get props => [
     tasks,
     isLoading,
-    activeTaskId,
+    activeSessionId,
+    sessionStartedAt,
     timerSeconds,
     isInterrupted,
+    activeInterruptionLogId,
+    interruptionStartedAt,
+    sessionLogs,
   ];
 }
 
 class SprintsCubit extends Cubit<SprintsState> {
   final SprintsService _service = SprintsService();
-  StreamSubscription? _subscription;
+  StreamSubscription? _tasksSubscription;
+  StreamSubscription? _logsSubscription;
   Timer? _ticker;
 
   SprintsCubit() : super(const SprintsState()) {
-    _subscription = _service.watchTasks().listen((tasks) {
+    _tasksSubscription = _service.watchTasks().listen((tasks) {
       emit(state.copyWith(tasks: tasks, isLoading: false));
     });
   }
 
-  void startTask(String taskId) {
-    // If there's an existing active task, stop it first?
-    // For now, let's just switch.
-    final task = state.tasks.firstWhere((t) => t.id == taskId);
+  // ─── Sprint Lifecycle ────────────────────────────────────────────────────
+
+  Future<void> startSprint(String folderKey) async {
+    if (state.hasActiveSession) return; // already running
+
+    final sessionId = await _service.createSession(folderKey);
+    final now = DateTime.now();
+
     emit(
       state.copyWith(
-        activeTaskId: taskId,
-        timerSeconds: task.timerSeconds ?? 0,
+        activeSessionId: sessionId,
+        sessionStartedAt: now,
+        timerSeconds: 0,
         isInterrupted: false,
       ),
     );
+
+    _subscribeToLogs(sessionId);
     _startTicker();
   }
 
-  void toggleInterrupt() {
-    emit(state.copyWith(isInterrupted: !state.isInterrupted));
-    // Ensure ticker is running if unpausing
-    if (!state.isInterrupted) {
-      _startTicker();
-    }
-  }
+  Future<void> pauseSprint() async {
+    if (!state.hasActiveSession || state.isInterrupted) return;
 
-  void stopTask() {
     _ticker?.cancel();
-    if (state.activeTaskId != null) {
-      _service.updateTimer(state.activeTaskId!, state.timerSeconds);
-    }
-    emit(state.copyWith(clearActiveTaskId: true, isInterrupted: false));
+
+    final logId = await _service.startInterruption(
+      sessionId: state.activeSessionId,
+      elapsedSeconds: state.timerSeconds,
+    );
+
+    emit(
+      state.copyWith(
+        isInterrupted: true,
+        activeInterruptionLogId: logId,
+        interruptionStartedAt: DateTime.now(),
+      ),
+    );
   }
 
-  void completeTask(String taskId) {
-    if (state.activeTaskId == taskId) {
-      stopTask();
+  Future<void> resumeSprint() async {
+    if (!state.hasActiveSession || !state.isInterrupted) return;
+
+    if (state.activeInterruptionLogId != null) {
+      await _service.endInterruption(state.activeInterruptionLogId!);
     }
-    _service.setCompletionStatus(taskId, true);
+
+    emit(state.copyWith(isInterrupted: false, clearInterruption: true));
+    _startTicker();
+  }
+
+  Future<void> stopSprint() async {
+    _ticker?.cancel();
+    _logsSubscription?.cancel();
+
+    if (state.activeInterruptionLogId != null) {
+      await _service.endInterruption(state.activeInterruptionLogId!);
+    }
+
+    if (state.activeSessionId != null) {
+      await _service.endSession(state.activeSessionId!);
+    }
+
+    emit(state.copyWith(clearSession: true, clearInterruption: true));
+  }
+
+  // ─── Task Actions ─────────────────────────────────────────────────────────
+
+  Future<void> completeTask(String taskId) async {
+    await _service.setCompletionStatus(taskId, true);
+    await _service.logTaskCompletion(
+      taskId,
+      sessionId: state.activeSessionId,
+      elapsedSeconds: state.hasActiveSession ? state.timerSeconds : null,
+    );
+  }
+
+  Future<void> logUpdate(String taskId, String content) async {
+    await _service.logTaskUpdate(
+      taskId,
+      content,
+      sessionId: state.activeSessionId,
+      elapsedSeconds: state.hasActiveSession ? state.timerSeconds : null,
+    );
+  }
+
+  // ─── Internals ────────────────────────────────────────────────────────────
+
+  void _subscribeToLogs(String sessionId) {
+    _logsSubscription?.cancel();
+    _logsSubscription = _service.watchSessionLogs(sessionId).listen((logs) {
+      emit(state.copyWith(sessionLogs: logs));
+    });
   }
 
   void _startTicker() {
     _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!state.isInterrupted && state.activeTaskId != null) {
-        final newSeconds = state.timerSeconds + 1;
-        emit(state.copyWith(timerSeconds: newSeconds));
-
-        // Persist every 10 seconds to avoid too much DB pressure
-        if (newSeconds % 10 == 0) {
-          _service.updateTimer(state.activeTaskId!, newSeconds);
-        }
+    _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!state.isInterrupted && state.hasActiveSession) {
+        emit(state.copyWith(timerSeconds: state.timerSeconds + 1));
       }
     });
   }
 
   @override
   Future<void> close() {
-    _subscription?.cancel();
+    _tasksSubscription?.cancel();
+    _logsSubscription?.cancel();
     _ticker?.cancel();
     return super.close();
   }

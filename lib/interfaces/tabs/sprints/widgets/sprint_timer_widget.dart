@@ -1,9 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
+import '../../../../core/models/activity_log.dart';
 import '../../../../core/models/common_note_item.dart';
 import '../sprints_cubit.dart';
 
@@ -27,9 +27,11 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _expandController;
   late Animation<double> _expandAnimation;
-  DateTime? _pauseStartTime;
+
+  // Pause duration is computed each rebuild from state.interruptionStartedAt.
+  // No local timer needed — the cubit ticker drives rebuilds every second via
+  // the timerSeconds increment, which is enough granularity for the pause display.
   Duration _pauseDuration = Duration.zero;
-  Timer? _pauseTimer;
 
   @override
   void initState() {
@@ -45,7 +47,7 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
   }
 
   void _handleStateChange(SprintsState state) {
-    final isActive = state.activeTaskId != null;
+    final isActive = state.hasActiveSession;
 
     if (isActive && _expandController.status == AnimationStatus.dismissed) {
       _expandController.forward();
@@ -54,35 +56,17 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
       _expandController.reverse();
     }
 
-    if (state.isInterrupted) {
-      if (_pauseStartTime == null) {
-        _pauseStartTime = DateTime.now();
-        _startPauseTicker();
-      }
+    // Recompute pause duration from authoritative state timestamp
+    if (state.isInterrupted && state.interruptionStartedAt != null) {
+      _pauseDuration = DateTime.now().difference(state.interruptionStartedAt!);
     } else {
-      if (_pauseStartTime != null) {
-        _pauseStartTime = null;
-        _pauseDuration = Duration.zero;
-        _pauseTimer?.cancel();
-      }
+      _pauseDuration = Duration.zero;
     }
-  }
-
-  void _startPauseTicker() {
-    _pauseTimer?.cancel();
-    _pauseTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_pauseStartTime != null) {
-        setState(() {
-          _pauseDuration = DateTime.now().difference(_pauseStartTime!);
-        });
-      }
-    });
   }
 
   @override
   void dispose() {
     _expandController.dispose();
-    _pauseTimer?.cancel();
     super.dispose();
   }
 
@@ -108,7 +92,7 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
     return BlocConsumer<SprintsCubit, SprintsState>(
       listener: (context, state) => _handleStateChange(state),
       builder: (context, state) {
-        final isActive = state.activeTaskId != null;
+        final isActive = state.hasActiveSession;
         final shape = RoundedSuperellipseBorder(
           borderRadius: BorderRadius.circular(32),
           side: BorderSide(
@@ -139,16 +123,9 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
                     customBorder: shape,
                     onTap: isActive
                         ? null
-                        : () {
-                            final firstIncomplete = widget.tasks
-                                .where((t) => !(t.completionStatus ?? false))
-                                .firstOrNull;
-                            if (firstIncomplete != null) {
-                              context.read<SprintsCubit>().startTask(
-                                firstIncomplete.id,
-                              );
-                            }
-                          },
+                        : () => context.read<SprintsCubit>().startSprint(
+                            widget.folderKey,
+                          ),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -231,11 +208,14 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
   }
 
   Widget _buildControls(BuildContext context, SprintsState state) {
+    final cubit = context.read<SprintsCubit>();
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         _CircleButton(
-          onPressed: () => context.read<SprintsCubit>().toggleInterrupt(),
+          onPressed: state.isInterrupted
+              ? () => cubit.resumeSprint()
+              : () => cubit.pauseSprint(),
           icon: state.isInterrupted
               ? Icons.play_arrow_rounded
               : Icons.pause_rounded,
@@ -244,7 +224,7 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
         ),
         const SizedBox(width: 12),
         _CircleButton(
-          onPressed: () => context.read<SprintsCubit>().stopTask(),
+          onPressed: () => cubit.stopSprint(),
           icon: Icons.stop_rounded,
           color: Colors.redAccent,
           isDark: widget.isDark,
@@ -271,24 +251,45 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
   }
 
   Widget _buildLogs(SprintsState state) {
-    final minutes = _pauseDuration.inMinutes;
-    final seconds = _pauseDuration.inSeconds % 60;
-    final pauseTimeStr =
-        "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
+    final timeFmt = DateFormat('h:mm a');
+    final pauseMins = _pauseDuration.inMinutes;
+    final pauseSecs = _pauseDuration.inSeconds % 60;
+    final pauseStr =
+        '${pauseMins.toString().padLeft(2, '0')}:${pauseSecs.toString().padLeft(2, '0')}';
 
-    final items = [
+    // Build display items: real DB logs first, then live interruption on top if active
+    final items = <_LogItem>[
+      for (final log in state.sessionLogs)
+        _LogItem.fromActivityLog(log, timeFmt),
       if (state.isInterrupted)
-        {'title': 'Pause Interval', 'time': pauseTimeStr, 'isPause': true},
-      {'title': 'Task Started', 'time': '10:00 AM', 'isPause': false},
-      {'title': 'Brainstorming Session', 'time': '10:15 AM', 'isPause': false},
-      {'title': 'UI Refactor', 'time': '10:45 AM', 'isPause': false},
+        _LogItem(
+          title: 'Paused',
+          subtitle: pauseStr,
+          isInterruption: true,
+          isLiveInterruption: true,
+        ),
     ];
+
+    if (items.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'No activity yet',
+          style: TextStyle(
+            fontSize: 12,
+            color: widget.isDark ? Colors.white38 : Colors.black38,
+          ),
+        ),
+      );
+    }
 
     return Column(
       children: List.generate(items.length, (index) {
         final item = items[index];
-        final isPause = item['isPause'] == true;
         final isLast = index == items.length - 1;
+        final dotColor = item.isInterruption
+            ? Colors.orangeAccent
+            : (widget.isDark ? Colors.white24 : Colors.black12);
 
         return IntrinsicHeight(
           child: Row(
@@ -301,11 +302,9 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
                     height: 12,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: isPause
-                          ? Colors.orangeAccent
-                          : (widget.isDark ? Colors.white24 : Colors.black12),
+                      color: dotColor,
                     ),
-                    child: isPause
+                    child: item.isInterruption
                         ? Center(
                             child: Container(
                               width: 4,
@@ -335,22 +334,24 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        item['title'] as String,
+                        item.title,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: isPause ? Colors.orangeAccent : null,
+                          color: item.isInterruption
+                              ? Colors.orangeAccent
+                              : null,
                         ),
                       ),
                       Text(
-                        item['time'] as String,
+                        item.subtitle,
                         style: TextStyle(
                           fontSize: 12,
-                          color: isPause
+                          color: item.isInterruption
                               ? Colors.orangeAccent.withAlpha(180)
                               : (widget.isDark
                                     ? Colors.white38
                                     : Colors.black38),
-                          fontFamily: isPause ? 'monospace' : null,
+                          fontFamily: item.isInterruption ? 'monospace' : null,
                         ),
                       ),
                     ],
@@ -362,6 +363,49 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
         );
       }),
     );
+  }
+}
+
+// ─── Helper model for log display ───────────────────────────────────────────
+
+class _LogItem {
+  final String title;
+  final String subtitle;
+  final bool isInterruption;
+  final bool isLiveInterruption;
+
+  const _LogItem({
+    required this.title,
+    required this.subtitle,
+    this.isInterruption = false,
+    this.isLiveInterruption = false,
+  });
+
+  factory _LogItem.fromActivityLog(ActivityLog log, DateFormat fmt) {
+    final time = fmt.format(log.loggedAt);
+    switch (log.activityType) {
+      case ActivityType.taskCompletion:
+        return _LogItem(title: 'Task completed', subtitle: time);
+      case ActivityType.taskUpdate:
+        return _LogItem(title: log.updateContent ?? 'Note', subtitle: time);
+      case ActivityType.interruption:
+        final resumed = log.resumedAt;
+        final paused = log.pausedAt;
+        String sub;
+        if (resumed != null && paused != null) {
+          final dur = resumed.difference(paused);
+          final m = dur.inMinutes.toString().padLeft(2, '0');
+          final s = (dur.inSeconds % 60).toString().padLeft(2, '0');
+          sub = 'Paused for $m:$s';
+        } else {
+          sub = fmt.format(paused ?? log.loggedAt);
+        }
+        return _LogItem(
+          title: 'Interrupted',
+          subtitle: sub,
+          isInterruption: true,
+        );
+    }
   }
 }
 

@@ -8,7 +8,7 @@ import 'package:personal_application/core/services/item_preview_cubit.dart';
 class SprintTaskItemWidget extends StatefulWidget {
   final CommonNoteItem task;
   final bool isDark;
-  final VoidCallback onStart;
+  final VoidCallback? onStart;
   final bool active;
   final VoidCallback? onComplete;
 
@@ -16,7 +16,7 @@ class SprintTaskItemWidget extends StatefulWidget {
     super.key,
     required this.task,
     required this.isDark,
-    required this.onStart,
+    this.onStart,
     this.active = false,
     this.onComplete,
   });
@@ -175,7 +175,7 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
                                   size: 24,
                                   color: Colors.blueAccent,
                                 ),
-                                onPressed: widget.onStart,
+                                onPressed: widget.onStart ?? () {},
                               ),
                             if (widget.active && !_isHovered && !isSelected)
                               const Icon(
@@ -339,7 +339,7 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
         if (!widget.active && !isCompleted)
           _ActionButton(
             icon: Icons.play_arrow_rounded,
-            onPressed: widget.onStart,
+            onPressed: widget.onStart ?? () {},
             tooltip: 'Start Task',
             color: Colors.blueAccent,
           ),
