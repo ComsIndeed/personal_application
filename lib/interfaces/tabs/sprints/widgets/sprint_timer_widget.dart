@@ -28,11 +28,6 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
   late AnimationController _expandController;
   late Animation<double> _expandAnimation;
 
-  // Pause duration is computed each rebuild from state.interruptionStartedAt.
-  // No local timer needed — the cubit ticker drives rebuilds every second via
-  // the timerSeconds increment, which is enough granularity for the pause display.
-  Duration _pauseDuration = Duration.zero;
-
   @override
   void initState() {
     super.initState();
@@ -54,13 +49,6 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
     } else if (!isActive &&
         _expandController.status == AnimationStatus.completed) {
       _expandController.reverse();
-    }
-
-    // Recompute pause duration from authoritative state timestamp
-    if (state.isInterrupted && state.interruptionStartedAt != null) {
-      _pauseDuration = DateTime.now().difference(state.interruptionStartedAt!);
-    } else {
-      _pauseDuration = Duration.zero;
     }
   }
 
@@ -252,18 +240,28 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
 
   Widget _buildLogs(SprintsState state) {
     final timeFmt = DateFormat('h:mm a');
-    final pauseMins = _pauseDuration.inMinutes;
-    final pauseSecs = _pauseDuration.inSeconds % 60;
+
+    // Recompute pause duration from authoritative state timestamp
+    Duration currentPauseDuration = Duration.zero;
+    if (state.isInterrupted && state.interruptionStartedAt != null) {
+      currentPauseDuration = DateTime.now().difference(
+        state.interruptionStartedAt!,
+      );
+    }
+    final pauseMins = currentPauseDuration.inMinutes;
+    final pauseSecs = currentPauseDuration.inSeconds % 60;
     final pauseStr =
         '${pauseMins.toString().padLeft(2, '0')}:${pauseSecs.toString().padLeft(2, '0')}';
 
     // Build display items: real DB logs first, then live interruption on top if active
     final items = <_LogItem>[
       for (final log in state.sessionLogs)
-        _LogItem.fromActivityLog(log, timeFmt),
+        if (log.id != state.activeInterruptionLogId)
+          _LogItem.fromActivityLog(log, timeFmt),
       if (state.isInterrupted)
         _LogItem(
-          title: 'Paused',
+          id: 'live_interruption',
+          title: 'Interrupted',
           subtitle: pauseStr,
           isInterruption: true,
           isLiveInterruption: true,
@@ -287,8 +285,12 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
       children: List.generate(items.length, (index) {
         final item = items[index];
         final isLast = index == items.length - 1;
+        final isLive = item.isLiveInterruption;
+
         final dotColor = item.isInterruption
-            ? Colors.orangeAccent
+            ? (isLive
+                  ? Colors.orangeAccent
+                  : Colors.orangeAccent.withAlpha(150))
             : (widget.isDark ? Colors.white24 : Colors.black12);
 
         return IntrinsicHeight(
@@ -337,22 +339,41 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
                         item.title,
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: isLive ? 15 : null,
                           color: item.isInterruption
                               ? Colors.orangeAccent
                               : null,
                         ),
                       ),
-                      Text(
-                        item.subtitle,
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: item.isInterruption
-                              ? Colors.orangeAccent.withAlpha(180)
-                              : (widget.isDark
-                                    ? Colors.white38
-                                    : Colors.black38),
-                          fontFamily: item.isInterruption ? 'monospace' : null,
-                        ),
+                      const SizedBox(height: 2),
+                      Row(
+                        children: [
+                          if (isLive) ...[
+                            const Icon(
+                              Icons.timer_outlined,
+                              size: 14,
+                              color: Colors.orangeAccent,
+                            ),
+                            const SizedBox(width: 4),
+                          ],
+                          Text(
+                            item.subtitle,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isLive ? FontWeight.bold : null,
+                              color: item.isInterruption
+                                  ? (isLive
+                                        ? Colors.orangeAccent
+                                        : Colors.orangeAccent.withAlpha(180))
+                                  : (widget.isDark
+                                        ? Colors.white38
+                                        : Colors.black38),
+                              fontFamily: item.isInterruption
+                                  ? 'monospace'
+                                  : null,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -369,12 +390,14 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
 // ─── Helper model for log display ───────────────────────────────────────────
 
 class _LogItem {
+  final String id;
   final String title;
   final String subtitle;
   final bool isInterruption;
   final bool isLiveInterruption;
 
   const _LogItem({
+    required this.id,
     required this.title,
     required this.subtitle,
     this.isInterruption = false,
@@ -385,9 +408,13 @@ class _LogItem {
     final time = fmt.format(log.loggedAt);
     switch (log.activityType) {
       case ActivityType.taskCompletion:
-        return _LogItem(title: 'Task completed', subtitle: time);
+        return _LogItem(id: log.id, title: 'Task completed', subtitle: time);
       case ActivityType.taskUpdate:
-        return _LogItem(title: log.updateContent ?? 'Note', subtitle: time);
+        return _LogItem(
+          id: log.id,
+          title: log.updateContent ?? 'Note',
+          subtitle: time,
+        );
       case ActivityType.interruption:
         final resumed = log.resumedAt;
         final paused = log.pausedAt;
@@ -401,6 +428,7 @@ class _LogItem {
           sub = fmt.format(paused ?? log.loggedAt);
         }
         return _LogItem(
+          id: log.id,
           title: 'Interrupted',
           subtitle: sub,
           isInterruption: true,

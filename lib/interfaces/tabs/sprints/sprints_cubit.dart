@@ -24,6 +24,9 @@ class SprintsState extends Equatable {
   // Log of events in the current session (for the UI log view)
   final List<ActivityLog> sessionLogs;
 
+  // Used to force UI rebuilds during interruptions
+  final DateTime? lastTick;
+
   const SprintsState({
     this.tasks = const [],
     this.isLoading = true,
@@ -34,6 +37,7 @@ class SprintsState extends Equatable {
     this.activeInterruptionLogId,
     this.interruptionStartedAt,
     this.sessionLogs = const [],
+    this.lastTick,
   });
 
   bool get hasActiveSession => activeSessionId != null;
@@ -48,6 +52,7 @@ class SprintsState extends Equatable {
     String? activeInterruptionLogId,
     DateTime? interruptionStartedAt,
     List<ActivityLog>? sessionLogs,
+    DateTime? lastTick,
     bool clearSession = false,
     bool clearInterruption = false,
   }) {
@@ -71,6 +76,7 @@ class SprintsState extends Equatable {
           ? null
           : (interruptionStartedAt ?? this.interruptionStartedAt),
       sessionLogs: clearSession ? const [] : (sessionLogs ?? this.sessionLogs),
+      lastTick: lastTick ?? this.lastTick,
     );
   }
 
@@ -85,6 +91,7 @@ class SprintsState extends Equatable {
     activeInterruptionLogId,
     interruptionStartedAt,
     sessionLogs,
+    lastTick,
   ];
 }
 
@@ -198,8 +205,18 @@ class SprintsCubit extends Cubit<SprintsState> {
   void _startTicker() {
     _ticker?.cancel();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      if (!state.isInterrupted && state.hasActiveSession) {
-        emit(state.copyWith(timerSeconds: state.timerSeconds + 1));
+      if (state.hasActiveSession) {
+        if (!state.isInterrupted) {
+          emit(
+            state.copyWith(
+              timerSeconds: state.timerSeconds + 1,
+              lastTick: DateTime.now(),
+            ),
+          );
+        } else {
+          // Still emit to drive UI updates (like the pause timer)
+          emit(state.copyWith(lastTick: DateTime.now()));
+        }
       }
     });
   }
