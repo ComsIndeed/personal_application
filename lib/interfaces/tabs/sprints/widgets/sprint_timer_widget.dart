@@ -1,10 +1,11 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import '../sprints_cubit.dart';
 import '../../../../core/models/common_note_item.dart';
+import '../sprints_cubit.dart';
 
 class SprintTimerWidget extends StatefulWidget {
   final String folderKey;
@@ -108,6 +109,15 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
       listener: (context, state) => _handleStateChange(state),
       builder: (context, state) {
         final isActive = state.activeTaskId != null;
+        final shape = RoundedSuperellipseBorder(
+          borderRadius: BorderRadius.circular(32),
+          side: BorderSide(
+            color: isActive
+                ? (widget.isDark ? Colors.white12 : Colors.black12)
+                : Colors.transparent,
+            width: 1,
+          ),
+        );
 
         return AnimatedBuilder(
           animation: _expandAnimation,
@@ -120,37 +130,41 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
 
             return Container(
               margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              decoration: ShapeDecoration(
-                color: color,
-                shadows: [
-                  BoxShadow(
-                    color: (isActive ? Colors.black : baseColor).withAlpha(40),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
+              decoration: ShapeDecoration(color: color, shape: shape),
+              child: ClipPath(
+                clipper: ShapeBorderClipper(shape: shape),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    customBorder: shape,
+                    onTap: isActive
+                        ? null
+                        : () {
+                            final firstIncomplete = widget.tasks
+                                .where((t) => !(t.completionStatus ?? false))
+                                .firstOrNull;
+                            if (firstIncomplete != null) {
+                              context.read<SprintsCubit>().startTask(
+                                firstIncomplete.id,
+                              );
+                            }
+                          },
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildTopContent(context, state, isActive, baseColor),
+                        if (_expandAnimation.value > 0)
+                          SizeTransition(
+                            sizeFactor: _expandAnimation,
+                            child: _buildExpandedContent(
+                              context,
+                              state,
+                              baseColor,
+                            ),
+                          ),
+                      ],
+                    ),
                   ),
-                ],
-                shape: ContinuousRectangleBorder(
-                  borderRadius: BorderRadius.circular(isActive ? 64 : 32),
-                  side: BorderSide(
-                    color: isActive
-                        ? (widget.isDark ? Colors.white12 : Colors.black12)
-                        : Colors.transparent,
-                    width: 1,
-                  ),
-                ),
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(isActive ? 32 : 16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildTopContent(context, state, isActive, baseColor),
-                    if (_expandAnimation.value > 0)
-                      SizeTransition(
-                        sizeFactor: _expandAnimation,
-                        child: _buildExpandedContent(context, state, baseColor),
-                      ),
-                  ],
                 ),
               ),
             );
@@ -166,44 +180,29 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
     bool isActive,
     Color baseColor,
   ) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: isActive
-            ? null
-            : () {
-                final firstIncomplete = widget.tasks
-                    .where((t) => !(t.completionStatus ?? false))
-                    .firstOrNull;
-                if (firstIncomplete != null) {
-                  context.read<SprintsCubit>().startTask(firstIncomplete.id);
-                }
-              },
-        child: Container(
-          height: 64 + (16 * _expandAnimation.value),
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (!isActive) ...[
-                const Icon(Icons.play_arrow_rounded, color: Colors.white),
-                const SizedBox(width: 12),
-                const Text(
-                  'Start Working',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ] else ...[
-                _buildWheelTimer(state.timerSeconds),
-                const Spacer(),
-                _buildControls(context, state),
-              ],
-            ],
-          ),
-        ),
+    return Container(
+      height: 64 + (16 * _expandAnimation.value),
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          if (!isActive) ...[
+            const Icon(Icons.play_arrow_rounded, color: Colors.white),
+            const SizedBox(width: 12),
+            const Text(
+              'Start Working',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ] else ...[
+            _buildWheelTimer(state.timerSeconds),
+            const Spacer(),
+            _buildControls(context, state),
+          ],
+        ],
       ),
     );
   }
