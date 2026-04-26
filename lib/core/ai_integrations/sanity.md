@@ -34,3 +34,5 @@ IN-CHECK
 ## DUMP
 
 - Sprint button indicate timer maybe
+- The sprint timer logs, show like some kind of line thing summariizng time
+  spent or something? Keeps it infomrative
