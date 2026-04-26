@@ -118,7 +118,6 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                         _CategorySquircle(
                                           color: Colors.redAccent,
                                           tooltip: 'Important',
-                                          icon: Icons.priority_high_rounded,
                                           onTap: () async {
                                             final date = await showDatePicker(
                                               context: context,
@@ -404,13 +403,11 @@ class _ActionButton extends StatelessWidget {
 class _CategorySquircle extends StatelessWidget {
   final Color color;
   final String tooltip;
-  final IconData? icon;
   final VoidCallback onTap;
 
   const _CategorySquircle({
     required this.color,
     required this.tooltip,
-    this.icon,
     required this.onTap,
   });
 
@@ -436,9 +433,6 @@ class _CategorySquircle extends StatelessWidget {
               ),
             ],
           ),
-          child: icon != null
-              ? Center(child: Icon(icon, size: 10, color: Colors.white))
-              : null,
         ),
       ),
     );
