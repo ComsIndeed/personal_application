@@ -8,6 +8,7 @@ import '../../../core/constants/app_tab_id.dart';
 import '../../../core/widgets/app_tab.dart';
 import 'package:personal_application/core/widgets/sprint_task_item_widget.dart';
 import 'package:personal_application/interfaces/tabs/sprints/sprints_cubit.dart';
+import 'package:personal_application/interfaces/tabs/sprints/widgets/sprint_timer_widget.dart';
 
 class SprintsTab extends StatefulWidget {
   const SprintsTab({super.key});
@@ -99,9 +100,7 @@ class _SprintsTabState extends State<SprintsTab>
           color: Colors.transparent,
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 400),
-            child: state.activeTaskId != null
-                ? _buildTimerView(context, state, isDark)
-                : _selectedFolderKey == null
+            child: _selectedFolderKey == null
                 ? _buildFolderGrid(context, folders, folderKeys, isDark)
                 : _buildFolderContents(
                     context,
@@ -153,54 +152,8 @@ class _SprintsTabState extends State<SprintsTab>
   ) {
     return Column(
       children: [
-        if (folderKey != 'fun' && tasks.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                onTap: () {
-                  // Start the first incomplete task, or just start the working session logic
-                  final firstIncomplete = tasks
-                      .where((t) => !(t.completionStatus ?? false))
-                      .firstOrNull;
-                  if (firstIncomplete != null) {
-                    context.read<SprintsCubit>().startTask(firstIncomplete.id);
-                  }
-                },
-                borderRadius: BorderRadius.circular(16),
-                child: Ink(
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: _getFolderColor(folderKey),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _getFolderColor(folderKey).withAlpha(80),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.play_arrow_rounded, color: Colors.white),
-                      SizedBox(width: 12),
-                      Text(
-                        'Start Working',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
+        if (folderKey != 'fun')
+          SprintTimerWidget(folderKey: folderKey, tasks: tasks, isDark: isDark),
         Expanded(
           child: folderKey == 'admin' || folderKey == 'uncategorized'
               ? _buildMaintenanceList(context, tasks, isDark)
@@ -303,106 +256,6 @@ class _SprintsTabState extends State<SprintsTab>
       default:
         return Icons.category_outlined;
     }
-  }
-
-  Widget _buildTimerView(
-    BuildContext context,
-    SprintsState state,
-    bool isDark,
-  ) {
-    final activeTask = state.tasks.firstWhere(
-      (t) => t.id == state.activeTaskId,
-    );
-    final minutes = state.timerSeconds ~/ 60;
-    final seconds = state.timerSeconds % 60;
-    final timeStr =
-        "${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}";
-
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      body: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(40),
-            child: Column(
-              children: [
-                Text(
-                  timeStr,
-                  style: GoogleFonts.ebGaramond(
-                    fontSize: 72,
-                    fontWeight: FontWeight.bold,
-                    color: state.isInterrupted
-                        ? (isDark ? Colors.white24 : Colors.black26)
-                        : (isDark ? Colors.white : Colors.black),
-                  ),
-                ),
-                if (state.isInterrupted)
-                  const Text(
-                    'SESSION INTERRUPTED',
-                    style: TextStyle(
-                      color: Colors.orangeAccent,
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
-                  ),
-                const SizedBox(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _TimerControlButton(
-                      onPressed: () =>
-                          context.read<SprintsCubit>().toggleInterrupt(),
-                      icon: state.isInterrupted
-                          ? Icons.play_arrow_rounded
-                          : Icons.pause_rounded,
-                      label: state.isInterrupted ? 'Resume' : 'Interrupt',
-                      color: state.isInterrupted
-                          ? Colors.greenAccent
-                          : Colors.orangeAccent,
-                    ),
-                    const SizedBox(width: 20),
-                    _TimerControlButton(
-                      onPressed: () => context.read<SprintsCubit>().stopTask(),
-                      icon: Icons.stop_rounded,
-                      label: 'Finish Session',
-                      color: Colors.redAccent,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1, color: Colors.white10),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.all(20),
-              children: [
-                const Text(
-                  'ACTIVE SPRINT TASK',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.2,
-                    color: Colors.white54,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                SprintTaskItemWidget(
-                  task: activeTask,
-                  isDark: isDark,
-                  onStart: () {}, // Already active
-                  active: true,
-                  onComplete: () =>
-                      context.read<SprintsCubit>().completeTask(activeTask.id),
-                ),
-                // Other tasks in the same folder could be shown here if needed
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -583,45 +436,6 @@ class _SprintFolderTile extends StatelessWidget {
           );
         }).toList(),
       ),
-    );
-  }
-}
-
-class _TimerControlButton extends StatelessWidget {
-  final VoidCallback onPressed;
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  const _TimerControlButton({
-    required this.onPressed,
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        IconButton(
-          onPressed: onPressed,
-          icon: Icon(icon, size: 32, color: color),
-          style: IconButton.styleFrom(
-            backgroundColor: color.withAlpha(25),
-            padding: const EdgeInsets.all(20),
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-      ],
     );
   }
 }

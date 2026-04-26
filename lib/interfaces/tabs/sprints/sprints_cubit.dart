@@ -23,13 +23,16 @@ class SprintsState extends Equatable {
     List<CommonNoteItem>? tasks,
     bool? isLoading,
     String? activeTaskId,
-    int? timerSeconds,
     bool? isInterrupted,
+    int? timerSeconds,
+    bool clearActiveTaskId = false,
   }) {
     return SprintsState(
       tasks: tasks ?? this.tasks,
       isLoading: isLoading ?? this.isLoading,
-      activeTaskId: activeTaskId ?? this.activeTaskId,
+      activeTaskId: clearActiveTaskId
+          ? null
+          : (activeTaskId ?? this.activeTaskId),
       timerSeconds: timerSeconds ?? this.timerSeconds,
       isInterrupted: isInterrupted ?? this.isInterrupted,
     );
@@ -72,6 +75,10 @@ class SprintsCubit extends Cubit<SprintsState> {
 
   void toggleInterrupt() {
     emit(state.copyWith(isInterrupted: !state.isInterrupted));
+    // Ensure ticker is running if unpausing
+    if (!state.isInterrupted) {
+      _startTicker();
+    }
   }
 
   void stopTask() {
@@ -79,7 +86,7 @@ class SprintsCubit extends Cubit<SprintsState> {
     if (state.activeTaskId != null) {
       _service.updateTimer(state.activeTaskId!, state.timerSeconds);
     }
-    emit(state.copyWith(activeTaskId: null, isInterrupted: false));
+    emit(state.copyWith(clearActiveTaskId: true, isInterrupted: false));
   }
 
   void completeTask(String taskId) {
