@@ -11,6 +11,7 @@ import '../../core/models/message/enums.dart';
 import '../../core/services/database_browser_cubit.dart';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../core/services/test_data_seeder.dart';
 
 class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
@@ -27,6 +28,7 @@ class _SettingsTabState extends State<SettingsTab> {
   String? _authError;
   User? _user;
   bool _isSyncing = false;
+  double? _seedingProgress;
 
   @override
   void initState() {
@@ -226,6 +228,72 @@ class _SettingsTabState extends State<SettingsTab> {
           ),
         ),
 
+        _buildSectionHeader('Developer Tools'),
+        _buildSectionContainer(
+          padding: EdgeInsets.zero,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: _seedingProgress != null ? null : _showSeederConfirmation,
+              borderRadius: BorderRadius.circular(20),
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.science_outlined,
+                          size: 16,
+                          color: Colors.orangeAccent,
+                        ),
+                        const SizedBox(width: 10),
+                        const Expanded(
+                          child: Text(
+                            'Download & Insert Test Data',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        if (_seedingProgress != null)
+                          SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              value: _seedingProgress,
+                              strokeWidth: 2,
+                              color: Colors.orangeAccent,
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            size: 16,
+                            color: Colors.white.withValues(alpha: 0.2),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _seedingProgress != null
+                          ? 'Generating 60+ matrix items... ${(_seedingProgress! * 100).toInt()}%'
+                          : 'Stress test the UI with 60 entries (Long MD, Multi-media, Inline images, Ambiguous dumps). Assets are downloaded from GitHub.',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.white30,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+
         if (_user != null) ...[
           const SizedBox(height: 32),
           Center(
@@ -245,6 +313,68 @@ class _SettingsTabState extends State<SettingsTab> {
         ],
       ],
     );
+  }
+
+  void _showSeederConfirmation() async {
+    final db = context.read<AppDatabase>();
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Seed Test Data?'),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'This will download ~15MB of assets from GitHub and insert 60 records into your database.',
+            ),
+            SizedBox(height: 12),
+            Text(
+              '⚠️ This will trigger background uploads to B2 and cloud sync.',
+              style: TextStyle(fontSize: 11, color: Colors.orangeAccent),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              textStyle: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            child: const Text('Download & Seed'),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    final seeder = TestDataSeeder(db);
+    final sub = seeder.progress.listen((p) {
+      if (mounted) setState(() => _seedingProgress = p);
+    });
+
+    try {
+      await seeder.run();
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Test data seeded!')));
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Seeding failed: $e')));
+      }
+    } finally {
+      sub.cancel();
+      if (mounted) setState(() => _seedingProgress = null);
+    }
   }
 
   void _showWipeConfirmation() async {
