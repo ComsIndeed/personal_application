@@ -1381,6 +1381,28 @@ class $CommonNoteItemsTable extends CommonNoteItems
     type: DriftSqlType.dateTime,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _criticalityMeta = const VerificationMeta(
+    'criticality',
+  );
+  @override
+  late final GeneratedColumn<int> criticality = GeneratedColumn<int>(
+    'criticality',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _resistanceMeta = const VerificationMeta(
+    'resistance',
+  );
+  @override
+  late final GeneratedColumn<int> resistance = GeneratedColumn<int>(
+    'resistance',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   @override
   late final GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
   metadata =
@@ -1412,6 +1434,8 @@ class $CommonNoteItemsTable extends CommonNoteItems
     completionStatus,
     timerSeconds,
     dueDate,
+    criticality,
+    resistance,
     metadata,
   ];
   @override
@@ -1510,6 +1534,21 @@ class $CommonNoteItemsTable extends CommonNoteItems
         dueDate.isAcceptableOrUnknown(data['due_date']!, _dueDateMeta),
       );
     }
+    if (data.containsKey('criticality')) {
+      context.handle(
+        _criticalityMeta,
+        criticality.isAcceptableOrUnknown(
+          data['criticality']!,
+          _criticalityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('resistance')) {
+      context.handle(
+        _resistanceMeta,
+        resistance.isAcceptableOrUnknown(data['resistance']!, _resistanceMeta),
+      );
+    }
     return context;
   }
 
@@ -1595,6 +1634,14 @@ class $CommonNoteItemsTable extends CommonNoteItems
         DriftSqlType.dateTime,
         data['${effectivePrefix}due_date'],
       ),
+      criticality: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}criticality'],
+      ),
+      resistance: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}resistance'],
+      ),
       metadata: $CommonNoteItemsTable.$convertermetadatan.fromSql(
         attachedDatabase.typeMapping.read(
           DriftSqlType.string,
@@ -1643,6 +1690,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
   final Value<bool?> completionStatus;
   final Value<int?> timerSeconds;
   final Value<DateTime?> dueDate;
+  final Value<int?> criticality;
+  final Value<int?> resistance;
   final Value<Map<String, dynamic>?> metadata;
   final Value<int> rowid;
   const CommonNoteItemsCompanion({
@@ -1663,6 +1712,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     this.completionStatus = const Value.absent(),
     this.timerSeconds = const Value.absent(),
     this.dueDate = const Value.absent(),
+    this.criticality = const Value.absent(),
+    this.resistance = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -1684,6 +1735,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     this.completionStatus = const Value.absent(),
     this.timerSeconds = const Value.absent(),
     this.dueDate = const Value.absent(),
+    this.criticality = const Value.absent(),
+    this.resistance = const Value.absent(),
     this.metadata = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : category = Value(category);
@@ -1705,6 +1758,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Expression<bool>? completionStatus,
     Expression<int>? timerSeconds,
     Expression<DateTime>? dueDate,
+    Expression<int>? criticality,
+    Expression<int>? resistance,
     Expression<String>? metadata,
     Expression<int>? rowid,
   }) {
@@ -1726,6 +1781,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       if (completionStatus != null) 'completion_status': completionStatus,
       if (timerSeconds != null) 'timer_seconds': timerSeconds,
       if (dueDate != null) 'due_date': dueDate,
+      if (criticality != null) 'criticality': criticality,
+      if (resistance != null) 'resistance': resistance,
       if (metadata != null) 'metadata': metadata,
       if (rowid != null) 'rowid': rowid,
     });
@@ -1749,6 +1806,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     Value<bool?>? completionStatus,
     Value<int?>? timerSeconds,
     Value<DateTime?>? dueDate,
+    Value<int?>? criticality,
+    Value<int?>? resistance,
     Value<Map<String, dynamic>?>? metadata,
     Value<int>? rowid,
   }) {
@@ -1770,6 +1829,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
       completionStatus: completionStatus ?? this.completionStatus,
       timerSeconds: timerSeconds ?? this.timerSeconds,
       dueDate: dueDate ?? this.dueDate,
+      criticality: criticality ?? this.criticality,
+      resistance: resistance ?? this.resistance,
       metadata: metadata ?? this.metadata,
       rowid: rowid ?? this.rowid,
     );
@@ -1837,6 +1898,12 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
     if (dueDate.present) {
       map['due_date'] = Variable<DateTime>(dueDate.value);
     }
+    if (criticality.present) {
+      map['criticality'] = Variable<int>(criticality.value);
+    }
+    if (resistance.present) {
+      map['resistance'] = Variable<int>(resistance.value);
+    }
     if (metadata.present) {
       map['metadata'] = Variable<String>(
         $CommonNoteItemsTable.$convertermetadatan.toSql(metadata.value),
@@ -1868,6 +1935,8 @@ class CommonNoteItemsCompanion extends UpdateCompanion<CommonNoteItem> {
           ..write('completionStatus: $completionStatus, ')
           ..write('timerSeconds: $timerSeconds, ')
           ..write('dueDate: $dueDate, ')
+          ..write('criticality: $criticality, ')
+          ..write('resistance: $resistance, ')
           ..write('metadata: $metadata, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -3590,6 +3659,8 @@ typedef $$CommonNoteItemsTableCreateCompanionBuilder =
       Value<bool?> completionStatus,
       Value<int?> timerSeconds,
       Value<DateTime?> dueDate,
+      Value<int?> criticality,
+      Value<int?> resistance,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
     });
@@ -3612,6 +3683,8 @@ typedef $$CommonNoteItemsTableUpdateCompanionBuilder =
       Value<bool?> completionStatus,
       Value<int?> timerSeconds,
       Value<DateTime?> dueDate,
+      Value<int?> criticality,
+      Value<int?> resistance,
       Value<Map<String, dynamic>?> metadata,
       Value<int> rowid,
     });
@@ -3711,6 +3784,16 @@ class $$CommonNoteItemsTableFilterComposer
 
   ColumnFilters<DateTime> get dueDate => $composableBuilder(
     column: $table.dueDate,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get criticality => $composableBuilder(
+    column: $table.criticality,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get resistance => $composableBuilder(
+    column: $table.resistance,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3819,6 +3902,16 @@ class $$CommonNoteItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get criticality => $composableBuilder(
+    column: $table.criticality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get resistance => $composableBuilder(
+    column: $table.resistance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get metadata => $composableBuilder(
     column: $table.metadata,
     builder: (column) => ColumnOrderings(column),
@@ -3891,6 +3984,16 @@ class $$CommonNoteItemsTableAnnotationComposer
   GeneratedColumn<DateTime> get dueDate =>
       $composableBuilder(column: $table.dueDate, builder: (column) => column);
 
+  GeneratedColumn<int> get criticality => $composableBuilder(
+    column: $table.criticality,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get resistance => $composableBuilder(
+    column: $table.resistance,
+    builder: (column) => column,
+  );
+
   GeneratedColumnWithTypeConverter<Map<String, dynamic>?, String>
   get metadata =>
       $composableBuilder(column: $table.metadata, builder: (column) => column);
@@ -3950,6 +4053,8 @@ class $$CommonNoteItemsTableTableManager
                 Value<bool?> completionStatus = const Value.absent(),
                 Value<int?> timerSeconds = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
+                Value<int?> criticality = const Value.absent(),
+                Value<int?> resistance = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CommonNoteItemsCompanion(
@@ -3970,6 +4075,8 @@ class $$CommonNoteItemsTableTableManager
                 completionStatus: completionStatus,
                 timerSeconds: timerSeconds,
                 dueDate: dueDate,
+                criticality: criticality,
+                resistance: resistance,
                 metadata: metadata,
                 rowid: rowid,
               ),
@@ -3992,6 +4099,8 @@ class $$CommonNoteItemsTableTableManager
                 Value<bool?> completionStatus = const Value.absent(),
                 Value<int?> timerSeconds = const Value.absent(),
                 Value<DateTime?> dueDate = const Value.absent(),
+                Value<int?> criticality = const Value.absent(),
+                Value<int?> resistance = const Value.absent(),
                 Value<Map<String, dynamic>?> metadata = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => CommonNoteItemsCompanion.insert(
@@ -4012,6 +4121,8 @@ class $$CommonNoteItemsTableTableManager
                 completionStatus: completionStatus,
                 timerSeconds: timerSeconds,
                 dueDate: dueDate,
+                criticality: criticality,
+                resistance: resistance,
                 metadata: metadata,
                 rowid: rowid,
               ),

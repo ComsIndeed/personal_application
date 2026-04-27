@@ -32,6 +32,8 @@ class SprintsService {
     String? group,
     int? estTime,
     DateTime? dueDate,
+    int? criticality,
+    int? resistance,
   }) async {
     if (_db == null) return;
 
@@ -44,6 +46,8 @@ class SprintsService {
         group: Value(group),
         estTime: Value(estTime),
         dueDate: Value(dueDate),
+        criticality: Value(criticality),
+        resistance: Value(resistance),
         updatedAt: Value(DateTime.now()),
       ),
     );

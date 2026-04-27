@@ -28,6 +28,8 @@ class CommonNoteItem extends Equatable implements Syncable {
     this.completionStatus,
     this.timerSeconds,
     this.dueDate,
+    this.criticality,
+    this.resistance,
     this.metadata,
   });
 
@@ -62,6 +64,8 @@ class CommonNoteItem extends Equatable implements Syncable {
   final bool? completionStatus;
   final int? timerSeconds;
   final DateTime? dueDate;
+  final int? criticality;
+  final int? resistance;
 
   bool get isUrgent {
     if (category != TabCategory.tasks || dueDate == null) return false;
@@ -97,6 +101,8 @@ class CommonNoteItem extends Equatable implements Syncable {
       completionStatus: Value(completionStatus),
       timerSeconds: Value(timerSeconds),
       dueDate: Value(dueDate),
+      criticality: Value(criticality),
+      resistance: Value(resistance),
       metadata: Value(metadata),
     );
   }
@@ -119,6 +125,8 @@ class CommonNoteItem extends Equatable implements Syncable {
     bool? completionStatus,
     int? timerSeconds,
     DateTime? dueDate,
+    int? criticality,
+    int? resistance,
     Map<String, dynamic>? metadata,
   }) {
     return CommonNoteItem(
@@ -139,6 +147,8 @@ class CommonNoteItem extends Equatable implements Syncable {
       completionStatus: completionStatus ?? this.completionStatus,
       timerSeconds: timerSeconds ?? this.timerSeconds,
       dueDate: dueDate ?? this.dueDate,
+      criticality: criticality ?? this.criticality,
+      resistance: resistance ?? this.resistance,
       metadata: metadata ?? this.metadata,
     );
   }
@@ -162,6 +172,8 @@ class CommonNoteItem extends Equatable implements Syncable {
     completionStatus,
     timerSeconds,
     dueDate,
+    criticality,
+    resistance,
     metadata,
   ];
 

@@ -33,6 +33,8 @@ CommonNoteItem _$CommonNoteItemFromJson(Map<String, dynamic> json) =>
       dueDate: json['due_date'] == null
           ? null
           : DateTime.parse(json['due_date'] as String),
+      criticality: (json['criticality'] as num?)?.toInt(),
+      resistance: (json['resistance'] as num?)?.toInt(),
       metadata: json['metadata'] as Map<String, dynamic>?,
     );
 
@@ -55,6 +57,8 @@ Map<String, dynamic> _$CommonNoteItemToJson(CommonNoteItem instance) =>
       'completion_status': instance.completionStatus,
       'timer_seconds': instance.timerSeconds,
       'due_date': instance.dueDate?.toIso8601String(),
+      'criticality': instance.criticality,
+      'resistance': instance.resistance,
       'metadata': instance.metadata,
     };
 

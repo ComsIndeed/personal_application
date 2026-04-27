@@ -26,15 +26,18 @@ class BrainDumpItemWidget extends StatefulWidget {
 
 class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
   bool _isHovered = false;
-  bool _isDatePromptVisible = false;
-  TaskType? _pendingTaskType;
+  bool _isPromotionModalVisible = false;
+  int _selectedCriticality = 3;
+  int _selectedResistance = 3;
+  DateTime? _selectedDueDate;
 
   @override
   void didUpdateWidget(BrainDumpItemWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.item.id != widget.item.id) {
-      _isDatePromptVisible = false;
-      _pendingTaskType = null;
+      _isPromotionModalVisible = false;
+      _selectedCriticality = 3;
+      _selectedResistance = 3;
     }
   }
 
@@ -118,12 +121,12 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                             child:
                                 (_isHovered ||
                                         isSelected ||
-                                        _isDatePromptVisible) &&
+                                        _isPromotionModalVisible) &&
                                     !widget.isPending
                                 ? Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      if (!_isDatePromptVisible)
+                                      if (!_isPromotionModalVisible)
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(
                                             16,
@@ -133,38 +136,38 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                           ),
                                           child: Row(
                                             children: [
-                                              _CategorySquircle(
-                                                color: Colors.redAccent,
-                                                tooltip: 'Important',
-                                                onTap: () {
+                                              TextButton.icon(
+                                                onPressed: () {
                                                   setState(() {
-                                                    _pendingTaskType =
-                                                        TaskType.important;
-                                                    _isDatePromptVisible = true;
+                                                    _isPromotionModalVisible =
+                                                        true;
                                                   });
                                                 },
-                                              ),
-                                              _CategorySquircle(
-                                                color: Colors.blueAccent,
-                                                tooltip: 'Admin',
-                                                onTap: () {
-                                                  setState(() {
-                                                    _pendingTaskType =
-                                                        TaskType.admin;
-                                                    _isDatePromptVisible = true;
-                                                  });
-                                                },
-                                              ),
-                                              _CategorySquircle(
-                                                color: Colors.purpleAccent,
-                                                tooltip: 'Fun',
-                                                onTap: () {
-                                                  setState(() {
-                                                    _pendingTaskType =
-                                                        TaskType.fun;
-                                                    _isDatePromptVisible = true;
-                                                  });
-                                                },
+                                                icon: const Icon(
+                                                  Icons.add_task_rounded,
+                                                  size: 18,
+                                                ),
+                                                label: const Text('Add to..'),
+                                                style: TextButton.styleFrom(
+                                                  foregroundColor:
+                                                      Colors.redAccent,
+                                                  backgroundColor: Colors
+                                                      .redAccent
+                                                      .withAlpha(
+                                                        isDark ? 20 : 10,
+                                                      ),
+                                                  shape: RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                          12,
+                                                        ),
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        horizontal: 16,
+                                                        vertical: 8,
+                                                      ),
+                                                ),
                                               ),
                                               const SizedBox(width: 8),
                                               _ActionButton(
@@ -193,27 +196,35 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                             ],
                                           ),
                                         ),
-                                      if (_isDatePromptVisible)
-                                        _DatePromptWidget(
-                                          onConfirmed: (date, time) {
-                                            DateTime? finalDueDate;
-                                            if (date != null) {
-                                              finalDueDate = DateTime(
-                                                date.year,
-                                                date.month,
-                                                date.day,
-                                                time?.hour ?? 0,
-                                                time?.minute ?? 0,
-                                              );
-                                            }
-
+                                      if (_isPromotionModalVisible)
+                                        _PromotionModal(
+                                          criticality: _selectedCriticality,
+                                          resistance: _selectedResistance,
+                                          dueDate: _selectedDueDate,
+                                          onCriticalityChanged: (val) =>
+                                              setState(
+                                                () =>
+                                                    _selectedCriticality = val,
+                                              ),
+                                          onResistanceChanged: (val) =>
+                                              setState(
+                                                () => _selectedResistance = val,
+                                              ),
+                                          onDueDateChanged: (val) => setState(
+                                            () => _selectedDueDate = val,
+                                          ),
+                                          onConfirmed: () {
                                             context
                                                 .read<BrainDumpCubit>()
                                                 .promoteToTask(
                                                   widget.item,
-                                                  _pendingTaskType ??
-                                                      TaskType.important,
-                                                  dueDate: finalDueDate,
+                                                  TaskType
+                                                      .important, // Default to important, actual grouping by parameters
+                                                  dueDate: _selectedDueDate,
+                                                  criticality:
+                                                      _selectedCriticality,
+                                                  resistance:
+                                                      _selectedResistance,
                                                 );
 
                                             context
@@ -224,8 +235,7 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
                                           },
                                           onCancel: () {
                                             setState(() {
-                                              _isDatePromptVisible = false;
-                                              _pendingTaskType = null;
+                                              _isPromotionModalVisible = false;
                                             });
                                           },
                                         ),
@@ -386,47 +396,26 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
   }
 }
 
-class _DatePromptWidget extends StatefulWidget {
-  final Function(DateTime?, TimeOfDay?) onConfirmed;
+class _PromotionModal extends StatelessWidget {
+  final int criticality;
+  final int resistance;
+  final DateTime? dueDate;
+  final ValueChanged<int> onCriticalityChanged;
+  final ValueChanged<int> onResistanceChanged;
+  final ValueChanged<DateTime?> onDueDateChanged;
+  final VoidCallback onConfirmed;
   final VoidCallback onCancel;
 
-  const _DatePromptWidget({required this.onConfirmed, required this.onCancel});
-
-  @override
-  State<_DatePromptWidget> createState() => _DatePromptWidgetState();
-}
-
-class _DatePromptWidgetState extends State<_DatePromptWidget> {
-  DateTime? _selectedDate;
-  TimeOfDay? _selectedTime;
-
-  Future<void> _selectTime(BuildContext context) async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: isDark
-                ? const ColorScheme.dark(
-                    primary: Colors.redAccent,
-                    onPrimary: Colors.white,
-                    surface: Color(0xFF1E293B),
-                  )
-                : const ColorScheme.light(
-                    primary: Colors.redAccent,
-                    onPrimary: Colors.white,
-                  ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => _selectedTime = picked);
-    }
-  }
+  const _PromotionModal({
+    required this.criticality,
+    required this.resistance,
+    this.dueDate,
+    required this.onCriticalityChanged,
+    required this.onResistanceChanged,
+    required this.onDueDateChanged,
+    required this.onConfirmed,
+    required this.onCancel,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -434,11 +423,11 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
     final isDark = theme.brightness == Brightness.dark;
 
     return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: isDark
               ? Colors.white.withAlpha(15)
@@ -451,19 +440,24 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
         children: [
           Row(
             children: [
+              Icon(
+                Icons.auto_awesome_rounded,
+                size: 16,
+                color: Colors.redAccent.withAlpha(180),
+              ),
               const SizedBox(width: 8),
               Text(
-                'Set Final Deadline',
+                'UPGRADE TO TASK',
                 style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 0.5,
-                  color: isDark ? Colors.white70 : Colors.black87,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                  color: isDark ? Colors.white54 : Colors.black54,
                 ),
               ),
               const Spacer(),
               IconButton(
-                onPressed: widget.onCancel,
+                onPressed: onCancel,
                 icon: const Icon(Icons.close, size: 14),
                 padding: EdgeInsets.zero,
                 constraints: const BoxConstraints(),
@@ -472,17 +466,67 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
               ),
             ],
           ),
+          const SizedBox(height: 20),
+
+          // Criticality Selector
+          _ParameterSelectionRow(
+            label: 'CRITICALITY',
+            value: criticality,
+            onChanged: onCriticalityChanged,
+            lowLabel: 'Minor',
+            highLabel: 'Vital',
+            colorScale: [
+              Colors.greenAccent,
+              Colors.lightGreenAccent,
+              Colors.yellowAccent,
+              Colors.orangeAccent,
+              Colors.redAccent,
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          // Resistance Selector
+          _ParameterSelectionRow(
+            label: 'RESISTANCE',
+            value: resistance,
+            onChanged: onResistanceChanged,
+            lowLabel: 'Flow',
+            highLabel: 'Friction',
+            colorScale: [
+              Colors.greenAccent,
+              Colors.lightGreenAccent,
+              Colors.yellowAccent,
+              Colors.orangeAccent,
+              Colors.redAccent,
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          Text(
+            'DEADLINE',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+              color: isDark ? Colors.white54 : Colors.black54,
+            ),
+          ),
           const SizedBox(height: 12),
+
           _WeeklyDateSlider(
-            selectedDate: _selectedDate,
-            onDateSelected: (date) => setState(() => _selectedDate = date),
-            selectedTime: _selectedTime,
-            onTimeTap: () => _selectTime(context),
+            selectedDate: dueDate,
+            onDateSelected: (date) => onDueDateChanged(date),
+            // Reusing existing components, time selection omitted for brevity in first pass
+            // but can be added back if needed by adding a time field to _PromotionModal
+            selectedTime: null,
+            onTimeTap: () {},
             actions: [
               TextButton(
-                onPressed: () => widget.onConfirmed(null, null),
+                onPressed: () => onDueDateChanged(null),
                 child: Text(
-                  'Skip',
+                  'Clear',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark ? Colors.white38 : Colors.black38,
@@ -491,32 +535,160 @@ class _DatePromptWidgetState extends State<_DatePromptWidget> {
               ),
               const SizedBox(width: 8),
               ElevatedButton(
-                onPressed: _selectedDate == null
-                    ? null
-                    : () => widget.onConfirmed(_selectedDate, _selectedTime),
+                onPressed: onConfirmed,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.redAccent,
                   foregroundColor: Colors.white,
-                  disabledBackgroundColor: isDark
-                      ? Colors.white.withAlpha(20)
-                      : Colors.black.withAlpha(20),
                   elevation: 0,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  minimumSize: const Size(60, 32),
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                 ),
                 child: const Text(
-                  'Set',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                  'Set as Task',
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
                 ),
               ),
             ],
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.05, end: 0);
+    ).animate().fadeIn(duration: 200.ms).slideY(begin: 0.1, end: 0);
+  }
+}
+
+class _ParameterSelectionRow extends StatelessWidget {
+  final String label;
+  final int value;
+  final ValueChanged<int> onChanged;
+  final String lowLabel;
+  final String highLabel;
+  final List<Color> colorScale;
+
+  const _ParameterSelectionRow({
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    required this.lowLabel,
+    required this.highLabel,
+    required this.colorScale,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.5,
+            color: isDark ? Colors.white54 : Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: List.generate(5, (index) {
+            final level = index + 1;
+            final isSelected = value == level;
+            final color = colorScale[index];
+
+            return Expanded(
+              child: GestureDetector(
+                onTap: () => onChanged(level),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  height: 48,
+                  margin: EdgeInsets.only(right: index == 4 ? 0 : 6),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withAlpha(isDark ? 80 : 100)
+                        : color.withAlpha(isDark ? 20 : 30),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? color
+                          : color.withAlpha(isDark ? 30 : 40),
+                      width: isSelected ? 2 : 1,
+                    ),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withAlpha(60),
+                              blurRadius: 8,
+                              spreadRadius: 1,
+                            ),
+                          ]
+                        : [],
+                  ),
+                  child: Stack(
+                    children: [
+                      Center(
+                        child: Text(
+                          '$level',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected
+                                ? FontWeight.w900
+                                : FontWeight.bold,
+                            color: isSelected
+                                ? color
+                                : (isDark ? Colors.white24 : Colors.black26),
+                          ),
+                        ),
+                      ),
+                      if (index == 0)
+                        Positioned(
+                          bottom: 4,
+                          left: 0,
+                          right: 0,
+                          child: Text(
+                            lowLabel,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 7,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? color
+                                  : (isDark ? Colors.white12 : Colors.black12),
+                            ),
+                          ),
+                        ),
+                      if (index == 4)
+                        Positioned(
+                          bottom: 4,
+                          left: 0,
+                          right: 0,
+                          child: Text(
+                            highLabel,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 7,
+                              fontWeight: FontWeight.bold,
+                              color: isSelected
+                                  ? color
+                                  : (isDark ? Colors.white12 : Colors.black12),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 }
 
@@ -1163,45 +1335,6 @@ class _ActionButton extends StatelessWidget {
                 color: isDark ? Colors.white38 : Colors.black38,
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategorySquircle extends StatelessWidget {
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-
-  const _CategorySquircle({
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: 'Promote to $tooltip',
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          width: 14,
-          height: 14,
-          margin: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(4),
-            boxShadow: [
-              BoxShadow(
-                color: color.withValues(alpha: 0.3),
-                blurRadius: 4,
-                spreadRadius: 1,
-              ),
-            ],
           ),
         ),
       ),

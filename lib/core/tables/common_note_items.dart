@@ -67,6 +67,8 @@ class CommonNoteItems extends Table implements SyncableTable {
   BoolColumn get completionStatus => boolean().nullable()();
   IntColumn get timerSeconds => integer().nullable()();
   DateTimeColumn get dueDate => dateTime().nullable()();
+  IntColumn get criticality => integer().nullable()();
+  IntColumn get resistance => integer().nullable()();
   TextColumn get metadata => text().map(const MapConverter()).nullable()();
 
   @override

@@ -119,6 +119,8 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
     CommonNoteItem item,
     TaskType type, {
     DateTime? dueDate,
+    int? criticality,
+    int? resistance,
   }) async {
     await (_db.update(
       _db.commonNoteItems,
@@ -127,6 +129,8 @@ class BrainDumpCubit extends Cubit<BrainDumpState> {
         category: const Value(TabCategory.tasks),
         priority: Value(type),
         dueDate: Value(dueDate),
+        criticality: Value(criticality),
+        resistance: Value(resistance),
         updatedAt: Value(DateTime.now()),
       ),
     );

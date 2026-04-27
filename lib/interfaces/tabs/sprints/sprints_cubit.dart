@@ -8,6 +8,8 @@ import '../../../core/services/sprints_service.dart';
 class SprintsState extends Equatable {
   final List<CommonNoteItem> tasks;
   final bool isLoading;
+  final String searchQuery;
+  final String sortType; // 'pressure', 'resistance', 'default'
 
   // Session
   final String? activeSessionId;
@@ -30,6 +32,8 @@ class SprintsState extends Equatable {
   const SprintsState({
     this.tasks = const [],
     this.isLoading = true,
+    this.searchQuery = '',
+    this.sortType = 'default',
     this.activeSessionId,
     this.sessionStartedAt,
     this.timerSeconds = 0,
@@ -45,6 +49,8 @@ class SprintsState extends Equatable {
   SprintsState copyWith({
     List<CommonNoteItem>? tasks,
     bool? isLoading,
+    String? searchQuery,
+    String? sortType,
     String? activeSessionId,
     DateTime? sessionStartedAt,
     int? timerSeconds,
@@ -59,6 +65,8 @@ class SprintsState extends Equatable {
     return SprintsState(
       tasks: tasks ?? this.tasks,
       isLoading: isLoading ?? this.isLoading,
+      searchQuery: searchQuery ?? this.searchQuery,
+      sortType: sortType ?? this.sortType,
       activeSessionId: clearSession
           ? null
           : (activeSessionId ?? this.activeSessionId),
@@ -84,6 +92,8 @@ class SprintsState extends Equatable {
   List<Object?> get props => [
     tasks,
     isLoading,
+    searchQuery,
+    sortType,
     activeSessionId,
     sessionStartedAt,
     timerSeconds,
@@ -93,6 +103,82 @@ class SprintsState extends Equatable {
     sessionLogs,
     lastTick,
   ];
+
+  // ─── Telemetry ──────────────────────────────────────────────────────────
+
+  int get urgentCount {
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+    return tasks.where((t) {
+      if (t.completionStatus == true) return false;
+      final isDueSoon =
+          t.dueDate != null &&
+          (t.dueDate!.isBefore(tomorrow) || t.dueDate!.day == tomorrow.day);
+      return isDueSoon && (t.criticality ?? 0) >= 4;
+    }).length;
+  }
+
+  int get quickCount {
+    return tasks
+        .where((t) => t.completionStatus != true && (t.resistance ?? 5) <= 2)
+        .length;
+  }
+
+  int get waitingCount {
+    final today = DateTime.now();
+    final tomorrow = today.add(const Duration(days: 1));
+    return tasks.where((t) {
+      if (t.completionStatus == true) return false;
+      final isUrgent =
+          t.dueDate != null &&
+          t.dueDate!.isBefore(tomorrow) &&
+          (t.criticality ?? 0) >= 4;
+      final isQuick = (t.resistance ?? 5) <= 2;
+      return !isUrgent && !isQuick;
+    }).length;
+  }
+
+  // ─── Filtered Tasks ──────────────────────────────────────────────────────
+
+  List<CommonNoteItem> get filteredTasks {
+    var list = tasks.where((t) => t.completionStatus != true).toList();
+
+    // Search
+    if (searchQuery.isNotEmpty) {
+      final query = searchQuery.toLowerCase();
+      list = list.where((t) {
+        final titleMatch = t.title?.toLowerCase().contains(query) ?? false;
+        final contentMatch =
+            t.textContent?.toLowerCase().contains(query) ?? false;
+        return titleMatch || contentMatch;
+      }).toList();
+    }
+
+    // Sort
+    if (sortType == 'pressure') {
+      list.sort((a, b) {
+        // Deadlines first
+        if (a.dueDate != null && b.dueDate == null) return -1;
+        if (a.dueDate == null && b.dueDate != null) return 1;
+        if (a.dueDate != null && b.dueDate != null) {
+          final cmp = a.dueDate!.compareTo(b.dueDate!);
+          if (cmp != 0) return cmp;
+        }
+        // Then criticality
+        return (b.criticality ?? 0).compareTo(a.criticality ?? 0);
+      });
+    } else if (sortType == 'resistance') {
+      list.sort((a, b) {
+        final cmp = (a.resistance ?? 5).compareTo(b.resistance ?? 5);
+        if (cmp != 0) return cmp;
+        return b.createdAt.compareTo(a.createdAt);
+      });
+    } else {
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    }
+
+    return list;
+  }
 }
 
 class SprintsCubit extends Cubit<SprintsState> {
@@ -105,6 +191,14 @@ class SprintsCubit extends Cubit<SprintsState> {
     _tasksSubscription = _service.watchTasks().listen((tasks) {
       emit(state.copyWith(tasks: tasks, isLoading: false));
     });
+  }
+
+  void updateSearch(String query) {
+    emit(state.copyWith(searchQuery: query));
+  }
+
+  void updateSort(String sortType) {
+    emit(state.copyWith(sortType: sortType));
   }
 
   // ─── Sprint Lifecycle ────────────────────────────────────────────────────

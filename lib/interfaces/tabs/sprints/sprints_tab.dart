@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/common_note_item.dart';
-import '../../../core/models/message/enums.dart';
 import '../../../core/constants/app_tab_id.dart';
 import '../../../core/widgets/app_tab.dart';
 import 'package:personal_application/core/widgets/sprint_task_item_widget.dart';
@@ -71,75 +70,255 @@ class _SprintsTabState extends State<SprintsTab>
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Map tasks to folders (UI categories)
-        final folders = <String, List<CommonNoteItem>>{
-          'urgent': state.tasks
-              .where((t) => t.priority == TaskType.important && t.isUrgent)
-              .toList(),
-          'approaching': state.tasks
-              .where((t) => t.priority == TaskType.important && !t.isUrgent)
-              .toList(),
-          'admin': state.tasks
-              .where((t) => t.priority == TaskType.admin)
-              .toList(),
-          'fun': state.tasks.where((t) => t.priority == TaskType.fun).toList(),
-          'uncategorized': state.tasks
-              .where((t) => t.priority == TaskType.uncategorized)
-              .toList(),
-        };
-
-        const folderKeys = [
-          'urgent',
-          'approaching',
-          'admin',
-          'fun',
-          'uncategorized',
-        ];
-
         return Container(
           color: Colors.transparent,
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 400),
-            child: _selectedFolderKey == null
-                ? _buildFolderGrid(context, folders, folderKeys, isDark)
-                : _buildFolderContents(
-                    context,
-                    state,
-                    _selectedFolderKey as String,
-                    folders[_selectedFolderKey] ?? [],
-                    isDark,
-                  ),
+          child: Column(
+            children: [
+              // Zone A: Telemetry
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _TelemetryCard(
+                        label: 'Urgent',
+                        count: state.urgentCount,
+                        color: Colors.redAccent,
+                        icon: Icons.emergency_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TelemetryCard(
+                        label: 'Quick',
+                        count: state.quickCount,
+                        color: Colors.greenAccent,
+                        icon: Icons.flash_on_rounded,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _TelemetryCard(
+                        label: 'Waiting',
+                        count: state.waitingCount,
+                        color: Colors.blueAccent,
+                        icon: Icons.hourglass_empty_rounded,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Zone B: Guided Sessions
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'GENERATORS',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _GeneratorCard(
+                            label: 'Momentum',
+                            icon: Icons.ramp_right_rounded,
+                            onTap: () {
+                              setState(() => _selectedFolderKey = 'momentum');
+                              _updateHeader();
+                            },
+                            color: Colors.orangeAccent,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _GeneratorCard(
+                            label: 'Triage',
+                            icon: Icons.medical_services_outlined,
+                            onTap: () {
+                              setState(() => _selectedFolderKey = 'triage');
+                              _updateHeader();
+                            },
+                            color: Colors.redAccent,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: _GeneratorCard(
+                            label: 'Deep Work',
+                            icon: Icons.psychology_rounded,
+                            onTap: () {
+                              setState(() => _selectedFolderKey = 'deep_work');
+                              _updateHeader();
+                            },
+                            color: Colors.purpleAccent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Zone C: Global Pool
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 400),
+                  child: _selectedFolderKey != null
+                      ? _buildFolderContents(
+                          context,
+                          state,
+                          _selectedFolderKey as String,
+                          _getTasksForGenerator(
+                            _selectedFolderKey as String,
+                            state.filteredTasks,
+                          ),
+                          isDark,
+                        )
+                      : _buildGlobalPool(context, state, isDark),
+                ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildFolderGrid(
+  List<CommonNoteItem> _getTasksForGenerator(
+    String key,
+    List<CommonNoteItem> all,
+  ) {
+    if (key == 'momentum') {
+      final sorted = List<CommonNoteItem>.from(all)
+        ..sort((a, b) => (a.resistance ?? 5).compareTo(b.resistance ?? 5));
+      return sorted.take(3).toList();
+    }
+    if (key == 'triage') {
+      final sorted = List<CommonNoteItem>.from(all)
+        ..sort((a, b) {
+          if (a.dueDate != null && b.dueDate == null) return -1;
+          if (a.dueDate == null && b.dueDate != null) return 1;
+          return (b.criticality ?? 0).compareTo(a.criticality ?? 0);
+        });
+      return sorted.take(5).toList();
+    }
+    if (key == 'deep_work') {
+      return all
+          .where((t) => (t.resistance ?? 0) >= 4 && (t.criticality ?? 0) >= 4)
+          .toList();
+    }
+    return all;
+  }
+
+  Widget _buildGlobalPool(
     BuildContext context,
-    Map<String, List<CommonNoteItem>> folders,
-    List<String> folderKeys,
+    SprintsState state,
     bool isDark,
   ) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-      children: folderKeys.map((key) {
-        final tasks = folders[key] ?? [];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 12),
-          child: _SprintFolderTile(
-            folderKey: key,
-            tasks: tasks,
-            isDark: isDark,
-            onTap: () {
-              setState(() {
-                _selectedFolderKey = key;
-              });
-              _updateHeader();
-            },
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  onChanged: (val) =>
+                      context.read<SprintsCubit>().updateSearch(val),
+                  style: const TextStyle(fontSize: 14),
+                  decoration: InputDecoration(
+                    hintText: 'Search brain dump tasks...',
+                    hintStyle: TextStyle(
+                      color: isDark ? Colors.white24 : Colors.black26,
+                    ),
+                    prefixIcon: Icon(
+                      Icons.search_rounded,
+                      size: 20,
+                      color: isDark ? Colors.white24 : Colors.black26,
+                    ),
+                    filled: true,
+                    fillColor: isDark
+                        ? Colors.white.withAlpha(10)
+                        : Colors.black.withAlpha(5),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              _FilterButton(
+                onTap: () {
+                  // Show Sort Selector
+                  _showSortOptions(context, state);
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(child: _buildNormalList(context, state.filteredTasks, isDark)),
+      ],
+    );
+  }
+
+  void _showSortOptions(BuildContext context, SprintsState state) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SortOptionTile(
+                label: 'Newest First',
+                icon: Icons.new_releases_rounded,
+                isSelected: state.sortType == 'default',
+                onTap: () {
+                  context.read<SprintsCubit>().updateSort('default');
+                  Navigator.pop(context);
+                },
+              ),
+              _SortOptionTile(
+                label: 'High Pressure',
+                icon: Icons.emergency_rounded,
+                isSelected: state.sortType == 'pressure',
+                onTap: () {
+                  context.read<SprintsCubit>().updateSort('pressure');
+                  Navigator.pop(context);
+                },
+              ),
+              _SortOptionTile(
+                label: 'Low Resistance',
+                icon: Icons.flash_on_rounded,
+                isSelected: state.sortType == 'resistance',
+                onTap: () {
+                  context.read<SprintsCubit>().updateSort('resistance');
+                  Navigator.pop(context);
+                },
+              ),
+            ],
           ),
         );
-      }).toList(),
+      },
     );
   }
 
@@ -257,133 +436,104 @@ class _SprintsTabState extends State<SprintsTab>
   }
 }
 
-class _SprintFolderTile extends StatelessWidget {
-  const _SprintFolderTile({
-    required this.folderKey,
-    required this.tasks,
-    required this.isDark,
-    required this.onTap,
-  });
+class _TelemetryCard extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+  final IconData icon;
 
-  final String folderKey;
-  final List<CommonNoteItem> tasks;
-  final bool isDark;
-  final VoidCallback onTap;
+  const _TelemetryCard({
+    required this.label,
+    required this.count,
+    required this.color,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = _getFolderColor(folderKey);
-    final incompleteCount = tasks
-        .where((t) => !(t.completionStatus ?? false))
-        .length;
-    final totalEstSeconds = tasks.fold<int>(
-      0,
-      (sum, t) => sum + (t.estTime ?? 0),
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: color.withAlpha(isDark ? 30 : 20),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withAlpha(50), width: 1.2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 20, color: color),
+          const SizedBox(height: 12),
+          Text(
+            '$count',
+            style: GoogleFonts.inter(
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              color: color,
+            ),
+          ),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 1.2,
+              color: color.withAlpha(200),
+            ),
+          ),
+        ],
+      ),
     );
-    final isEmpty = tasks.isEmpty;
+  }
+}
+
+class _GeneratorCard extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color color;
+
+  const _GeneratorCard({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: Ink(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: isEmpty
-                ? color.withAlpha(isDark ? 12 : 8)
-                : color.withAlpha(isDark ? 30 : 20),
-            borderRadius: BorderRadius.circular(20),
+            color: isDark
+                ? Colors.white.withAlpha(10)
+                : Colors.black.withAlpha(5),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isEmpty ? color.withAlpha(25) : color.withAlpha(50),
-              width: 1.2,
+              color: isDark
+                  ? Colors.white.withAlpha(15)
+                  : Colors.black.withAlpha(15),
             ),
           ),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
             children: [
-              Row(
-                children: [
-                  Icon(
-                    _getFolderIcon(folderKey),
-                    size: 24,
-                    color: isEmpty ? color.withAlpha(100) : color,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      folderKey.toUpperCase(),
-                      style: GoogleFonts.inter(
-                        color: isEmpty ? color.withAlpha(100) : color,
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ),
-                  Opacity(
-                    opacity: isEmpty ? 0.3 : 1.0,
-                    child: _buildMediaStack(
-                      tasks.expand((t) => t.assetIds).toList(),
-                      color,
-                    ),
-                  ),
-                ],
-              ),
+              Icon(icon, size: 24, color: color),
               const SizedBox(height: 8),
               Text(
-                _getFolderRundown(folderKey),
+                label,
                 style: TextStyle(
-                  fontSize: 14,
-                  color: isEmpty
-                      ? color.withAlpha(80)
-                      : (isDark ? Colors.white70 : Colors.black87),
-                  height: 1.4,
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white70 : Colors.black87,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 12),
-              // Bottom row with strong timer and task info
-              Row(
-                children: [
-                  Icon(
-                    Icons.timer_outlined,
-                    size: 15,
-                    color: isEmpty ? color.withAlpha(60) : color,
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    _formatDurationShort(Duration(seconds: totalEstSeconds)),
-                    style: TextStyle(
-                      color: isEmpty ? color.withAlpha(60) : color,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  Container(
-                    height: 15,
-                    width: 1.5,
-                    margin: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: isEmpty
-                          ? color.withAlpha(40)
-                          : color.withAlpha(60),
-                      borderRadius: BorderRadius.circular(1),
-                    ),
-                  ),
-                  Text(
-                    '$incompleteCount TASKS',
-                    style: TextStyle(
-                      color: isEmpty
-                          ? color.withAlpha(60)
-                          : (isDark ? Colors.white : Colors.black87),
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -391,101 +541,71 @@ class _SprintFolderTile extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildMediaStack(List<String> assetIds, Color color) {
-    if (assetIds.isEmpty) return const SizedBox.shrink();
-    final count = assetIds.length.clamp(0, 3);
-    return SizedBox(
-      height: 32,
-      width: 32 + (count - 1) * 18.0,
-      child: Stack(
-        children: assetIds.take(3).toList().asMap().entries.map((e) {
-          return Positioned(
-            left: e.key * 18.0,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: color.withAlpha(100), width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withAlpha(80),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.network(
-                  "https://jzxfhtthknwegozofkvg.supabase.co/storage/v1/object/public/assets/${e.value}",
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => Container(
-                    color: Colors.white10,
-                    child: const Icon(
-                      Icons.image_outlined,
-                      size: 10,
-                      color: Colors.white24,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
+class _FilterButton extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _FilterButton({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Material(
+      color: isDark ? Colors.white.withAlpha(10) : Colors.black.withAlpha(5),
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: const Padding(
+          padding: EdgeInsets.all(12),
+          child: Icon(Icons.filter_list_rounded, size: 20),
+        ),
       ),
     );
   }
 }
 
-Color _getFolderColor(String key) {
-  switch (key) {
-    case 'urgent':
-      return Colors.redAccent;
-    case 'approaching':
-      return Colors.orangeAccent;
-    case 'admin':
-      return Colors.blueAccent;
-    case 'fun':
-      return Colors.purpleAccent;
-    default:
-      return Colors.grey;
-  }
-}
+class _SortOptionTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
 
-IconData _getFolderIcon(String key) {
-  switch (key) {
-    case 'urgent':
-      return Icons.warning_amber_rounded;
-    case 'approaching':
-      return Icons.access_time_rounded;
-    case 'admin':
-      return Icons.build_rounded;
-    case 'fun':
-      return Icons.palette_rounded;
-    default:
-      return Icons.category_outlined;
-  }
-}
+  const _SortOptionTile({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
 
-String _getFolderRundown(String key) {
-  switch (key) {
-    case 'urgent':
-      return "Critical blockers. Real-time issues. High priority tasks requiring immediate attention.";
-    case 'approaching':
-      return "Upcoming deadlines. Next-action items. Items that need to stay on your radar.";
-    case 'admin':
-      return "Maintenance and operations. System upkeep. Email clearing. Logistics.";
-    case 'fun':
-      return "Exploration and play. Low pressure tasks. Creative experiments.";
-    default:
-      return "Tasks awaiting classification. Brain dump overflows.";
-  }
-}
+  @override
+  Widget build(BuildContext context) {
+    final color = isSelected
+        ? Colors.redAccent
+        : (Theme.of(context).brightness == Brightness.dark
+              ? Colors.white70
+              : Colors.black87);
 
-String _formatDurationShort(Duration d) {
-  if (d.inHours > 0) {
-    return '${d.inHours}h ${d.inMinutes.remainder(60)}m';
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: color),
+      title: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+        ),
+      ),
+      trailing: isSelected
+          ? const Icon(
+              Icons.check_circle_rounded,
+              color: Colors.redAccent,
+              size: 20,
+            )
+          : null,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    );
   }
-  return '${d.inMinutes}m';
 }
