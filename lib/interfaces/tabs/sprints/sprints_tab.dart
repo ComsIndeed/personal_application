@@ -70,125 +70,104 @@ class _SprintsTabState extends State<SprintsTab>
           return const Center(child: CircularProgressIndicator());
         }
 
-        return Container(
-          color: Colors.transparent,
-          child: Column(
-            children: [
-              // Zone A: Telemetry
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _TelemetryCard(
-                        label: 'Urgent',
-                        count: state.urgentCount,
-                        color: Colors.redAccent,
-                        icon: Icons.emergency_rounded,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TelemetryCard(
-                        label: 'Quick',
-                        count: state.quickCount,
-                        color: Colors.greenAccent,
-                        icon: Icons.flash_on_rounded,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _TelemetryCard(
-                        label: 'Waiting',
-                        count: state.waitingCount,
-                        color: Colors.blueAccent,
-                        icon: Icons.hourglass_empty_rounded,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              // Zone B: Guided Sessions
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+        return NestedScrollView(
+          headerSliverBuilder: (context, innerBoxIsScrolled) {
+            return [
+              SliverToBoxAdapter(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'GENERATORS',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.5,
-                        color: isDark ? Colors.white38 : Colors.black38,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _GeneratorCard(
-                            label: 'Momentum',
-                            icon: Icons.ramp_right_rounded,
-                            onTap: () {
-                              setState(() => _selectedFolderKey = 'momentum');
-                              _updateHeader();
-                            },
-                            color: Colors.orangeAccent,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _GeneratorCard(
-                            label: 'Triage',
-                            icon: Icons.medical_services_outlined,
-                            onTap: () {
-                              setState(() => _selectedFolderKey = 'triage');
-                              _updateHeader();
-                            },
+                    // Zone A: Telemetry
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                      child: Row(
+                        children: [
+                          _TelemetryCard(
+                            label: 'Urgent',
+                            count: state.urgentCount,
                             color: Colors.redAccent,
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _GeneratorCard(
-                            label: 'Deep Work',
-                            icon: Icons.psychology_rounded,
-                            onTap: () {
-                              setState(() => _selectedFolderKey = 'deep_work');
-                              _updateHeader();
-                            },
-                            color: Colors.purpleAccent,
+                          const SizedBox(width: 16),
+                          _TelemetryCard(
+                            label: 'Quick',
+                            count: state.quickCount,
+                            color: Colors.greenAccent,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 16),
+                          _TelemetryCard(
+                            label: 'Waiting',
+                            count: state.waitingCount,
+                            color: Colors.blueAccent,
+                          ),
+                        ],
+                      ),
                     ),
+
+                    // Zone B: Folders
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: _GeneratorCard(
+                              label: 'Deep Work',
+                              icon: Icons.psychology_rounded,
+                              onTap: () {
+                                setState(
+                                  () => _selectedFolderKey = 'deep_work',
+                                );
+                                _updateHeader();
+                              },
+                              color: Colors.purpleAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GeneratorCard(
+                              label: 'Urgent',
+                              icon: Icons.bolt_rounded,
+                              onTap: () {
+                                setState(() => _selectedFolderKey = 'triage');
+                                _updateHeader();
+                              },
+                              color: Colors.redAccent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _GeneratorCard(
+                              label: 'Quick',
+                              icon: Icons.flash_on_rounded,
+                              onTap: () {
+                                setState(() => _selectedFolderKey = 'momentum');
+                                _updateHeader();
+                              },
+                              color: Colors.greenAccent,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 32),
-
-              // Zone C: Global Pool
-              Expanded(
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 400),
-                  child: _selectedFolderKey != null
-                      ? _buildFolderContents(
-                          context,
-                          state,
-                          _selectedFolderKey as String,
-                          _getTasksForGenerator(
-                            _selectedFolderKey as String,
-                            state.filteredTasks,
-                          ),
-                          isDark,
-                        )
-                      : _buildGlobalPool(context, state, isDark),
-                ),
-              ),
-            ],
+            ];
+          },
+          body: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 400),
+            child: _selectedFolderKey != null
+                ? _buildFolderContents(
+                    context,
+                    state,
+                    _selectedFolderKey as String,
+                    _getTasksForGenerator(
+                      _selectedFolderKey as String,
+                      state.filteredTasks,
+                    ),
+                    isDark,
+                  )
+                : _buildGlobalPool(context, state, isDark),
           ),
         );
       },
@@ -446,50 +425,38 @@ class _TelemetryCard extends StatelessWidget {
   final String label;
   final int count;
   final Color color;
-  final IconData icon;
 
   const _TelemetryCard({
     required this.label,
     required this.count,
     required this.color,
-    required this.icon,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withAlpha(isDark ? 30 : 20),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withAlpha(50), width: 1.2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: color),
-          const SizedBox(height: 12),
-          Text(
-            '$count',
-            style: GoogleFonts.inter(
-              fontSize: 24,
-              fontWeight: FontWeight.w900,
-              color: color,
-            ),
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Text(
+          '$count',
+          style: GoogleFonts.inter(
+            fontSize: 15,
+            fontWeight: FontWeight.w900,
+            color: color,
           ),
-          Text(
-            label.toUpperCase(),
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
-              color: color.withAlpha(200),
-            ),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label.toLowerCase(),
+          style: GoogleFonts.inter(
+            fontSize: 14,
+            fontWeight: FontWeight.w700,
+            color: color.withAlpha(200),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -515,19 +482,13 @@ class _GeneratorCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
           decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withAlpha(10)
-                : Colors.black.withAlpha(5),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withAlpha(15)
-                  : Colors.black.withAlpha(15),
-            ),
+            color: color.withAlpha(isDark ? 30 : 20),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withAlpha(50), width: 1.2),
           ),
           child: Column(
             children: [
@@ -537,8 +498,8 @@ class _GeneratorCard extends StatelessWidget {
                 label,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white70 : Colors.black87,
+                  fontWeight: FontWeight.w900,
+                  color: color,
                 ),
               ),
             ],
