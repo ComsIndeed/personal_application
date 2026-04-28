@@ -146,19 +146,25 @@ class TestDataSeeder {
     // Variation Logic
     switch (variation) {
       case 0: // Long MD + No Media
-        textContent = _generateLongMarkdown(false, [], rand);
+        textContent = (category == TabCategory.braindump)
+            ? _generateLazyDump(rand)
+            : _generateLongMarkdown(false, [], rand);
         break;
       case 1: // Long MD + 1 Media
         final img = _images[rand.nextInt(_images.length)];
         if (assetMap.containsKey(img)) assetIds.add(assetMap[img]!);
-        textContent = _generateLongMarkdown(false, [], rand);
+        textContent = (category == TabCategory.braindump)
+            ? _generateLongLazyDump(rand)
+            : _generateLongMarkdown(false, [], rand);
         break;
       case 2: // Long MD + Many Media
         final imgs = _getRandomImages(3, rand);
         for (var img in imgs) {
           if (assetMap.containsKey(img)) assetIds.add(assetMap[img]!);
         }
-        textContent = _generateLongMarkdown(false, [], rand);
+        textContent = (category == TabCategory.braindump)
+            ? _generateLongLazyDump(rand)
+            : _generateLongMarkdown(false, [], rand);
         break;
       case 3: // No text + 1 Media
         textContent = null;
@@ -181,7 +187,9 @@ class TestDataSeeder {
             inlineIds.add(assetMap[img]!);
           }
         }
-        textContent = _generateLongMarkdown(true, inlineIds, rand);
+        textContent = (category == TabCategory.braindump)
+            ? _generateLongLazyDump(rand)
+            : _generateLongMarkdown(true, inlineIds, rand);
         break;
     }
 
@@ -262,7 +270,18 @@ class TestDataSeeder {
       'buy milk',
       'check this: https://google.com',
       'arrange notes',
-    ].elementAt(rand.nextInt(5));
+      'meeting 2pm',
+      'call mom',
+      'fix bug in seeder',
+    ].elementAt(rand.nextInt(8));
+  }
+
+  String _generateLongLazyDump(Random rand) {
+    return [
+      "ATTENTION ALL STUDENTS: The scheduled maintenance for the cafeteria will begin this Friday and last through Sunday. Please use the secondary entrance for access to the vending machines. Also, remember that the club sign-ups are extended until next Tuesday. Please check your emails for the link to the form. Late submissions will not be accepted under any circumstances. Thank you and have a great week!",
+      "Announcement from the Science Dept - please be reminded that the lab coats must be laundered before the practical exam this Friday. If you do not have a clean lab coat you will not be allowed to participate. Check the bulletin board for your assigned station number. Also, there's a typo in the pre-lab handout: question 4 should refer to 'distilled water' not 'tap water'. Fix this before submitting your reports.",
+      "Hey everyone, just a quick reminder about the upcoming bake sale. We need more volunteers for the second shift (12pm-2pm). If you can help, please sign up in the office. All proceeds go to the music department's new uniforms. Don't forget to bring your labeled containers for any leftovers at the end of the day. See you there!",
+    ].elementAt(rand.nextInt(3));
   }
 
   String _generateLongMarkdown(
