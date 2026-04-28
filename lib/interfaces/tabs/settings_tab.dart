@@ -317,6 +317,8 @@ class _SettingsTabState extends State<SettingsTab> {
 
   void _showSeederConfirmation() async {
     final db = context.read<AppDatabase>();
+    final seeder = TestDataSeeder(db);
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -326,7 +328,7 @@ class _SettingsTabState extends State<SettingsTab> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'This will download ~15MB of assets from GitHub and insert 60 records into your database.',
+              'This will download ~15MB of assets from GitHub and insert 60 records into your database (12 variations across 5 categories).',
             ),
             SizedBox(height: 12),
             Text(
@@ -353,26 +355,113 @@ class _SettingsTabState extends State<SettingsTab> {
 
     if (ok != true) return;
 
-    final seeder = TestDataSeeder(db);
-    final sub = seeder.progress.listen((p) {
-      if (mounted) setState(() => _seedingProgress = p);
-    });
+    if (!mounted) return;
+
+    final completedNotifier = ValueNotifier<bool>(false);
+    final errorNotifier = ValueNotifier<String?>(null);
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => ListenableBuilder(
+        listenable: Listenable.merge([completedNotifier, errorNotifier]),
+        builder: (ctx, _) {
+          return StreamBuilder<double>(
+            stream: seeder.progress,
+            builder: (ctx, snapshot) {
+              final p = snapshot.data ?? 0.0;
+              final isDone = completedNotifier.value || p >= 1.0;
+              final error = errorNotifier.value;
+
+              return AlertDialog(
+                backgroundColor: const Color(0xFF1A1A1A),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                title: Row(
+                  children: [
+                    Icon(
+                      isDone
+                          ? (error != null
+                                ? Icons.error_outline
+                                : Icons.check_circle_outline)
+                          : Icons.auto_awesome_motion_rounded,
+                      color: error != null
+                          ? Colors.redAccent
+                          : Colors.orangeAccent,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      isDone
+                          ? (error != null
+                                ? 'Seeding Failed'
+                                : 'Seeding Complete')
+                          : 'Seeding Data',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      isDone
+                          ? (error ??
+                                '60 items successfully seeded. Check your Brain Dump, Notes, and Sprints tabs!')
+                          : 'Generating rich Markdown entries and downloading digital assets...',
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white54,
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    if (!isDone) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: LinearProgressIndicator(
+                          value: p,
+                          minHeight: 8,
+                          backgroundColor: Colors.white10,
+                          color: Colors.orangeAccent,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        '${(p * 100).toInt()}% complete',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                          color: Colors.orangeAccent,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                actions: [
+                  if (isDone)
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Close'),
+                    ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
 
     try {
       await seeder.run();
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('Test data seeded!')));
-      }
+      completedNotifier.value = true;
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Seeding failed: $e')));
-      }
+      errorNotifier.value = e.toString();
     } finally {
-      sub.cancel();
       if (mounted) setState(() => _seedingProgress = null);
     }
   }

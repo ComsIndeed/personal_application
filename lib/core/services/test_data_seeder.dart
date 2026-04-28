@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../database/app_database.dart';
@@ -13,6 +14,8 @@ class TestDataSeeder {
   final StorageService storage = StorageService();
 
   TestDataSeeder(this.db);
+
+  String? get _userId => Supabase.instance.client.auth.currentUser?.id;
 
   final _progressController = StreamController<double>.broadcast();
   Stream<double> get progress => _progressController.stream;
@@ -56,11 +59,18 @@ class TestDataSeeder {
             group: 'test_data',
           );
           assetIdMap[img] = asset.id;
+          print('TestDataSeeder: Downloaded and imported $img -> ${asset.id}');
+        } else {
+          print(
+            'TestDataSeeder: Failed to download $img - Status: ${resp.statusCode}',
+          );
         }
       } catch (e) {
-        // Silently fail for test data downloads
+        print('TestDataSeeder: Error downloading $img: $e');
       }
     }
+
+    print('TestDataSeeder: Starting record insertion for 60 items...');
 
     // Seeding Matrix
     final groups = [
@@ -71,15 +81,21 @@ class TestDataSeeder {
       _SeedGroup('important', TabCategory.tasks, 'important'),
     ];
 
-    for (var group in groups) {
-      for (var variation = 0; variation < 6; variation++) {
-        for (var i = 0; i < 2; i++) {
-          await _seedItem(group, variation, assetIdMap, rand);
-          currentStep++;
-          _progressController.add(currentStep / totalSteps);
+    int insertedCount = 0;
+    await db.transaction(() async {
+      for (var group in groups) {
+        for (var variation = 0; variation < 6; variation++) {
+          for (var i = 0; i < 2; i++) {
+            await _seedItem(group, variation, assetIdMap, rand);
+            currentStep++;
+            insertedCount++;
+            _progressController.add(currentStep / totalSteps);
+          }
         }
       }
-    }
+    });
+
+    print('TestDataSeeder: Finished. Total items attempted: $insertedCount');
   }
 
   Future<void> _seedItem(
@@ -176,27 +192,33 @@ class TestDataSeeder {
       textContent = _formatTaskContent(textContent, rand);
     }
 
-    await db
-        .into(db.commonNoteItems)
-        .insert(
-          CommonNoteItemsCompanion.insert(
-            id: Value(id),
-            updatedAt: Value(now),
-            deleted: const Value(false),
-            category: category,
-            title: Value(title),
-            textContent: Value(textContent),
-            assetIds: Value(assetIds),
-            createdAt: Value(
-              now.subtract(Duration(minutes: rand.nextInt(1000))),
+    try {
+      await db
+          .into(db.commonNoteItems)
+          .insert(
+            CommonNoteItemsCompanion.insert(
+              id: Value(id),
+              userId: Value(_userId),
+              updatedAt: Value(now),
+              deleted: const Value(false),
+              category: category,
+              title: Value(title),
+              textContent: Value(textContent),
+              assetIds: Value(assetIds),
+              createdAt: Value(
+                now.subtract(Duration(minutes: rand.nextInt(1000))),
+              ),
+              priority: Value(priority),
+              group: Value(group.groupName),
+              criticality: Value(criticality),
+              resistance: Value(resistance),
+              dueDate: Value(dueDate),
             ),
-            priority: Value(priority),
-            group: Value(group.groupName),
-            criticality: Value(criticality),
-            resistance: Value(resistance),
-            dueDate: Value(dueDate),
-          ),
-        );
+          );
+    } catch (e) {
+      print('TestDataSeeder: FAILED to insert entry $id. Error: $e');
+      rethrow;
+    }
   }
 
   String _generateTaskTitle(String key, Random rand) {
