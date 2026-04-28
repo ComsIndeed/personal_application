@@ -67,9 +67,7 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
           onTap: () =>
               previewCubit.setSelectedItem(isSelected ? null : widget.task),
           borderRadius: BorderRadius.circular(16),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeInOut,
+          child: Container(
             margin: const EdgeInsets.only(bottom: 12),
             decoration: BoxDecoration(
               color: widget.isDark
@@ -90,12 +88,12 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
                           ? Colors.white.withAlpha(80)
                           : (widget.active
                                 ? Colors.blue.withAlpha(50)
-                                : Colors.white.withAlpha(10)))
+                                : Colors.white.withAlpha(40)))
                     : ((_isHovered || isSelected || widget.active)
                           ? Colors.black.withAlpha(40)
                           : (widget.active
                                 ? Colors.blue.withAlpha(50)
-                                : Colors.black.withAlpha(10))),
+                                : Colors.black.withAlpha(30))),
                 width: (isSelected || widget.active) ? 2 : 1,
               ),
               boxShadow: (_isHovered || isSelected || widget.active)
@@ -112,130 +110,121 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
               children: [
                 Padding(
                   padding: const EdgeInsets.all(16),
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    alignment: Alignment.topCenter,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Container(
-                              width: 32,
-                              height: 32,
-                              decoration: BoxDecoration(
-                                color: _getGroupColor(widget.task.group),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
-                                _getGroupIcon(widget.task.group),
-                                size: 16,
-                                color: Colors.white,
-                              ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 32,
+                            height: 32,
+                            decoration: BoxDecoration(
+                              color: _getGroupColor(widget.task.group),
+                              borderRadius: BorderRadius.circular(8),
                             ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  if (widget.task.title != null &&
-                                      widget.task.title!.isNotEmpty)
-                                    Text(
-                                      widget.task.title!,
-                                      style: GoogleFonts.inter(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        decoration: isCompleted
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                        color: isCompleted
-                                            ? (widget.isDark
-                                                  ? Colors.white38
-                                                  : Colors.black38)
-                                            : (widget.isDark
-                                                  ? Colors.white
-                                                  : Colors.black),
-                                      ),
+                            child: Icon(
+                              _getGroupIcon(widget.task.group),
+                              size: 16,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                if (widget.task.title != null &&
+                                    widget.task.title!.isNotEmpty)
+                                  Text(
+                                    widget.task.title!,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      decoration: isCompleted
+                                          ? TextDecoration.lineThrough
+                                          : null,
+                                      color: isCompleted
+                                          ? (widget.isDark
+                                                ? Colors.white38
+                                                : Colors.black38)
+                                          : (widget.isDark
+                                                ? Colors.white
+                                                : Colors.black),
                                     ),
-                                ],
-                              ),
+                                  ),
+                              ],
                             ),
-                            if (!isCompleted &&
-                                !widget.active &&
-                                !_isHovered &&
-                                !isSelected)
-                              IconButton(
-                                visualDensity: VisualDensity.compact,
-                                icon: const Icon(
-                                  Icons.play_circle_outline_rounded,
-                                  size: 24,
-                                  color: Colors.blueAccent,
-                                ),
-                                onPressed: widget.onStart ?? () {},
-                              ),
-                            if (widget.active && !_isHovered && !isSelected)
-                              const Icon(
-                                Icons.timer_outlined,
-                                size: 20,
+                          ),
+                          if (!isCompleted &&
+                              !widget.active &&
+                              !_isHovered &&
+                              !isSelected)
+                            IconButton(
+                              visualDensity: VisualDensity.compact,
+                              icon: const Icon(
+                                Icons.play_circle_outline_rounded,
+                                size: 24,
                                 color: Colors.blueAccent,
                               ),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        IgnorePointer(
-                          child: ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxHeight: showOverlay ? 80 : 20,
+                              onPressed: widget.onStart ?? () {},
                             ),
-                            child: ShaderMask(
-                              shaderCallback: (rect) {
-                                return const LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [Colors.black, Colors.transparent],
-                                  stops: [0.7, 1.0],
-                                ).createShader(rect);
-                              },
-                              blendMode: BlendMode.dstIn,
-                              child: NoteMarkdownEditor(
-                                initialMarkdown:
-                                    widget.task.textContent ?? "No description",
-                                onSave: (_) async {},
-                                readOnly: true,
-                                shrinkWrap: true,
-                                isCard: true,
-                                padding: EdgeInsets.zero,
-                              ),
+                          if (widget.active && !_isHovered && !isSelected)
+                            const Icon(
+                              Icons.timer_outlined,
+                              size: 20,
+                              color: Colors.blueAccent,
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      IgnorePointer(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: showOverlay ? 80 : 20,
+                          ),
+                          child: ShaderMask(
+                            shaderCallback: (rect) {
+                              return const LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Colors.black, Colors.transparent],
+                                stops: [0.7, 1.0],
+                              ).createShader(rect);
+                            },
+                            blendMode: BlendMode.dstIn,
+                            child: NoteMarkdownEditor(
+                              initialMarkdown:
+                                  widget.task.textContent ?? "No description",
+                              onSave: (_) async {},
+                              readOnly: true,
+                              shrinkWrap: true,
+                              isCard: true,
+                              padding: EdgeInsets.zero,
                             ),
                           ),
                         ),
+                      ),
+                      const SizedBox(height: 12),
+                      _buildFooter(context),
+                      if (showOverlay) ...[
                         const SizedBox(height: 12),
-                        _buildFooter(context),
-                        if (showOverlay) ...[
-                          const SizedBox(height: 12),
-                          const Divider(height: 1, thickness: 0.5),
-                          const SizedBox(height: 12),
-                          _buildLogBox(context),
-                        ],
+                        const Divider(height: 1, thickness: 0.5),
+                        const SizedBox(height: 12),
+                        _buildLogBox(context),
                       ],
-                    ),
+                    ],
                   ),
                 ),
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    child: showOverlay
-                        ? _buildTickboxOverlay(context)
-                        : const SizedBox.shrink(),
-                  ),
+                  child: showOverlay
+                      ? _buildTickboxOverlay(context)
+                      : const SizedBox.shrink(),
                 ),
               ],
             ),
@@ -342,46 +331,68 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
   Widget _buildTickboxOverlay(BuildContext context) {
     final isCompleted = widget.task.completionStatus ?? false;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        if (widget.active && widget.onComplete != null)
-          _ActionButton(
-            icon: Icons.check_circle_outline_rounded,
-            onPressed: widget.onComplete!,
-            tooltip: 'Complete Task',
-            color: Colors.greenAccent,
+    return Container(
+      decoration: BoxDecoration(
+        color: widget.isDark ? const Color(0xFF1E293B) : Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withAlpha(40),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
-        if (!widget.active && !isCompleted)
-          _ActionButton(
-            icon: Icons.play_arrow_rounded,
-            onPressed: widget.onStart ?? () {},
-            tooltip: 'Start Task',
-            color: Colors.blueAccent,
-          ),
-        const SizedBox(width: 4),
-        Transform.scale(
-          scale: 0.9,
-          child: Checkbox(
-            value: isCompleted,
-            activeColor: Colors.blueAccent,
-            side: BorderSide(
-              color: widget.isDark ? Colors.white38 : Colors.black38,
-              width: 1.5,
-            ),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(4),
-            ),
-            onChanged: (val) {
-              // Optional: Trigger completion logic
-              if (val != null && widget.onComplete != null) {
-                widget.onComplete!();
-              }
-            },
-          ),
+        ],
+        border: Border.all(
+          color: widget.isDark
+              ? Colors.white.withAlpha(40)
+              : Colors.black.withAlpha(20),
         ),
-      ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          if (widget.active && widget.onComplete != null)
+            _ActionButton(
+              icon: Icons.check_circle_outline_rounded,
+              onPressed: widget.onComplete!,
+              tooltip: 'Complete Task',
+              color: Colors.greenAccent,
+            ),
+          if (!widget.active && !isCompleted)
+            _ActionButton(
+              icon: Icons.play_arrow_rounded,
+              onPressed: widget.onStart ?? () {},
+              tooltip: 'Start Task',
+              color: Colors.blueAccent,
+            ),
+          const SizedBox(width: 4),
+          Transform.scale(
+            scale: 0.9,
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: Checkbox(
+                value: isCompleted,
+                activeColor: Colors.blueAccent,
+                side: BorderSide(
+                  color: widget.isDark ? Colors.white38 : Colors.black38,
+                  width: 1.5,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                onChanged: (val) {
+                  if (val != null && widget.onComplete != null) {
+                    widget.onComplete!();
+                  }
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 

@@ -349,6 +349,7 @@ class _SprintsTabState extends State<SprintsTab>
   ) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
+      cacheExtent: 1000,
       itemCount: tasks.length,
       itemBuilder: (context, index) {
         final task = tasks[index];
@@ -372,46 +373,51 @@ class _SprintsTabState extends State<SprintsTab>
       grouped.putIfAbsent(g, () => []).add(task);
     }
 
-    return ListView(
+    final flattenedItems = <dynamic>[];
+    for (var entry in grouped.entries) {
+      flattenedItems.add(entry.key); // Header string
+      flattenedItems.addAll(entry.value); // Task items
+    }
+
+    return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20),
-      children: grouped.entries.map((entry) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              child: Row(
-                children: [
-                  Icon(
-                    _getGroupIconStatic(entry.key),
-                    size: 16,
+      cacheExtent: 1000,
+      itemCount: flattenedItems.length,
+      itemBuilder: (context, index) {
+        final item = flattenedItems[index];
+        if (item is String) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                Icon(
+                  _getGroupIconStatic(item),
+                  size: 16,
+                  color: isDark ? Colors.white38 : Colors.black38,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  item.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
                     color: isDark ? Colors.white38 : Colors.black38,
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    entry.key.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.2,
-                      color: isDark ? Colors.white38 : Colors.black38,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            ...entry.value.map(
-              (task) => SprintTaskItemWidget(
-                task: task,
-                isDark: isDark,
-                onComplete: () =>
-                    context.read<SprintsCubit>().completeTask(task.id),
-              ),
-            ),
-            const SizedBox(height: 10),
-          ],
-        );
-      }).toList(),
+          );
+        } else {
+          final task = item as CommonNoteItem;
+          return SprintTaskItemWidget(
+            task: task,
+            isDark: isDark,
+            onComplete: () =>
+                context.read<SprintsCubit>().completeTask(task.id),
+          );
+        }
+      },
     );
   }
 

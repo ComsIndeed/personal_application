@@ -55,6 +55,145 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
     final isSelected =
         context.watch<ItemPreviewCubit>().state.selectedItem == widget.item;
 
+    final card = Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: isDark
+            ? ((_isHovered || isSelected)
+                  ? const Color(0xFF1E293B)
+                  : const Color(0xFF0F172A).withAlpha(128))
+            : ((_isHovered || isSelected)
+                  ? Colors.white
+                  : Colors.white.withAlpha(200)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isDark
+              ? ((_isHovered || isSelected)
+                    ? Colors.white.withAlpha(80)
+                    : Colors.white.withAlpha(40))
+              : ((_isHovered || isSelected)
+                    ? Colors.black.withAlpha(40)
+                    : Colors.black.withAlpha(30)),
+          width: isSelected ? 2 : 1,
+        ),
+        boxShadow: (_isHovered || isSelected)
+            ? [
+                BoxShadow(
+                  color: Colors.black.withAlpha(isDark ? 50 : 20),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Opacity(
+        opacity: widget.isPending ? 0.6 : 1.0,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            isSingleMedia
+                ? _buildSingleMediaLayout(context)
+                : _buildTextHeavyLayout(context),
+            if (_isPromotionModalVisible && !widget.isPending)
+              _PromotionModal(
+                criticality: _selectedCriticality,
+                resistance: _selectedResistance,
+                dueDate: _selectedDueDate,
+                onCriticalityChanged: (val) =>
+                    setState(() => _selectedCriticality = val),
+                onResistanceChanged: (val) =>
+                    setState(() => _selectedResistance = val),
+                onDueDateChanged: (val) =>
+                    setState(() => _selectedDueDate = val),
+                onConfirmed: () {
+                  context.read<BrainDumpCubit>().promoteToTask(
+                    widget.item,
+                    TaskType.important,
+                    dueDate: _selectedDueDate,
+                    criticality: _selectedCriticality,
+                    resistance: _selectedResistance,
+                  );
+
+                  context.read<AppTabController<AppTabId>>().animateToId(
+                    AppTabId.sprints,
+                  );
+                },
+                onCancel: () {
+                  setState(() {
+                    _isPromotionModalVisible = false;
+                  });
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+
+    final hoverOverlay =
+        (_isHovered && !widget.isPending && !_isPromotionModalVisible)
+        ? Positioned(
+            top: 20,
+            right: 28,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1E293B) : Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(40),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+                border: Border.all(
+                  color: isDark
+                      ? Colors.white.withAlpha(40)
+                      : Colors.black.withAlpha(20),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      setState(() {
+                        _isPromotionModalVisible = true;
+                      });
+                    },
+                    icon: const Icon(Icons.add_task_rounded, size: 20),
+                    color: Colors.redAccent,
+                    tooltip: 'Promote',
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 20,
+                    color: isDark
+                        ? Colors.white.withAlpha(20)
+                        : Colors.black.withAlpha(10),
+                  ),
+                  IconButton(
+                    onPressed: () {
+                      context.read<BrainDumpCubit>().deleteItem(widget.item.id);
+                    },
+                    icon: const Icon(Icons.delete_outline_rounded, size: 20),
+                    color: isDark ? Colors.white60 : Colors.black54,
+                    tooltip: 'Delete',
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        : const SizedBox.shrink();
+
     return MouseRegion(
       onEnter: (_) {
         setState(() => _isHovered = true);
@@ -70,192 +209,19 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
           onTap: () =>
               previewCubit.setSelectedItem(isSelected ? null : widget.item),
           borderRadius: BorderRadius.circular(16),
-          child:
-              AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeInOut,
-                    margin: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
+          child: Stack(
+            children: [
+              widget.isPending
+                  ? card.animate().shimmer(
+                      duration: 1.5.seconds,
                       color: isDark
-                          ? ((_isHovered || isSelected)
-                                ? const Color(0xFF1E293B)
-                                : const Color(0xFF0F172A).withAlpha(128))
-                          : ((_isHovered || isSelected)
-                                ? Colors.white
-                                : Colors.white.withAlpha(200)),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: isDark
-                            ? ((_isHovered || isSelected)
-                                  ? Colors.white.withAlpha(80)
-                                  : Colors.white.withAlpha(10))
-                            : ((_isHovered || isSelected)
-                                  ? Colors.black.withAlpha(40)
-                                  : Colors.black.withAlpha(10)),
-                        width: isSelected ? 2 : 1,
-                      ),
-                      boxShadow: (_isHovered || isSelected)
-                          ? [
-                              BoxShadow(
-                                color: Colors.black.withAlpha(isDark ? 50 : 20),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                          : null,
-                    ),
-                    clipBehavior: Clip.antiAlias,
-                    child: Opacity(
-                      opacity: widget.isPending ? 0.6 : 1.0,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          isSingleMedia
-                              ? _buildSingleMediaLayout(context)
-                              : _buildTextHeavyLayout(context),
-                          AnimatedSize(
-                            duration: const Duration(milliseconds: 200),
-                            curve: Curves.easeInOut,
-                            child:
-                                (_isHovered ||
-                                        isSelected ||
-                                        _isPromotionModalVisible) &&
-                                    !widget.isPending
-                                ? Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      if (!_isPromotionModalVisible)
-                                        Padding(
-                                          padding: const EdgeInsets.fromLTRB(
-                                            16,
-                                            0,
-                                            16,
-                                            12,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              TextButton.icon(
-                                                onPressed: () {
-                                                  setState(() {
-                                                    _isPromotionModalVisible =
-                                                        true;
-                                                  });
-                                                },
-                                                icon: const Icon(
-                                                  Icons.add_task_rounded,
-                                                  size: 18,
-                                                ),
-                                                label: const Text('Add to..'),
-                                                style: TextButton.styleFrom(
-                                                  foregroundColor:
-                                                      Colors.redAccent,
-                                                  backgroundColor: Colors
-                                                      .redAccent
-                                                      .withAlpha(
-                                                        isDark ? 20 : 10,
-                                                      ),
-                                                  shape: RoundedRectangleBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                          12,
-                                                        ),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.symmetric(
-                                                        horizontal: 16,
-                                                        vertical: 8,
-                                                      ),
-                                                ),
-                                              ),
-                                              const SizedBox(width: 8),
-                                              _ActionButton(
-                                                icon: Icons
-                                                    .delete_outline_rounded,
-                                                onPressed: () {
-                                                  context
-                                                      .read<BrainDumpCubit>()
-                                                      .deleteItem(
-                                                        widget.item.id,
-                                                      );
-                                                },
-                                                tooltip: 'Delete',
-                                              ),
-                                              const Spacer(),
-                                              _ActionButton(
-                                                icon: Icons.copy_rounded,
-                                                onPressed: () {},
-                                                tooltip: 'Copy Text',
-                                              ),
-                                              _ActionButton(
-                                                icon: Icons.edit_rounded,
-                                                onPressed: () {},
-                                                tooltip: 'Edit',
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      if (_isPromotionModalVisible)
-                                        _PromotionModal(
-                                          criticality: _selectedCriticality,
-                                          resistance: _selectedResistance,
-                                          dueDate: _selectedDueDate,
-                                          onCriticalityChanged: (val) =>
-                                              setState(
-                                                () =>
-                                                    _selectedCriticality = val,
-                                              ),
-                                          onResistanceChanged: (val) =>
-                                              setState(
-                                                () => _selectedResistance = val,
-                                              ),
-                                          onDueDateChanged: (val) => setState(
-                                            () => _selectedDueDate = val,
-                                          ),
-                                          onConfirmed: () {
-                                            context
-                                                .read<BrainDumpCubit>()
-                                                .promoteToTask(
-                                                  widget.item,
-                                                  TaskType
-                                                      .important, // Default to important, actual grouping by parameters
-                                                  dueDate: _selectedDueDate,
-                                                  criticality:
-                                                      _selectedCriticality,
-                                                  resistance:
-                                                      _selectedResistance,
-                                                );
-
-                                            context
-                                                .read<
-                                                  AppTabController<AppTabId>
-                                                >()
-                                                .animateToId(AppTabId.sprints);
-                                          },
-                                          onCancel: () {
-                                            setState(() {
-                                              _isPromotionModalVisible = false;
-                                            });
-                                          },
-                                        ),
-                                    ],
-                                  )
-                                : const SizedBox(
-                                    width: double.infinity,
-                                    height: 0,
-                                  ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  )
-                  .animate(target: widget.isPending ? 1 : 0)
-                  .shimmer(
-                    duration: 1.5.seconds,
-                    color: isDark ? Colors.white10 : Colors.black.withAlpha(10),
-                  ),
+                          ? Colors.white10
+                          : Colors.black.withAlpha(10),
+                    )
+                  : card,
+              hoverOverlay,
+            ],
+          ),
         ),
       ),
     );
@@ -317,9 +283,6 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
   }
 
   Widget _buildTextHeavyLayout(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -1316,45 +1279,6 @@ class _DateTile extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback onPressed;
-  final String tooltip;
-
-  const _ActionButton({
-    required this.icon,
-    required this.onPressed,
-    required this.tooltip,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 2),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: onPressed,
-            borderRadius: BorderRadius.circular(8),
-            child: Padding(
-              padding: const EdgeInsets.all(6.0),
-              child: Icon(
-                icon,
-                size: 18,
-                color: isDark ? Colors.white38 : Colors.black38,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

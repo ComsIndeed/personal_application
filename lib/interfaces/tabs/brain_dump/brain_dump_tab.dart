@@ -7,7 +7,6 @@ import 'package:personal_application/core/widgets/brain_dump_item_widget.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/models/message/enums.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'brain_dump_cubit.dart';
 import 'brain_dump_input.dart';
 
@@ -112,6 +111,7 @@ class _BrainDumpTabState extends State<BrainDumpTab>
 
               return ListView.builder(
                 padding: const EdgeInsets.only(top: 8, bottom: 20),
+                cacheExtent: 1000,
                 itemCount: allCount,
                 itemBuilder: (context, index) {
                   final Widget child;
@@ -126,16 +126,7 @@ class _BrainDumpTabState extends State<BrainDumpTab>
                     );
                   }
 
-                  return child
-                      .animate()
-                      .fadeIn(duration: 400.ms, delay: (index * 50).ms)
-                      .slideY(
-                        begin: 0.1,
-                        end: 0,
-                        duration: 400.ms,
-                        delay: (index * 50).ms,
-                        curve: Curves.easeOutCubic,
-                      );
+                  return child;
                 },
               );
             },
