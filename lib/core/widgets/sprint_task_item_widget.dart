@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/item_preview_cubit.dart';
+import 'package:personal_application/core/widgets/note_markdown_editor.dart';
 
 class SprintTaskItemWidget extends StatefulWidget {
   final CommonNoteItem task;
@@ -186,15 +187,31 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
                           ],
                         ),
                         const SizedBox(height: 8),
-                        Text(
-                          widget.task.textContent ?? "No description",
-                          maxLines: showOverlay ? 4 : 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: widget.isDark
-                                ? Colors.white60
-                                : Colors.black54,
+                        IgnorePointer(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                              maxHeight: showOverlay ? 80 : 20,
+                            ),
+                            child: ShaderMask(
+                              shaderCallback: (rect) {
+                                return const LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.black, Colors.transparent],
+                                  stops: [0.7, 1.0],
+                                ).createShader(rect);
+                              },
+                              blendMode: BlendMode.dstIn,
+                              child: NoteMarkdownEditor(
+                                initialMarkdown:
+                                    widget.task.textContent ?? "No description",
+                                onSave: (_) async {},
+                                readOnly: true,
+                                shrinkWrap: true,
+                                isCard: true,
+                                padding: EdgeInsets.zero,
+                              ),
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),

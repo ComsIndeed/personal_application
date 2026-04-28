@@ -9,6 +9,7 @@ import 'package:personal_application/core/models/message/enums.dart';
 import 'package:personal_application/core/constants/app_tab_id.dart';
 import 'package:personal_application/core/widgets/app_tab.dart';
 import 'package:personal_application/interfaces/tabs/brain_dump/brain_dump_cubit.dart';
+import 'package:personal_application/core/widgets/note_markdown_editor.dart';
 
 class BrainDumpItemWidget extends StatefulWidget {
   final CommonNoteItem item;
@@ -333,14 +334,31 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
           ],
           if (widget.item.textContent != null &&
               widget.item.textContent!.isNotEmpty) ...[
-            Text(
-              widget.item.textContent!,
-              style: TextStyle(
-                color: isDark ? Colors.white60 : Colors.black54,
-                fontSize: 14,
+            IgnorePointer(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxHeight: widget.item.assetIds.isEmpty ? 200 : 80,
+                ),
+                child: ShaderMask(
+                  shaderCallback: (rect) {
+                    return const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.black, Colors.transparent],
+                      stops: [0.8, 1.0],
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: NoteMarkdownEditor(
+                    initialMarkdown: widget.item.textContent!,
+                    onSave: (_) async {},
+                    readOnly: true,
+                    shrinkWrap: true,
+                    isCard: true,
+                    padding: EdgeInsets.zero,
+                  ),
+                ),
               ),
-              maxLines: widget.item.assetIds.isEmpty ? 10 : 4,
-              overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 12),
           ],

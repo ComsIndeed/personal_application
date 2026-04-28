@@ -12,6 +12,7 @@ import 'package:personal_application/core/services/sprints_service.dart';
 import 'package:personal_application/core/models/message/enums.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:personal_application/core/widgets/interface_container.dart';
+import 'package:personal_application/core/widgets/note_markdown_editor.dart';
 
 class ItemPreviewWidget extends StatefulWidget {
   const ItemPreviewWidget({super.key});
@@ -25,11 +26,11 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
   final ScrollController _scrollController = ScrollController();
   final ScrollController _mainScrollController = ScrollController();
   late TextEditingController _titleController;
-  late TextEditingController _contentController;
   late AnimationController _animationController;
   late AnimationController _headerAnimationController;
   Timer? _scrollTimer;
-  Timer? _saveTimer;
+  // Title-save timer (title stays plain text)
+  Timer? _titleSaveTimer;
   CommonNoteItem? _lastItem;
   String? _currentActiveId;
 
@@ -37,7 +38,6 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
   void initState() {
     super.initState();
     _titleController = TextEditingController();
-    _contentController = TextEditingController();
     _animationController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 1),
@@ -67,14 +67,13 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
 
   @override
   void dispose() {
-    _saveTimer?.cancel();
+    _titleSaveTimer?.cancel();
     _scrollTimer?.cancel();
     _animationController.dispose();
     _headerAnimationController.dispose();
     _scrollController.dispose();
     _mainScrollController.dispose();
     _titleController.dispose();
-    _contentController.dispose();
     super.dispose();
   }
 
@@ -129,28 +128,38 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
     );
   }
 
-  void _debounceSave(CommonNoteItem item) {
-    _saveTimer?.cancel();
-    _saveTimer = Timer(const Duration(milliseconds: 1000), () {
-      _saveChanges(item);
+  void _debounceTitleSave(CommonNoteItem item) {
+    _titleSaveTimer?.cancel();
+    _titleSaveTimer = Timer(const Duration(milliseconds: 800), () {
+      _saveTitleChange(item);
     });
   }
 
-  Future<void> _saveChanges(CommonNoteItem item) async {
+  Future<void> _saveTitleChange(CommonNoteItem item) async {
     final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
-
-    if (title == (item.title ?? '') && content == (item.textContent ?? '')) {
-      return;
-    }
-
+    if (title == (item.title ?? '')) return;
     final db = context.read<AppDatabase>();
     await (db.update(
       db.commonNoteItems,
     )..where((t) => t.id.equals(item.id))).write(
       CommonNoteItemsCompanion(
         title: Value(title.isEmpty ? null : title),
-        textContent: Value(content.isEmpty ? null : content),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
+
+  Future<void> _saveMarkdownContent(
+    CommonNoteItem item,
+    String markdown,
+  ) async {
+    if (markdown.trim() == (item.textContent?.trim() ?? '')) return;
+    final db = context.read<AppDatabase>();
+    await (db.update(
+      db.commonNoteItems,
+    )..where((t) => t.id.equals(item.id))).write(
+      CommonNoteItemsCompanion(
+        textContent: Value(markdown.isEmpty ? null : markdown),
         updatedAt: Value(DateTime.now()),
       ),
     );
@@ -162,14 +171,13 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
       listener: (context, state) {
         final item = state.activeItem;
         if (item != null && item.id != _currentActiveId) {
-          // If we had a previous item, save it before switching
+          // If we had a previous item, save title before switching
           if (_currentActiveId != null && _lastItem != null) {
-            _saveChanges(_lastItem!);
+            _saveTitleChange(_lastItem!);
           }
 
           _currentActiveId = item.id;
           _titleController.text = item.title ?? '';
-          _contentController.text = item.textContent ?? '';
           _resetScroll();
         } else if (item == null) {
           _stopScrolling();
@@ -241,14 +249,15 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                               titleController: _titleController,
                               animation: _headerAnimationController,
                               onScrollToItem: _scrollToItem,
-                              onChanged: () => _debounceSave(displayItem),
+                              onChanged: () => _debounceTitleSave(displayItem),
                             ),
                           ),
                         SliverToBoxAdapter(
                           child: Padding(
-                            padding: const EdgeInsets.all(24.0),
+                            padding: const EdgeInsets.fromLTRB(24, 24, 24, 4),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
                               children: [
                                 if (displayItem.assetIds.isEmpty) ...[
                                   TextField(
@@ -273,36 +282,26 @@ class _ItemPreviewWidgetState extends State<ItemPreviewWidget>
                                               : Colors.black87,
                                         ),
                                     onChanged: (_) =>
-                                        _debounceSave(displayItem),
+                                        _debounceTitleSave(displayItem),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 4),
                                 ],
-                                TextField(
-                                  controller: _contentController,
-                                  maxLines: null,
-                                  decoration: InputDecoration(
-                                    hintText: 'Add content...',
-                                    border: InputBorder.none,
-                                    filled: false,
-                                    fillColor: Colors.transparent,
-                                    hintStyle: theme.textTheme.bodyLarge
-                                        ?.copyWith(
-                                          color: isDark
-                                              ? Colors.white24
-                                              : Colors.black26,
-                                        ),
-                                  ),
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: isDark
-                                        ? Colors.white70
-                                        : Colors.black87,
-                                    height: 1.5,
-                                  ),
-                                  onChanged: (_) => _debounceSave(displayItem),
-                                ),
-                                const SizedBox(height: 100),
                               ],
                             ),
+                          ),
+                        ),
+                        // SliverFillRemaining gives the editor a finite height
+                        // equal to the remaining viewport — required by
+                        // AppFlowyEditor's internal Overlay widget.
+                        SliverFillRemaining(
+                          hasScrollBody: true,
+                          child: NoteMarkdownEditor(
+                            key: ValueKey('md-editor-${displayItem.id}'),
+                            initialMarkdown: displayItem.textContent ?? '',
+                            onSave: (md) =>
+                                _saveMarkdownContent(displayItem, md),
+                            placeholder: 'Add content...',
+                            padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                           ),
                         ),
                       ],

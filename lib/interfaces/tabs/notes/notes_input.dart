@@ -40,7 +40,7 @@ class _NotesInputState extends State<NotesInput> {
     List<PlatformFile>? newFiles,
   ]) async {
     if (newFiles == null) {
-      final result = await FilePicker.pickFiles(
+      final result = await FilePicker.platform.pickFiles(
         allowMultiple: true,
         withData: true,
       );

@@ -34,13 +34,14 @@ dependencies:
   google_fonts: ^8.0.2
   flyer_chat_text_message: ^2.6.0
   supabase_flutter: ^2.12.2
-  file_picker: ^11.0.2
+  file_picker: ^10.2.0
   crypto: ^3.0.7
   http: ^1.6.0
   syncable: ^1.0.3
   json_annotation: ^4.11.0
   connectivity_plus: ^7.1.1
   pasteboard: ^0.5.0
+  appflowy_editor: ^6.2.0
 
   intl: any
   skeletonizer: ^2.1.3
