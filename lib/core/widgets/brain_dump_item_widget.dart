@@ -498,41 +498,31 @@ class _PromotionModal extends StatelessWidget {
 
           _WeeklyDateSlider(
             selectedDate: dueDate,
-            onDateSelected: (date) => onDueDateChanged(date),
+            onDateSelected: (date) {
+              final currentDueDate = dueDate;
+              if (currentDueDate != null &&
+                  date.year == currentDueDate.year &&
+                  date.month == currentDueDate.month &&
+                  date.day == currentDueDate.day) {
+                onDueDateChanged(null);
+              } else {
+                onDueDateChanged(date);
+              }
+            },
             // Reusing existing components, time selection omitted for brevity in first pass
             // but can be added back if needed by adding a time field to _PromotionModal
             selectedTime: null,
             onTimeTap: () {},
             actions: [
-              TextButton(
-                onPressed: () => onDueDateChanged(null),
-                child: Text(
-                  'Clear',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isDark ? Colors.white38 : Colors.black38,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              ElevatedButton(
+              IconButton(
                 onPressed: onConfirmed,
-                style: ElevatedButton.styleFrom(
+                icon: const Icon(Icons.check_rounded),
+                color: Colors.white,
+                style: IconButton.styleFrom(
                   backgroundColor: Colors.redAccent,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 12,
-                  ),
+                  padding: const EdgeInsets.all(12),
                 ),
-                child: const Text(
-                  'Set as Task',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                ),
+                tooltip: 'Set as Task',
               ),
             ],
           ),
@@ -946,7 +936,7 @@ class _WeeklyDateSliderState extends State<_WeeklyDateSlider> {
                         ),
                       ),
                     ),
-                  ).animate().scale(begin: const Offset(0.95, 0.95)),
+                  ),
                   const Spacer(),
                   ...widget.actions,
                 ],
