@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:personal_application/core/models/common_note_item.dart';
 import 'package:personal_application/core/services/item_preview_cubit.dart';
-import 'package:personal_application/core/widgets/note_markdown_editor.dart';
 
 class SprintTaskItemWidget extends StatefulWidget {
   final CommonNoteItem task;
@@ -49,8 +48,6 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
     final previewCubit = context.read<ItemPreviewCubit>();
     final isSelected =
         context.watch<ItemPreviewCubit>().state.selectedItem == widget.task;
-
-    final showOverlay = (_isHovered || isSelected || widget.active);
 
     return MouseRegion(
       onEnter: (_) {
@@ -181,51 +178,66 @@ class _SprintTaskItemWidgetState extends State<SprintTaskItemWidget>
                         ],
                       ),
                       const SizedBox(height: 8),
-                      IgnorePointer(
+                      ShaderMask(
+                        shaderCallback: (rect) {
+                          return const LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.black, Colors.transparent],
+                            stops: [0.7, 1.0],
+                          ).createShader(rect);
+                        },
+                        blendMode: BlendMode.dstIn,
                         child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxHeight: showOverlay ? 80 : 20,
-                          ),
-                          child: ShaderMask(
-                            shaderCallback: (rect) {
-                              return const LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.black, Colors.transparent],
-                                stops: [0.7, 1.0],
-                              ).createShader(rect);
-                            },
-                            blendMode: BlendMode.dstIn,
-                            child: NoteMarkdownEditor(
-                              initialMarkdown:
-                                  widget.task.textContent ?? "No description",
-                              onSave: (_) async {},
-                              readOnly: true,
-                              shrinkWrap: true,
-                              isCard: true,
-                              padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(maxHeight: 40),
+                          child: Text(
+                            widget.task.textContent ?? "No description",
+                            style: GoogleFonts.inter(
+                              fontSize: 13,
+                              height: 1.5,
+                              color: widget.isDark
+                                  ? Colors.white54
+                                  : Colors.black54,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.fade,
                           ),
                         ),
                       ),
                       const SizedBox(height: 12),
                       _buildFooter(context),
-                      if (showOverlay) ...[
-                        const SizedBox(height: 12),
-                        const Divider(height: 1, thickness: 0.5),
-                        const SizedBox(height: 12),
-                        _buildLogBox(context),
-                      ],
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOutCubic,
+                        alignment: Alignment.topCenter,
+                        child: (isSelected || widget.active)
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const SizedBox(height: 12),
+                                  const Divider(height: 1, thickness: 0.1),
+                                  const SizedBox(height: 12),
+                                  _buildLogBox(context),
+                                ],
+                              )
+                            : const SizedBox(width: double.infinity, height: 0),
+                      ),
                     ],
                   ),
                 ),
-                Positioned(
-                  top: 12,
-                  right: 12,
-                  child: showOverlay
-                      ? _buildTickboxOverlay(context)
-                      : const SizedBox.shrink(),
-                ),
+                // Action Overlays (Positioned to avoid layout shift)
+                if (_isHovered && !isSelected && !widget.active)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: _buildTickboxOverlay(context),
+                  ),
+                if (isSelected || widget.active)
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: _buildTickboxOverlay(context),
+                  ),
               ],
             ),
           ),

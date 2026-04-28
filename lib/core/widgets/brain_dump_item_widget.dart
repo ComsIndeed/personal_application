@@ -94,36 +94,42 @@ class _BrainDumpItemWidgetState extends State<BrainDumpItemWidget> {
             isSingleMedia
                 ? _buildSingleMediaLayout(context)
                 : _buildTextHeavyLayout(context),
-            if (_isPromotionModalVisible && !widget.isPending)
-              _PromotionModal(
-                criticality: _selectedCriticality,
-                resistance: _selectedResistance,
-                dueDate: _selectedDueDate,
-                onCriticalityChanged: (val) =>
-                    setState(() => _selectedCriticality = val),
-                onResistanceChanged: (val) =>
-                    setState(() => _selectedResistance = val),
-                onDueDateChanged: (val) =>
-                    setState(() => _selectedDueDate = val),
-                onConfirmed: () {
-                  context.read<BrainDumpCubit>().promoteToTask(
-                    widget.item,
-                    TaskType.important,
-                    dueDate: _selectedDueDate,
-                    criticality: _selectedCriticality,
-                    resistance: _selectedResistance,
-                  );
+            AnimatedSize(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOutCubic,
+              alignment: Alignment.topCenter,
+              child: (_isPromotionModalVisible && !widget.isPending)
+                  ? _PromotionModal(
+                      criticality: _selectedCriticality,
+                      resistance: _selectedResistance,
+                      dueDate: _selectedDueDate,
+                      onCriticalityChanged: (val) =>
+                          setState(() => _selectedCriticality = val),
+                      onResistanceChanged: (val) =>
+                          setState(() => _selectedResistance = val),
+                      onDueDateChanged: (val) =>
+                          setState(() => _selectedDueDate = val),
+                      onConfirmed: () {
+                        context.read<BrainDumpCubit>().promoteToTask(
+                          widget.item,
+                          TaskType.important,
+                          dueDate: _selectedDueDate,
+                          criticality: _selectedCriticality,
+                          resistance: _selectedResistance,
+                        );
 
-                  context.read<AppTabController<AppTabId>>().animateToId(
-                    AppTabId.sprints,
-                  );
-                },
-                onCancel: () {
-                  setState(() {
-                    _isPromotionModalVisible = false;
-                  });
-                },
-              ),
+                        context.read<AppTabController<AppTabId>>().animateToId(
+                          AppTabId.sprints,
+                        );
+                      },
+                      onCancel: () {
+                        setState(() {
+                          _isPromotionModalVisible = false;
+                        });
+                      },
+                    )
+                  : const SizedBox(width: double.infinity, height: 0),
+            ),
           ],
         ),
       ),
