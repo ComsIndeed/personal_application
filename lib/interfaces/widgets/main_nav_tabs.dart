@@ -1,4 +1,3 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
@@ -278,7 +277,7 @@ class _PulsingGlowState extends State<_PulsingGlow>
             boxShadow: [
               if (value > 0.01)
                 BoxShadow(
-                  color: widget.color.withOpacity(0.6 * value),
+                  color: widget.color.withValues(alpha: 0.6 * value),
                   blurRadius: 18 * value,
                   spreadRadius: 2 * value,
                 ),

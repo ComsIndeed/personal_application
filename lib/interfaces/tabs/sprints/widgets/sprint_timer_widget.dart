@@ -59,11 +59,13 @@ class _SprintTimerWidgetState extends State<SprintTimerWidget>
   }
 
   Color _getFolderColor() {
-    switch (widget.folderKey) {
+    switch (widget.folderKey.toLowerCase()) {
       case 'urgent':
         return Colors.redAccent;
-      case 'approaching':
-        return Colors.orangeAccent;
+      case 'quick':
+        return Colors.greenAccent;
+      case 'deep_work':
+        return Colors.purpleAccent;
       case 'admin':
         return Colors.blueAccent;
       case 'fun':
